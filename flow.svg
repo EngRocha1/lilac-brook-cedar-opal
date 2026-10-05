@@ -1,0 +1,197 @@
+<svg class="flow" viewBox="0 0 1000 1680" xmlns="http://www.w3.org/2000/svg" aria-label="Fluxograma HEMOPI">
+<defs>
+<marker id="ab" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#1a5f8a"/></marker>
+<marker id="ay" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#c9a227"/></marker>
+<marker id="ap" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#5b4b8a"/></marker>
+<marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#c41e3a"/></marker>
+<marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#1b7a4e"/></marker>
+<filter id="sh"><feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-opacity=".12"/></filter>
+</defs>
+<g class="node-hit" data-id="start" filter="url(#sh)">
+<ellipse cx="500" cy="28" rx="88" ry="20" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2.2"/>
+<text x="500" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">▶ JORNADA DE ACESSO</text>
+</g>
+<line x1="500" y1="48" x2="500" y2="70" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<g class="node-hit" data-id="canal" filter="url(#sh)">
+<polygon points="500,74 580,112 500,150 420,112" fill="#fdf6e3" stroke="#c9a227" stroke-width="2.5"/>
+<text x="500" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">Qual canal</text>
+<text x="500" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">de acesso?</text>
+</g>
+<text x="280" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="#1a5f8a">DIGITAL (autonomia)</text>
+<text x="720" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="#c9a227">FÍSICO / TELEFONE</text>
+<path d="M420,112 H250 V170" fill="none" stroke="#1a5f8a" stroke-width="2.5" marker-end="url(#ab)"/>
+<path d="M580,112 H750 V170" fill="none" stroke="#c9a227" stroke-width="2.5" marker-end="url(#ay)"/>
+<g class="node-hit" data-id="d1" filter="url(#sh)">
+<rect x="160" y="170" width="180" height="42" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2"/>
+<text x="250" y="188" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">1. Autenticação</text>
+<text x="250" y="202" text-anchor="middle" font-size="9" fill="#1a5f8a">CPF ou GOV.BR</text>
+</g>
+<line x1="250" y1="212" x2="250" y2="232" stroke="#1a5f8a" stroke-width="2" marker-end="url(#ab)"/>
+<g class="node-hit" data-id="d2" filter="url(#sh)">
+<rect x="160" y="232" width="180" height="42" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2"/>
+<text x="250" y="250" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">2. Atualização cadastral</text>
+<text x="250" y="264" text-anchor="middle" font-size="9" fill="#1a5f8a">RDC 34 · contato · idade</text>
+</g>
+<line x1="250" y1="274" x2="250" y2="294" stroke="#1a5f8a" stroke-width="2" marker-end="url(#ab)"/>
+<g class="node-hit" data-id="d3" filter="url(#sh)">
+<polygon points="250,298 330,338 250,378 170,338" fill="#fce4e8" stroke="#c41e3a" stroke-width="2.5"/>
+<text x="250" y="332" text-anchor="middle" font-size="10" font-weight="700" fill="#8b1528">3. Termos LGPD</text>
+<text x="250" y="346" text-anchor="middle" font-size="10" font-weight="700" fill="#8b1528">Aceita?</text>
+</g>
+<path d="M170,338 H90 V400" fill="none" stroke="#c41e3a" stroke-width="2.2" marker-end="url(#ar)"/>
+<text x="125" y="330" text-anchor="middle" font-size="10" font-weight="700" fill="#c41e3a">NÃO</text>
+<g class="node-hit" data-id="d3n" filter="url(#sh)">
+<rect x="20" y="400" width="140" height="40" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2"/>
+<text x="90" y="418" text-anchor="middle" font-size="10" font-weight="700" fill="#8b1528">Bloqueia doação</text>
+<text x="90" y="431" text-anchor="middle" font-size="8" fill="#c41e3a">sem consentimento</text>
+</g>
+<text x="310" y="330" font-size="10" font-weight="700" fill="#1b7a4e">SIM</text>
+<path d="M330,338 H380 V400 H250" fill="none" stroke="#1b7a4e" stroke-width="2.2"/>
+<line x1="250" y1="400" x2="250" y2="418" stroke="#1b7a4e" stroke-width="2.2" marker-end="url(#ag)"/>
+<g class="node-hit" data-id="d4" filter="url(#sh)">
+<rect x="160" y="418" width="180" height="42" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2"/>
+<text x="250" y="436" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">4. Escolha data e hora</text>
+<text x="250" y="450" text-anchor="middle" font-size="9" fill="#1a5f8a">só slots com vaga</text>
+</g>
+<line x1="250" y1="460" x2="250" y2="480" stroke="#1a5f8a" stroke-width="2" marker-end="url(#ab)"/>
+<g class="node-hit" data-id="d5" filter="url(#sh)">
+<rect x="160" y="480" width="180" height="48" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2.5"/>
+<text x="250" y="500" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">5. QR Code / Guia</text>
+<text x="250" y="514" text-anchor="middle" font-size="9" fill="#1a5f8a">⚠ ainda SEM senha de fila</text>
+</g>
+<g class="node-hit" data-id="f1" filter="url(#sh)">
+<rect x="660" y="170" width="180" height="42" rx="8" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
+<text x="750" y="188" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">1. Acolhimento</text>
+<text x="750" y="202" text-anchor="middle" font-size="9" fill="#a08a20">escuta da demanda</text>
+</g>
+<line x1="750" y1="212" x2="750" y2="232" stroke="#c9a227" stroke-width="2" marker-end="url(#ay)"/>
+<g class="node-hit" data-id="f2" filter="url(#sh)">
+<polygon points="750,236 830,276 750,316 670,276" fill="#fdf6e3" stroke="#c9a227" stroke-width="2.2"/>
+<text x="750" y="270" text-anchor="middle" font-size="10" font-weight="700" fill="#8a7018">2. Tem hora</text>
+<text x="750" y="284" text-anchor="middle" font-size="10" font-weight="700" fill="#8a7018">marcada?</text>
+</g>
+<text x="670" y="270" text-anchor="end" font-size="9" font-weight="700" fill="#1b7a4e">SIM→agenda</text>
+<path d="M670,276 H620 V340 H750" fill="none" stroke="#1b7a4e" stroke-width="2"/>
+<text x="835" y="270" font-size="9" font-weight="700" fill="#c9a227">NÃO→encaixe</text>
+<path d="M830,276 H880 V340 H750" fill="none" stroke="#c9a227" stroke-width="2"/>
+<line x1="750" y1="340" x2="750" y2="358" stroke="#c9a227" stroke-width="2" marker-end="url(#ay)"/>
+<g class="node-hit" data-id="f2b" filter="url(#sh)">
+<rect x="660" y="358" width="180" height="42" rx="8" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
+<text x="750" y="376" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">Agenda futura OU</text>
+<text x="750" y="390" text-anchor="middle" font-size="9" fill="#a08a20">encaixe espontâneo hoje</text>
+</g>
+<line x1="750" y1="400" x2="750" y2="430" stroke="#c9a227" stroke-width="2" marker-end="url(#ay)"/>
+<g class="node-hit" data-id="f3" filter="url(#sh)">
+<rect x="660" y="430" width="180" height="52" rx="8" fill="#fdf6e3" stroke="#c9a227" stroke-width="2.5"/>
+<text x="750" y="450" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">3. Senha no totem</text>
+<text x="750" y="464" text-anchor="middle" font-size="9" fill="#a08a20">normal ou prioritária</text>
+<text x="750" y="476" text-anchor="middle" font-size="8" fill="#8a7018">Lei 10.048 · se veio hoje</text>
+</g>
+<path d="M250,528 V560 H500" fill="none" stroke="#5b4b8a" stroke-width="2.5"/>
+<path d="M750,482 V560 H500" fill="none" stroke="#5b4b8a" stroke-width="2.5"/>
+<line x1="500" y1="560" x2="500" y2="582" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<text x="500" y="552" text-anchor="middle" font-size="9" font-weight="700" fill="#5b4b8a">caminhos se encontram na chegada</text>
+<g class="node-hit" data-id="chegada" filter="url(#sh)">
+<rect x="360" y="582" width="280" height="44" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2.5"/>
+<text x="500" y="600" text-anchor="middle" font-size="12" font-weight="700" fill="#5b4b8a">📍 Chegada ao HEMOCENTRO</text>
+<text x="500" y="614" text-anchor="middle" font-size="9" fill="#5b4b8a">Totem / Recepção · espera</text>
+</g>
+<line x1="500" y1="626" x2="500" y2="648" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<g class="node-hit" data-id="senha" filter="url(#sh)">
+<rect x="340" y="648" width="320" height="52" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2.5"/>
+<text x="500" y="668" text-anchor="middle" font-size="12" font-weight="700" fill="#5b4b8a">🎫 Emissão de SENHA (aqui!)</text>
+<text x="500" y="684" text-anchor="middle" font-size="9" fill="#5b4b8a">Agendado lê QR · Espontâneo já pode ter senha · Prioridades</text>
+</g>
+<line x1="500" y1="700" x2="500" y2="720" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<g class="node-hit" data-id="tipos" filter="url(#sh)">
+<rect x="200" y="720" width="600" height="56" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2"/>
+<text x="500" y="740" text-anchor="middle" font-size="11" font-weight="700" fill="#5b4b8a">Tipos na fila (Lei 10.048 + finalidades)</text>
+<text x="500" y="756" text-anchor="middle" font-size="9" fill="#5b4b8a">Agendado · Espontâneo · Prioridade · REDOME · 2ª amostra · Admin/fornecedor</text>
+</g>
+<line x1="500" y1="776" x2="500" y2="798" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<g class="node-hit" data-id="guiche" filter="url(#sh)">
+<rect x="340" y="798" width="320" height="44" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2"/>
+<text x="500" y="816" text-anchor="middle" font-size="11" font-weight="700" fill="#5b4b8a">Guichê · documento · idade · foto</text>
+<text x="500" y="830" text-anchor="middle" font-size="9" fill="#5b4b8a">RDC 34 · menores 16–17 · idosos 60–69</text>
+</g>
+<line x1="500" y1="842" x2="500" y2="862" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#ap)"/>
+<g class="node-hit" data-id="rota" filter="url(#sh)">
+<polygon points="500,866 590,906 500,946 410,906" fill="#fdf6e3" stroke="#c9a227" stroke-width="2.5"/>
+<text x="500" y="900" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">Qual a rota</text>
+<text x="500" y="914" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">desta visita?</text>
+</g>
+<path d="M410,906 H220 V970" fill="none" stroke="#c41e3a" stroke-width="2.2" marker-end="url(#ar)"/>
+<text x="300" y="898" text-anchor="middle" font-size="9" font-weight="700" fill="#c41e3a">2ª amostra</text>
+<g class="node-hit" data-id="seg" filter="url(#sh)">
+<rect x="120" y="970" width="200" height="70" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2"/>
+<text x="220" y="990" text-anchor="middle" font-size="10" font-weight="700" fill="#8b1528">Serviço social / médico</text>
+<text x="220" y="1004" text-anchor="middle" font-size="8" fill="#c41e3a">aconselhamento · reteste</text>
+<text x="220" y="1018" text-anchor="middle" font-size="8" fill="#c41e3a">coleta protegida · alta admin</text>
+</g>
+<path d="M590,906 H780 V970" fill="none" stroke="#5c6b7a" stroke-width="2" marker-end="url(#ap)"/>
+<text x="700" y="898" text-anchor="middle" font-size="9" font-weight="700" fill="#5c6b7a">Paciente / laudo</text>
+<g class="node-hit" data-id="pac" filter="url(#sh)">
+<rect x="680" y="970" width="200" height="48" rx="8" fill="#f0f3f7" stroke="#5c6b7a" stroke-width="2"/>
+<text x="780" y="990" text-anchor="middle" font-size="10" font-weight="700" fill="#5c6b7a">Ambulatório / laudos</text>
+<text x="780" y="1004" text-anchor="middle" font-size="8" fill="#5c6b7a">(fora da doação)</text>
+</g>
+<text x="500" y="958" text-anchor="middle" font-size="10" font-weight="700" fill="#1b7a4e">Doador sangue / REDOME</text>
+<line x1="500" y1="946" x2="500" y2="1060" stroke="#1b7a4e" stroke-width="2.5" marker-end="url(#ag)"/>
+<g class="node-hit" data-id="pre" filter="url(#sh)">
+<rect x="360" y="1060" width="280" height="40" rx="8" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2"/>
+<text x="500" y="1084" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">Pré-triagem (PA, peso, Hb)</text>
+</g>
+<line x1="500" y1="1100" x2="500" y2="1120" stroke="#1b7a4e" stroke-width="2" marker-end="url(#ag)"/>
+<g class="node-hit" data-id="tri" filter="url(#sh)">
+<rect x="360" y="1120" width="280" height="40" rx="8" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2"/>
+<text x="500" y="1144" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">Triagem clínica (sigilo · TCLE)</text>
+</g>
+<line x1="500" y1="1160" x2="500" y2="1180" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#ar)"/>
+<g class="node-hit" data-id="apto" filter="url(#sh)">
+<polygon points="500,1184 580,1222 500,1260 420,1222" fill="#fce4e8" stroke="#c41e3a" stroke-width="2.5"/>
+<text x="500" y="1218" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">Pode doar</text>
+<text x="500" y="1232" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">hoje?</text>
+</g>
+<path d="M420,1222 H300 V1290" fill="none" stroke="#c41e3a" stroke-width="2.2" marker-end="url(#ar)"/>
+<text x="350" y="1214" text-anchor="middle" font-size="10" font-weight="700" fill="#c41e3a">NÃO</text>
+<g class="node-hit" data-id="inapto" filter="url(#sh)">
+<rect x="210" y="1290" width="180" height="44" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2"/>
+<text x="300" y="1308" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">Inapto nesta visita</text>
+<text x="300" y="1322" text-anchor="middle" font-size="8" fill="#c41e3a">orienta · registra retorno</text>
+</g>
+<text x="600" y="1214" font-size="10" font-weight="700" fill="#1b7a4e">SIM</text>
+<path d="M580,1222 H680 V1280" fill="none" stroke="#1b7a4e" stroke-width="2.2"/>
+<g class="node-hit" data-id="lanchepre" filter="url(#sh)">
+<polygon points="680,1284 750,1314 680,1344 610,1314" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
+<text x="680" y="1310" text-anchor="middle" font-size="9" font-weight="700" fill="#8a7018">Lanche</text>
+<text x="680" y="1322" text-anchor="middle" font-size="9" font-weight="700" fill="#8a7018">ANTES?</text>
+</g>
+<text x="760" y="1305" font-size="8" fill="#8a7018">condicional</text>
+<path d="M680,1344 V1370 H500" fill="none" stroke="#1b7a4e" stroke-width="2"/>
+<line x1="500" y1="1370" x2="500" y2="1390" stroke="#1b7a4e" stroke-width="2" marker-end="url(#ag)"/>
+<g class="node-hit" data-id="prep" filter="url(#sh)">
+<rect x="360" y="1390" width="280" height="36" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2"/>
+<text x="500" y="1412" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">Preparação · kit · etiquetas</text>
+</g>
+<line x1="500" y1="1426" x2="500" y2="1442" stroke="#1a5f8a" stroke-width="2" marker-end="url(#ab)"/>
+<g class="node-hit" data-id="mapa" filter="url(#sh)">
+<rect x="360" y="1442" width="280" height="36" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2"/>
+<text x="500" y="1464" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">Mapa da sala · cadeira</text>
+</g>
+<line x1="500" y1="1478" x2="500" y2="1494" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#ar)"/>
+<g class="node-hit" data-id="coleta" filter="url(#sh)">
+<rect x="360" y="1494" width="280" height="36" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2.5"/>
+<text x="500" y="1516" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">Coleta na poltrona</text>
+</g>
+<line x1="500" y1="1530" x2="500" y2="1546" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#ar)"/>
+<g class="node-hit" data-id="pos" filter="url(#sh)">
+<rect x="360" y="1546" width="280" height="40" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2"/>
+<text x="500" y="1564" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">Lanche + observação ≥ 15 min</text>
+<text x="500" y="1577" text-anchor="middle" font-size="8" fill="#c41e3a">RDC 34 · declaração de doação</text>
+</g>
+<line x1="500" y1="1586" x2="500" y2="1608" stroke="#1b7a4e" stroke-width="2.5" marker-end="url(#ag)"/>
+<g class="node-hit" data-id="fim" filter="url(#sh)">
+<ellipse cx="500" cy="1632" rx="100" ry="22" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2.5"/>
+<text x="500" y="1636" text-anchor="middle" font-size="13" font-weight="700" fill="#1b7a4e">🏁 Alta / saída</text>
+</g>
+</svg>
