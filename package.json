@@ -1,0 +1,14 @@
+{
+  "name": "lilac-brook-cedar-opal",
+  "private": true,
+  "version": "1.0.0",
+  "description": "HEMOPI visual flow editor + Convex backend",
+  "scripts": {
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy",
+    "convex:codegen": "convex codegen"
+  },
+  "dependencies": {
+    "convex": "^1.17.0"
+  }
+}

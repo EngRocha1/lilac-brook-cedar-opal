@@ -1,0 +1,31 @@
+name: Deploy Convex
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "convex/**"
+      - "package.json"
+      - "convex.json"
+      - ".github/workflows/convex-deploy.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci || npm install
+      - name: Deploy to Convex
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          if [ -z "$CONVEX_DEPLOY_KEY" ]; then
+            echo "CONVEX_DEPLOY_KEY secret not set — skip Convex deploy."
+            echo "Add it in: Settings → Secrets and variables → Actions"
+            exit 0
+          fi
+          npx convex deploy --cmd 'echo deployed'
