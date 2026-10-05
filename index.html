@@ -3,111 +3,87 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>HEMOPI — Fluxograma desenhado (macro com bordas)</title>
+<title>HEMOPI — Editor visual do fluxo</title>
 <meta name="theme-color" content="#c41e3a"/>
-<style>
-:root{--sangue:#c41e3a;--sangue-esc:#8b1528;--azul:#0b3d5c;--azul-m:#1a5f8a;--verde:#1b7a4e;--amarelo:#c9a227;--roxo:#5b4b8a;--cinza:#5c6b7a;--fundo:#f0f3f7;--borda:#d0d8e2;--texto:#1a2332}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Segoe UI,system-ui,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.45}
-.wrap{max-width:1100px;margin:0 auto;padding:14px 12px 90px}
-.hero{background:linear-gradient(135deg,var(--sangue-esc),var(--sangue));color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px}
-.hero h1{font-size:1.15rem}.hero h1 small{display:block;font-size:.74rem;opacity:.9;margin-top:4px;font-weight:500}
-.hero p{font-size:.82rem;margin-top:8px;max-width:720px;opacity:.95}
-.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;position:sticky;top:0;z-index:15;background:rgba(240,243,247,.94);padding:8px 0;backdrop-filter:blur(6px)}
-.btn{border:1px solid var(--borda);background:#fff;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:600;cursor:pointer}
-.btn.pri{background:var(--sangue);color:#fff;border-color:var(--sangue)}
-.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.7rem;color:var(--cinza);margin-bottom:10px;background:#fff;border:1px solid var(--borda);border-radius:12px;padding:8px 10px}
-.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
-.board{background:#fff;border:1px solid var(--borda);border-radius:16px;padding:10px;overflow-x:auto}
-.board h2{font-size:.95rem;color:var(--azul);margin:4px 8px 2px}
-.board .hint{font-size:.72rem;color:var(--cinza);margin:0 8px 8px}
-svg.flow{display:block;margin:0 auto;min-width:920px;max-width:100%}
-.node-hit{cursor:pointer}
-.node-hit:hover{filter:brightness(0.97)}
-.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.2s;z-index:40}
-.backdrop.open{opacity:1;pointer-events:auto}
-.panel{position:fixed;top:0;right:0;width:min(380px,100%);height:100%;background:#fff;box-shadow:-8px 0 24px rgba(0,0,0,.12);transform:translateX(100%);transition:.25s;z-index:50;display:flex;flex-direction:column}
-.panel.open{transform:translateX(0)}
-.panel-h{display:flex;align-items:center;gap:8px;padding:14px;border-bottom:1px solid var(--borda)}
-.panel-h h3{flex:1;font-size:.95rem}
-.panel-h button{border:none;background:transparent;font-size:1.4rem;cursor:pointer;line-height:1}
-.panel-b{padding:14px;overflow:auto;flex:1}
-.meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.chip{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#eee}
-.chip.dig{background:#e8f4fc;color:#0b3d5c}.chip.fis{background:#fdf6e3;color:#8a7018}
-.chip.nor{background:#fce4e8;color:#8b1528}.chip.nov{background:#e6f5ed;color:#1b7a4e}
-.who{font-size:.78rem;color:var(--cinza);margin-bottom:8px}
-.vote-row{display:flex;gap:6px;margin:12px 0}
-.vbtn{flex:1;border:1px solid var(--borda);background:#fff;border-radius:8px;padding:8px;font-size:.75rem;cursor:pointer}
-.vbtn.active-ok{background:#e6f5ed;border-color:#1b7a4e}
-.vbtn.active-maybe{background:#fdf6e3;border-color:#c9a227}
-.vbtn.active-no{background:#fce4e8;border-color:#c41e3a}
-.comment-box label{font-size:.75rem;font-weight:600;display:block;margin-bottom:4px}
-.comment-box textarea{width:100%;min-height:80px;border:1px solid var(--borda);border-radius:8px;padding:8px;font-family:inherit;font-size:.8rem}
-.foot{position:fixed;bottom:0;left:0;right:0;background:var(--azul);color:#fff;padding:10px;z-index:30;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;font-size:.78rem}
-.foot .btn{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff}
-.foot .btn.pri{background:var(--sangue);border-color:var(--sangue)}
-@media print{.toolbar,.foot,.backdrop,.panel{display:none!important}body{background:#fff}.board{border:none;overflow:visible}svg.flow,.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-@page{size:A4;margin:10mm}
-</style>
+<link rel="stylesheet" href="editor.css"/>
 </head>
 <body>
-<div class="wrap">
-<header class="hero">
-  <h1>🩸 HEMOPI — Fluxograma desenhado
-    <small>Macrofluxo contínuo com bordas de delimitação · retângulos · losangos · linhas SIM/NÃO</small>
-  </h1>
-  <p>O desenho do fluxo permanece <strong>contínuo</strong> (como antes). As áreas tracejadas só delimitam cada macrofluxo (A digital · B físico · C senhas · D recepção · E pré/triagem · F coleta). Clique em qualquer caixa para comentar.</p>
-</header>
-<div class="toolbar">
-  <button type="button" class="btn pri" onclick="window.print()">🖨 Imprimir PDF colorido</button>
-  <button type="button" class="btn" onclick="exportComments()">↓ Exportar comentários</button>
-</div>
-<div class="legend">
-  <span><i style="background:#e8f4fc;border:2px dashed #1a5f8a"></i> Macro A digital</span>
-  <span><i style="background:#fdf6e3;border:2px dashed #c9a227"></i> Macro B físico</span>
-  <span><i style="background:#efeaf8;border:2px dashed #5b4b8a"></i> Macro C senhas</span>
-  <span><i style="background:#e6f5ed;border:2px dashed #1b7a4e"></i> Macro E pré/triagem</span>
-  <span><i style="background:#fce4e8;border:2px dashed #c41e3a"></i> Macro F coleta</span>
-  <span>Losango = decisão · setas coloridas = SIM/NÃO</span>
-</div>
-<div class="board">
-  <h2>Mapa macro contínuo — do acesso à saída</h2>
-  <p class="hint">Role horizontal no celular · Clique nas caixas · Bordas tracejadas = delimitação de macrofluxo</p>
-  <div id="svgHost"></div>
-</div>
-</div>
-<div class="backdrop" id="backdrop" onclick="closePanel()"></div>
-<div class="panel" id="panel">
-  <div class="panel-h"><span id="pIco">📋</span><h3 id="pTitle">—</h3><button type="button" onclick="closePanel()">×</button></div>
-  <div class="panel-b">
-    <div class="meta" id="pMeta"></div>
-    <div class="who" id="pWho"></div>
-    <div id="pBody"></div>
-    <div class="vote-row">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍 Faz sentido</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋ Ajustar</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎 Não faz</button>
+<div class="app">
+  <header class="hero">
+    <div class="hero-top">
+      <div class="logo">🩸</div>
+      <div>
+        <h1>HEMOPI — Visão do fluxo</h1>
+        <p class="tagline">Esta página apresenta uma visão visual e interativa do processo de hemoterapia, permitindo compreender como as etapas se relacionam, onde existem decisões, transições e responsabilidades e quais pontos precisam ser validados pelas equipes.</p>
+        <p class="tagline">Arraste elementos e conectores para reorganizar a visão. Clique em etapas ou linhas para registrar avaliação e comentários. O objetivo é transformar o conhecimento do processo em uma representação colaborativa antes da definição detalhada da solução.</p>
+      </div>
     </div>
-    <div class="comment-box">
-      <label>💬 Comentário neste passo</label>
-      <textarea id="pComment" placeholder="Sugestão ou regra local…"></textarea>
+    <div class="pills">
+      <span class="pill">SESAPI / HEMOPI</span>
+      <span class="pill">RDC 34 · Lei 10.048 · LGPD</span>
+      <span class="pill">Editor visual · validação</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tool-group">
+      <button type="button" class="btn" id="btnAddProcess" title="Processo">▭ Processo</button>
+      <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇ Decisão</button>
+      <button type="button" class="btn" id="btnAddText" title="Texto">T Texto</button>
+      <button type="button" class="btn" id="btnAddMacro" title="Novo macro">+ Macro</button>
+      <button type="button" class="btn" id="btnConnect" title="Ligar dois nós">⟷ Ligar</button>
+    </div>
+    <div class="tool-group prog-wrap">
+      <div class="prog-label">Validação visual · <span id="progText">0%</span></div>
+      <div class="prog"><i id="progBar"></i></div>
+      <div class="prog-stats">
+        <span id="statEls">0</span> elementos ·
+        <span id="statDone">0</span> avaliados ·
+        <span class="ok">👍 <b id="statOk">0</b></span> ·
+        <span class="no">👎 <b id="statNo">0</b></span>
+      </div>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="btn" onclick="printMode('overview')">🖨 Visão geral</button>
+      <button type="button" class="btn" onclick="printMode('macros')">🖨 Macros + comentários</button>
+      <button type="button" class="btn pri" onclick="exportJSON()">↓ Exportar JSON</button>
+      <button type="button" class="btn" onclick="saveLocal()">💾 Salvar</button>
     </div>
   </div>
+
+  <div class="workspace">
+    <aside class="palette" id="macroBar"></aside>
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <aside class="side" id="side">
+      <div class="side-h">
+        <span id="sideIco">📋</span>
+        <strong id="sideTitle">Selecione um elemento</strong>
+        <button type="button" class="x" onclick="clearSelection()">×</button>
+      </div>
+      <div class="side-b">
+        <p id="sideMeta" class="muted"></p>
+        <label>Título</label>
+        <input id="sideName" type="text"/>
+        <label>Cor de fundo (macro)</label>
+        <input id="sideColor" type="color" value="#e8f4fc"/>
+        <div class="vote-row">
+          <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button>
+          <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button>
+        </div>
+        <div class="counts"><span class="ok">👍 <b id="sideOk">0</b></span> <span class="no">👎 <b id="sideNo">0</b></span></div>
+        <label>Comentário</label>
+        <textarea id="sideComment" placeholder="Sugestão, dúvida ou correção…"></textarea>
+        <button type="button" class="btn danger" id="btnDelete" onclick="deleteSelected()">Excluir elemento</button>
+      </div>
+    </aside>
+  </div>
 </div>
-<div class="foot">
-  <span>Avaliados: <b id="statDone">0</b>/<span id="statTotal">0</span></span>
-  <button type="button" class="btn pri" onclick="window.print()">🖨 PDF</button>
-  <button type="button" class="btn" onclick="exportComments()">↓ Comentários</button>
-</div>
-<script src="app.js"></script>
-<script>
-fetch('flow.svg').then(r=>r.text()).then(t=>{
-  document.getElementById('svgHost').innerHTML=t;
-  document.querySelectorAll('.node-hit').forEach(g=>{
-    g.addEventListener('click',()=>openPanel(g.getAttribute('data-id')));
-  });
-}).catch(()=>{document.getElementById('svgHost').innerHTML='<p style="color:red;text-align:center">Erro ao carregar o mapa.</p>';});
-</script>
+
+<div id="printRoot" class="print-root"></div>
+
+<script src="flow-data.js"></script>
+<script src="editor.js"></script>
 </body>
 </html>
