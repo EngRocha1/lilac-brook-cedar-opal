@@ -1,14 +1,25 @@
-# HEMOPI — Fluxograma
+# HEMOPI — Editor visual do fluxo
 
-Mapa **desenhado contínuo** (retângulos, losangos, linhas SIM/NÃO) com **bordas tracejadas** delimitando os macrofluxos:
+Editor modular com nós e conectores arrastáveis, avaliação 👍/👎, comentários e impressão.
 
-- **Macro A** — Canal digital (agendamento até QR)
-- **Macro B** — Canal físico/telefone
-- **Macro C** — Chegada e emissão de SENHA
-- **Macro D** — Recepção, identidade e rota
-- **Macro E** — Pré-triagem e triagem (inaptidão em dois níveis)
-- **Macro F** — Preparação, coleta e pós
+## Uso
 
-Site: https://engrocha1.github.io/lilac-brook-cedar-opal/
+https://engrocha1.github.io/lilac-brook-cedar-opal/
 
-Arquivos: `index.html` + `flow.svg` + `app.js`
+- Arraste caixas (processos / decisões)
+- Duplo clique na **linha** para criar ponto intermediário; arraste o ponto
+- Botão **Ligar** para criar nova conexão
+- **+ Macro** cria novo quadrante
+- Clique em nó, linha ou macro para votar e comentar
+- Barra de progresso de validação no topo
+- Impressão: visão geral ou macros + comentários
+
+## Persistência
+
+- **Local:** localStorage (botão Salvar)
+- **Convex:** https://disciplined-jaguar-3.convex.cloud — schema em `convex/schema.ts`
+- Não coloque Deploy Key no frontend
+
+## Macro D (corrigido)
+
+Chegada → Identificação → Documento válido? → Cadastro/Regularização → Foto/LGPD/REDOME → Rota → Pré-triagem
