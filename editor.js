@@ -1,4 +1,4 @@
-/* HEMOPI visual flow editor — clean canvas, votes in modal + macros only */
+/* HEMOPI visual flow editor — Convex + localStorage */
 const STORAGE_KEY = 'hemopi_editor_v1';
 const CONVEX_URL = 'https://disciplined-jaguar-3.convex.cloud';
 
@@ -7,9 +7,36 @@ let selected = null;
 let tool = 'select';
 let drag = null;
 let connectFrom = null;
+let convexClient = null;
+const FLOW_KEY = 'hemopi-main';
 const svgNS = 'http://www.w3.org/2000/svg';
 
-function loadFlow(){
+async function initConvex(){
+  try{
+    const mod = await import('https://esm.sh/convex@1.17.0/browser');
+    if(!mod.ConvexHttpClient) return;
+    convexClient = new mod.ConvexHttpClient(CONVEX_URL);
+    console.log('Convex HTTP client ready', CONVEX_URL);
+  }catch(e){
+    console.warn('Convex indisponível — usando localStorage', e);
+    convexClient = null;
+  }
+}
+
+async function loadFlow(){
+  if(convexClient){
+    try{
+      const remote = await convexClient.query('flows:get', { key: FLOW_KEY });
+      if(remote){
+        flow = remote;
+        if(!flow.votes) flow.votes = {};
+        if(!flow.comments) flow.comments = {};
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
+        console.log('Fluxo carregado do Convex');
+        return;
+      }
+    }catch(e){ console.warn('Falha ao ler Convex', e); }
+  }
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ flow = JSON.parse(raw); return; }
@@ -21,7 +48,13 @@ function loadFlow(){
 
 function saveLocal(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
-  flash('Salvo localmente');
+  if(convexClient){
+    convexClient.mutation('flows:save', { key: FLOW_KEY, data: flow })
+      .then(()=> flash('Salvo · local + Convex'))
+      .catch(err=>{ console.warn(err); flash('Salvo localmente (Convex offline)'); });
+  } else {
+    flash('Salvo localmente');
+  }
 }
 
 function exportJSON(){
@@ -401,10 +434,13 @@ function printMode(mode){
   window.print();
 }
 
-loadFlow();
-render();
-renderMacroBar();
-updateProgress();
+(async function boot(){
+  await initConvex();
+  await loadFlow();
+  render();
+  renderMacroBar();
+  updateProgress();
+})();
 window.addEventListener('mousemove', onMove);
 window.addEventListener('mouseup', onUp);
 document.getElementById('canvas').addEventListener('mousedown', ()=>{ selected=null; closeModal(); render(); });
@@ -416,4 +452,4 @@ window.voteSelected = voteSelected;
 window.clearSelection = clearSelection;
 window.closeModal = closeModal;
 window.deleteSelected = deleteSelected;
-console.log('HEMOPI editor · double-click to evaluate');
+console.log('HEMOPI editor · Convex + double-click to evaluate');
