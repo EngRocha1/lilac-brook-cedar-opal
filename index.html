@@ -2,12 +2,96 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta http-equiv="refresh" content="0; url=HEMOPI.html"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>HEMOPI — Redirecionando…</title>
-<script>location.replace('HEMOPI.html');</script>
+<title>HEMOPI — Jornada do Doador (Agendamento → Coleta)</title>
+<meta name="description" content="Fluxo macro HEMOPI: agendamento, senhas, chegada, triagem e coleta."/>
+<meta name="theme-color" content="#c41e3a"/>
+<link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-<p><a href="HEMOPI.html">Abrir jornada HEMOPI</a></p>
+<div class="wrap">
+<div class="hero">
+  <div class="hero-row">
+    <div class="logo">🩸</div>
+    <div>
+      <h1>HEMOPI — Jornada do doador
+        <small>Agendamento · Senhas · Chegada · Triagem · Coleta · Validação com o cliente</small>
+      </h1>
+    </div>
+  </div>
+  <p>Clique em <strong>qualquer caixa do mapa</strong> para ver o detalhe, votar (👍 ✋ 👎) e comentar. Linhas SIM e NÃO ligam as decisões corretamente.</p>
+  <div class="pills">
+    <span class="pill">SESAPI / HEMOPI</span>
+    <span class="pill">RDC 34 · Portaria 158 · Lei 10.048 · LGPD</span>
+  </div>
+</div>
+<div class="legend">
+  <span><i class="s o"></i> Início / fim</span>
+  <span><i class="s"></i> Processo</span>
+  <span><i class="s d"></i> Decisão</span>
+  <span><i class="l b"></i> Digital</span>
+  <span><i class="l y"></i> Físico / telefone</span>
+  <span><i class="l p"></i> Convergência</span>
+  <span><i class="l r"></i> Norma / bloqueio</span>
+  <span><i class="l g"></i> Apto / segue</span>
+</div>
+<div class="toolbar">
+  <button type="button" class="btn pri" onclick="exportComments()">↓ Exportar comentários</button>
+  <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
+  <div class="prog">
+    <label>Caixas avaliadas: <span id="progText">0</span></label>
+    <div class="bar"><i id="progBar"></i></div>
+  </div>
+</div>
+<div class="focus-box">
+  <strong>Foco:</strong> início da jornada — canais, agendamento, QR, chegada e <strong>quando a senha nasce</strong> (só no hemocentro / totem, não no app).
+</div>
+<div class="board">
+  <h2>Mapa macro — do acesso até a saída</h2>
+  <p class="hint">Clique nas caixas · Azul = digital · Amarelo = físico · Roxo = chegada · Vermelho = NÃO/norma · Verde = SIM/segue</p>
+  <div id="svgHost"></div>
+</div>
+<p style="text-align:center;font-size:.78rem;color:var(--cinza);margin-top:10px">Clique em uma caixa · Exportar gera .txt</p>
+</div>
+<div class="backdrop" id="backdrop" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="panel-h">
+    <span class="ico" id="pIco">📋</span>
+    <h3 id="pTitle">—</h3>
+    <button type="button" onclick="closePanel()" aria-label="Fechar">×</button>
+  </div>
+  <div class="panel-b">
+    <div class="meta" id="pMeta"></div>
+    <div class="who" id="pWho"></div>
+    <div id="pBody"></div>
+    <div class="vote-row">
+      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍 Faz sentido</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋ Ajustar</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎 Não faz</button>
+    </div>
+    <div class="comment-box">
+      <label>💬 Comentário do cliente neste passo</label>
+      <textarea id="pComment" placeholder="Sugestão, dúvida ou regra local…"></textarea>
+    </div>
+  </div>
+</div>
+<div class="foot">
+  <div class="foot-in">
+    <div class="stats">Avaliados: <b id="statDone">0</b>/<span id="statTotal">0</span> · 👍 <b id="statOk">0</b> · ✋ <b id="statMaybe">0</b> · 👎 <b id="statNo">0</b></div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
+      <button type="button" class="btn pri" onclick="exportComments()">↓ Exportar</button>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+fetch('flow.svg').then(r=>r.text()).then(t=>{
+  document.getElementById('svgHost').innerHTML=t;
+  document.querySelectorAll('.node-hit').forEach(g=>{
+    g.addEventListener('click',()=>openPanel(g.getAttribute('data-id')));
+  });
+}).catch(e=>{document.getElementById('svgHost').innerHTML='<p style="color:red;text-align:center">Erro ao carregar o mapa. Atualize a página.</p>';});
+</script>
 </body>
 </html>
