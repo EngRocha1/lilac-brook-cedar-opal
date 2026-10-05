@@ -3,1153 +3,259 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>HEMOPI — Fluxo visual: Agendamento até a Coleta</title>
+<title>HEMOPI — Jornada de Acesso e Doação (visão macro)</title>
+<meta name="description" content="Fluxo macro HEMOPI: agendamento, senhas, chegada e doação. Validação com o cliente."/>
+<meta name="theme-color" content="#c41e3a"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>"/>
 <style>
-:root {
-  --sangue: #c41e3a;
-  --sangue-escuro: #8b1528;
-  --sangue-claro: #e85a6b;
-  --rosa: #fce4e8;
-  --azul: #0b3d5c;
-  --azul-medio: #1a5f8a;
-  --azul-claro: #e8f4fc;
-  --verde: #1b7a4e;
-  --verde-claro: #e6f5ed;
-  --amarelo: #c9a227;
-  --amarelo-claro: #fdf6e3;
-  --roxo: #5b4b8a;
-  --cinza: #5c6b7a;
-  --fundo: #f5f7fa;
-  --branco: #ffffff;
-  --texto: #1a2332;
-  --texto-suave: #5c6b7a;
-  --borda: #d8e0e8;
-  --sombra: 0 4px 20px rgba(11,61,92,0.08);
+:root{
+  --sangue:#c41e3a;--sangue-esc:#8b1528;--rosa:#fce4e8;
+  --azul:#0b3d5c;--azul-m:#1a5f8a;--azul-c:#e8f4fc;
+  --verde:#1b7a4e;--verde-c:#e6f5ed;
+  --amarelo:#c9a227;--amarelo-c:#fdf6e3;
+  --roxo:#5b4b8a;--roxo-c:#efeaf8;
+  --fundo:#f4f6f9;--branco:#fff;--texto:#1a2332;--muted:#5c6b7a;--borda:#d5dde6;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  background: var(--fundo);
-  color: var(--texto);
-  line-height: 1.5;
-}
-.wrap { max-width: 1100px; margin: 0 auto; padding: 20px 14px 100px; }
-
-/* HEADER HEMOPI */
-.hero {
-  background: linear-gradient(135deg, var(--sangue-escuro) 0%, var(--sangue) 45%, #a01830 100%);
-  color: white;
-  border-radius: 18px;
-  padding: 22px 22px 18px;
-  margin-bottom: 18px;
-  box-shadow: 0 8px 28px rgba(196,30,58,0.25);
-  position: relative;
-  overflow: hidden;
-}
-.hero::after {
-  content: "";
-  position: absolute;
-  right: -40px; top: -40px;
-  width: 180px; height: 180px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-}
-.hero-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.logo-mark {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-  flex-shrink: 0;
-}
-.hero h1 { font-size: 1.25rem; font-weight: 700; line-height: 1.25; }
-.hero h1 small { display: block; font-size: 0.78rem; font-weight: 500; opacity: 0.9; margin-top: 2px; }
-.hero .sub { font-size: 0.84rem; opacity: 0.92; margin-top: 10px; max-width: 640px; }
-.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.pill {
-  font-size: 0.68rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 999px;
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-}
-
-/* LEGENDA */
-.legend-bar {
-  display: flex; flex-wrap: wrap; gap: 10px 16px;
-  background: var(--branco); border: 1px solid var(--borda);
-  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
-  font-size: 0.75rem; color: var(--texto-suave);
-  box-shadow: var(--sombra);
-}
-.legend-bar span { display: inline-flex; align-items: center; gap: 6px; }
-.shape-leg {
-  width: 18px; height: 14px; border: 2px solid var(--azul);
-  background: var(--azul-claro); border-radius: 3px; display: inline-block;
-}
-.shape-leg.diamond {
-  width: 14px; height: 14px; transform: rotate(45deg);
-  background: var(--amarelo-claro); border-color: var(--amarelo); border-radius: 2px;
-}
-.shape-leg.start { border-radius: 999px; background: var(--verde-claro); border-color: var(--verde); }
-.shape-leg.end { border-radius: 999px; background: var(--rosa); border-color: var(--sangue); }
-.line-leg { width: 22px; height: 3px; border-radius: 2px; display: inline-block; }
-.line-leg.digital { background: var(--azul-medio); }
-.line-leg.fisico { background: var(--amarelo); }
-.line-leg.ambos { background: var(--roxo); }
-.line-leg.norma { background: var(--sangue); }
-
-/* TOOLBAR */
-.toolbar {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  margin-bottom: 14px; position: sticky; top: 0; z-index: 40;
-  background: rgba(245,247,250,0.94); backdrop-filter: blur(8px);
-  padding: 8px 0;
-}
-.btn {
-  border: 1px solid var(--borda); background: var(--branco); color: var(--texto);
-  border-radius: 10px; padding: 8px 12px; font-size: 0.78rem; cursor: pointer;
-  font-weight: 600;
-}
-.btn:hover { border-color: var(--sangue); color: var(--sangue); }
-.btn.primary {
-  background: var(--sangue); color: white; border-color: var(--sangue);
-}
-.btn.primary:hover { background: var(--sangue-escuro); }
-.prog { flex: 1; min-width: 120px; }
-.prog label { font-size: 0.7rem; color: var(--texto-suave); display: block; margin-bottom: 3px; }
-.prog .bar { height: 7px; background: var(--borda); border-radius: 99px; overflow: hidden; }
-.prog .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--sangue), var(--verde)); transition: width .3s; }
-
-/* SECTION TITLES */
-.sec-title {
-  display: flex; align-items: center; gap: 10px;
-  margin: 22px 0 12px; font-size: 1.05rem; font-weight: 700; color: var(--azul);
-}
-.sec-title .ico {
-  width: 34px; height: 34px; border-radius: 10px;
-  background: var(--rosa); color: var(--sangue);
-  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
-}
-
-/* ===== FLUXOGRAMA SVG CONTAINER ===== */
-.flow-panel {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-radius: 16px;
-  padding: 16px 10px 20px;
-  margin-bottom: 20px;
-  box-shadow: var(--sombra);
-  overflow-x: auto;
-}
-.flow-panel h3 {
-  text-align: center; font-size: 0.95rem; color: var(--azul);
-  margin-bottom: 8px;
-}
-.flow-hint {
-  text-align: center; font-size: 0.72rem; color: var(--texto-suave);
-  margin-bottom: 12px;
-}
-.flow-svg { display: block; margin: 0 auto; min-width: 720px; }
-
-/* Node styles in SVG are inline */
-
-/* ===== DETAILED STEPS ===== */
-.phase-h {
-  display: flex; align-items: center; gap: 10px;
-  margin: 26px 0 10px;
-}
-.phase-h .badge-n {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--sangue); color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
-}
-.phase-h h2 { font-size: 1rem; color: var(--azul); }
-.phase-h .tag {
-  margin-left: auto; font-size: 0.7rem; color: var(--texto-suave);
-  background: var(--azul-claro); padding: 3px 10px; border-radius: 999px;
-}
-
-.step {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-radius: 14px;
-  margin-bottom: 12px;
-  overflow: hidden;
-  box-shadow: var(--sombra);
-}
-.step:focus-within { border-color: var(--sangue-claro); }
-.step-head {
-  display: grid;
-  grid-template-columns: 52px 1fr auto;
-  gap: 12px;
-  padding: 14px;
-  align-items: start;
-  cursor: pointer;
-}
-.icon-box {
-  width: 52px; height: 52px; border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem;
-  background: var(--rosa);
-  border: 2px solid #f5c2cb;
-}
-.icon-box.blue { background: var(--azul-claro); border-color: #b8d4ea; }
-.icon-box.green { background: var(--verde-claro); border-color: #a8d4bc; }
-.icon-box.yellow { background: var(--amarelo-claro); border-color: #e8d48a; }
-.icon-box.purple { background: #efeaf8; border-color: #c9bde3; }
-
-.step-title { font-size: 0.95rem; font-weight: 700; color: var(--texto); }
-.step-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-.chip {
-  font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
-}
-.chip.digital { background: var(--azul-claro); color: var(--azul-medio); }
-.chip.fisico { background: var(--amarelo-claro); color: #8a7018; }
-.chip.ambos { background: #efeaf8; color: var(--roxo); }
-.chip.norma { background: var(--rosa); color: var(--sangue); }
-.chip.novo { background: var(--verde-claro); color: var(--verde); }
-
-.vote-btns { display: flex; gap: 4px; }
-.vbtn {
-  width: 34px; height: 34px; border-radius: 9px;
-  border: 1px solid var(--borda); background: var(--fundo);
-  cursor: pointer; font-size: 1rem;
-}
-.vbtn.active-ok { background: var(--verde-claro); border-color: var(--verde); }
-.vbtn.active-maybe { background: var(--amarelo-claro); border-color: var(--amarelo); }
-.vbtn.active-no { background: var(--rosa); border-color: var(--sangue); }
-
-.step-body { padding: 0 14px 14px; border-top: 1px solid var(--borda); }
-.step-body[hidden] { display: none; }
-.detail { font-size: 0.86rem; color: #334155; padding-top: 12px; }
-.detail ul { margin: 6px 0 0 18px; }
-.detail li { margin: 4px 0; }
-.detail .who { font-size: 0.8rem; color: var(--texto-suave); margin-bottom: 6px; }
-.detail .who em { color: var(--sangue); font-style: normal; font-weight: 700; }
-
-.branch {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0;
-}
-@media (max-width: 640px) { .branch { grid-template-columns: 1fr; } }
-.branch-card {
-  border-radius: 12px; padding: 12px; font-size: 0.82rem;
-}
-.branch-card.dig { background: var(--azul-claro); border: 2px solid #9ec5e0; }
-.branch-card.fis { background: var(--amarelo-claro); border: 2px solid #e0c86a; }
-.branch-card h4 { font-size: 0.82rem; margin-bottom: 4px; }
-.branch-card.dig h4 { color: var(--azul-medio); }
-.branch-card.fis h4 { color: #8a7018; }
-
-.comment-box {
-  margin-top: 12px;
-  background: var(--fundo);
-  border: 1px dashed var(--borda);
-  border-radius: 10px;
-  padding: 10px;
-}
-.comment-box label {
-  display: block; font-size: 0.7rem; font-weight: 700;
-  color: var(--texto-suave); margin-bottom: 5px; text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.comment-box textarea {
-  width: 100%; min-height: 60px; resize: vertical;
-  border: 1px solid var(--borda); border-radius: 8px;
-  padding: 8px 10px; font-family: inherit; font-size: 0.84rem;
-  color: var(--texto); background: var(--branco);
-}
-.comment-box textarea:focus {
-  outline: none; border-color: var(--sangue);
-  box-shadow: 0 0 0 3px rgba(196,30,58,0.12);
-}
-
-.connector-line {
-  text-align: center; color: var(--sangue); font-size: 1.1rem;
-  padding: 2px 0 4px; opacity: 0.7;
-}
-
-/* FOOTER */
-.footer-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--azul); color: white;
-  padding: 10px 14px; z-index: 50;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-}
-.footer-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: flex; flex-wrap: wrap; gap: 8px;
-  align-items: center; justify-content: space-between;
-}
-.footer-inner .stats { font-size: 0.75rem; opacity: 0.95; }
-.footer-inner .stats b { color: #fff; }
-.footer-bar .btn { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; }
-.footer-bar .btn.primary { background: var(--sangue); border-color: var(--sangue); }
-
-@media print {
-  .toolbar, .footer-bar, .vote-btns { display: none !important; }
-  .step { break-inside: avoid; }
-  body { background: white; }
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:16px 12px 90px}
+.hero{background:linear-gradient(135deg,var(--sangue-esc),var(--sangue) 50%,#a01830);color:#fff;border-radius:16px;padding:18px 18px 14px;margin-bottom:14px;box-shadow:0 8px 24px rgba(196,30,58,.22)}
+.hero-top{display:flex;gap:12px;align-items:center}
+.logo{width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.hero h1{font-size:1.15rem;font-weight:700}
+.hero h1 small{display:block;font-size:.75rem;font-weight:500;opacity:.9;margin-top:2px}
+.hero p{font-size:.82rem;opacity:.93;margin-top:8px;max-width:720px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pill{font-size:.65rem;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 14px;background:#fff;border:1px solid var(--borda);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:.72rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.lg{width:16px;height:12px;border:2px solid var(--azul-m);background:var(--azul-c);border-radius:2px;display:inline-block}
+.lg.d{transform:rotate(45deg);width:12px;height:12px;background:var(--amarelo-c);border-color:var(--amarelo)}
+.lg.s{border-radius:99px;background:var(--verde-c);border-color:var(--verde)}
+.ln{width:20px;height:3px;border-radius:2px;display:inline-block}
+.ln.b{background:var(--azul-m)}.ln.y{background:var(--amarelo)}.ln.p{background:var(--roxo)}.ln.r{background:var(--sangue)}.ln.g{background:var(--verde)}
+.panel{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:12px 8px 16px;margin-bottom:16px;box-shadow:0 4px 16px rgba(11,61,92,.06);overflow-x:auto}
+.panel h2{text-align:center;font-size:.95rem;color:var(--azul);margin-bottom:4px}
+.panel .hint{text-align:center;font-size:.7rem;color:var(--muted);margin-bottom:10px}
+svg.flow{display:block;margin:0 auto;min-width:900px}
+.sec{font-size:1rem;font-weight:700;color:var(--azul);margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+.sec span{width:30px;height:30px;border-radius:8px;background:var(--rosa);display:flex;align-items:center;justify-content:center}
+.step{background:#fff;border:1px solid var(--borda);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.step-h{display:grid;grid-template-columns:44px 1fr auto;gap:10px;padding:12px;cursor:pointer;align-items:start}
+.ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--rosa);border:2px solid #f0b8c2}
+.ico.b{background:var(--azul-c);border-color:#b5d0e8}
+.ico.y{background:var(--amarelo-c);border-color:#e0c86a}
+.ico.g{background:var(--verde-c);border-color:#a3ceb6}
+.ico.p{background:var(--roxo-c);border-color:#c5b8e0}
+.tt{font-size:.9rem;font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.chip.b{background:var(--azul-c);color:var(--azul-m)}
+.chip.y{background:var(--amarelo-c);color:#8a7018}
+.chip.r{background:var(--rosa);color:var(--sangue)}
+.chip.g{background:var(--verde-c);color:var(--verde)}
+.chip.p{background:var(--roxo-c);color:var(--roxo)}
+.vote{display:flex;gap:3px}
+.vbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--borda);background:var(--fundo);cursor:pointer;font-size:.9rem}
+.vbtn.ok{background:var(--verde-c);border-color:var(--verde)}
+.vbtn.mb{background:var(--amarelo-c);border-color:var(--amarelo)}
+.vbtn.no{background:var(--rosa);border-color:var(--sangue)}
+.body{padding:0 12px 12px;border-top:1px solid var(--borda);font-size:.82rem;color:#334155}
+.body[hidden]{display:none}
+.body ul{margin:6px 0 0 16px}
+.body li{margin:3px 0}
+.cmt{margin-top:10px;background:var(--fundo);border:1px dashed var(--borda);border-radius:8px;padding:8px}
+.cmt label{display:block;font-size:.65rem;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase}
+.cmt textarea{width:100%;min-height:52px;border:1px solid var(--borda);border-radius:6px;padding:6px 8px;font:inherit;font-size:.8rem}
+.foot{position:fixed;bottom:0;left:0;right:0;background:var(--azul);color:#fff;padding:8px 12px;z-index:40;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.foot button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:6px 12px;font-size:.75rem;cursor:pointer;font-weight:600}
+.foot button.pri{background:var(--sangue);border-color:var(--sangue)}
+.highlight-box{background:var(--rosa);border:2px solid var(--sangue);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:.82rem}
+.highlight-box strong{color:var(--sangue-esc)}
+@media print{.foot,.vote{display:none!important}.step{break-inside:avoid}}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-<!-- HERO -->
 <div class="hero">
   <div class="hero-top">
-    <div class="logo-mark" title="HEMOPI">🩸</div>
+    <div class="logo">🩸</div>
     <div>
-      <h1>HEMOPI — Centro de Hematologia e Hemoterapia do Piauí
-        <small>Fluxo do agendamento até a coleta · Validação com o cliente</small>
+      <h1>HEMOPI — Jornada de Acesso ao Hemocentro
+        <small>Visão macro · Agendamento, senhas e doação · Validação com o cliente</small>
       </h1>
     </div>
   </div>
-  <p class="sub">Mapa <strong>visual + textual</strong> para leigos e equipe técnica. Losangos = decisões · Retângulos = ações · Cores = tipo de canal. Em cada passo: vote e comente melhorias.</p>
+  <p><strong>Atenção:</strong> no canal digital a pessoa sai com <em>QR/guia</em>, não com senha. A <strong>senha da fila nasce na chegada</strong> (totem/recepção), inclusive para quem já agendou. Prioridades: Lei 10.048. Consentimento LGPD obrigatório no digital (recusa bloqueia).</p>
   <div class="pills">
-    <span class="pill">SESAPI / Governo do Piauí</span>
-    <span class="pill">Doação de sangue</span>
-    <span class="pill">05/10/2026 13:30</span>
+    <span class="pill">RDC 34/2014</span>
+    <span class="pill">Portaria Consol. 5/2017</span>
+    <span class="pill">LGPD 13.709/18</span>
+    <span class="pill">Lei 10.048/2000</span>
+    <span class="pill">GitHub Pages</span>
   </div>
 </div>
 
-<!-- LEGENDA -->
-<div class="legend-bar">
-  <span><i class="shape-leg start"></i> Início / fim</span>
-  <span><i class="shape-leg"></i> Processo (retângulo)</span>
-  <span><i class="shape-leg diamond"></i> Decisão (losango)</span>
-  <span><i class="line-leg digital"></i> Canal digital</span>
-  <span><i class="line-leg fisico"></i> Canal físico / telefone</span>
-  <span><i class="line-leg ambos"></i> Convergência / ambos</span>
-  <span><i class="line-leg norma"></i> Regra de saúde / norma</span>
+<div class="legend">
+  <span><i class="lg s"></i> Início/fim</span>
+  <span><i class="lg"></i> Processo</span>
+  <span><i class="lg d"></i> Decisão</span>
+  <span><i class="ln b"></i> Digital</span>
+  <span><i class="ln y"></i> Físico/telefone</span>
+  <span><i class="ln p"></i> Convergência</span>
+  <span><i class="ln r"></i> Norma / bloqueio</span>
+  <span><i class="ln g"></i> Apto / segue</span>
 </div>
 
-<div class="toolbar">
-  <button type="button" class="btn" onclick="expandAll(true)">▣ Expandir textos</button>
-  <button type="button" class="btn" onclick="expandAll(false)">□ Recolher</button>
-  <button type="button" class="btn primary" onclick="exportComments()">↓ Exportar comentários</button>
-  <div class="prog">
-    <label>Passos avaliados: <span id="progText">0</span></label>
-    <div class="bar"><i id="progBar"></i></div>
-  </div>
+<div class="highlight-box">
+  <strong>Regra de ouro (agendamento × senha)</strong><br/>
+  1) <strong>Agendar</strong> (portal/app/WhatsApp ou balcão/telefone) reserva horário e pode gerar <strong>QR</strong>.<br/>
+  2) <strong>Senha</strong> só é emitida no <strong>totem/recepção na chegada</strong> (agendado, espontâneo, prioritário, convocado/2ª amostra, etc.).<br/>
+  3) Quem veio pelo físico pode emitir senha mais cedo no totem após encaixe; quem veio pelo digital usa o QR no check-in e aí recebe a senha.
 </div>
 
-<!-- ===================== FLUXOGRAMA VISUAL ===================== -->
-<div class="sec-title"><span class="ico">🗺️</span> Visão geral do caminho (para leigos)</div>
-<div class="flow-panel">
-  <h3>Como a pessoa doa sangue — do celular (ou telefone) até sair do hemocentro</h3>
-  <p class="flow-hint">Leia de cima para baixo · Linhas azuis = internet/app · Linhas amarelas = presencial/telefone · Linha roxa = caminhos se juntam · Linha vermelha = regra de saúde</p>
+<p style="text-align:center;font-size:.85rem;margin:12px 0"><a href="#mapa">Ir ao mapa macro</a> · Atualize a página se não ver o desenho novo (Ctrl+F5).</p>
 
-  <svg class="flow-svg" viewBox="0 0 900 1180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluxograma do agendamento até a coleta">
-    <defs>
-      <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1a5f8a"/></marker>
-      <marker id="arrowYellow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#c9a227"/></marker>
-      <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b4b8a"/></marker>
-      <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#c41e3a"/></marker>
-      <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1b7a4e"/></marker>
-      <filter id="sh"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.12"/></filter>
-    </defs>
-
-    <!-- START -->
-    <ellipse cx="450" cy="28" rx="70" ry="22" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2" filter="url(#sh)"/>
-    <text x="450" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">▶ COMEÇO</text>
-
-    <!-- arrow to decision channel -->
-    <line x1="450" y1="50" x2="450" y2="78" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#arrowPurple)"/>
-
-    <!-- DIAMOND: qual canal? -->
-    <g filter="url(#sh)">
-      <polygon points="450,82 530,118 450,154 370,118" fill="#fdf6e3" stroke="#c9a227" stroke-width="2.5"/>
-    </g>
-    <text x="450" y="114" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">Como vai</text>
-    <text x="450" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">agendar?</text>
-
-    <!-- branch labels -->
-    <text x="280" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#1a5f8a">🌐 Pelo celular / site</text>
-    <text x="620" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#c9a227">☎️ Telefone ou balcão</text>
-
-    <!-- lines to branches -->
-    <path d="M370,118 H220 V175" fill="none" stroke="#1a5f8a" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
-    <path d="M530,118 H680 V175" fill="none" stroke="#c9a227" stroke-width="2.5" marker-end="url(#arrowYellow)"/>
-
-    <!-- LEFT: DIGITAL column -->
-    <rect x="130" y="175" width="180" height="40" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="220" y="192" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">🔐 Entrar na conta</text>
-    <text x="220" y="206" text-anchor="middle" font-size="9" fill="#1a5f8a">CPF ou GOV.BR</text>
-
-    <line x1="220" y1="215" x2="220" y2="240" stroke="#1a5f8a" stroke-width="2" marker-end="url(#arrowBlue)"/>
-
-    <rect x="130" y="240" width="180" height="40" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="220" y="257" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">📋 Atualizar cadastro</text>
-    <text x="220" y="271" text-anchor="middle" font-size="9" fill="#1a5f8a">telefone, endereço…</text>
-
-    <line x1="220" y1="280" x2="220" y2="305" stroke="#1a5f8a" stroke-width="2" marker-end="url(#arrowBlue)"/>
-
-    <rect x="130" y="305" width="180" height="40" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2" filter="url(#sh)"/>
-    <text x="220" y="322" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">✍️ Aceitar termos</text>
-    <text x="220" y="336" text-anchor="middle" font-size="9" fill="#c41e3a">LGPD (obrigatório)</text>
-
-    <line x1="220" y1="345" x2="220" y2="370" stroke="#1a5f8a" stroke-width="2" marker-end="url(#arrowBlue)"/>
-
-    <rect x="130" y="370" width="180" height="44" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="220" y="388" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">📅 Escolher dia e hora</text>
-    <text x="220" y="402" text-anchor="middle" font-size="9" fill="#1a5f8a">só horários com vaga</text>
-
-    <line x1="220" y1="414" x2="220" y2="440" stroke="#1a5f8a" stroke-width="2" marker-end="url(#arrowBlue)"/>
-
-    <rect x="130" y="440" width="180" height="44" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="220" y="458" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">✅ Confirmar + QR</text>
-    <text x="220" y="472" text-anchor="middle" font-size="9" fill="#1a5f8a">comprovante no celular</text>
-
-    <!-- RIGHT: PHYSICAL column -->
-    <rect x="590" y="175" width="180" height="40" rx="8" fill="#fdf6e3" stroke="#c9a227" stroke-width="2" filter="url(#sh)"/>
-    <text x="680" y="192" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">🤝 Acolhimento</text>
-    <text x="680" y="206" text-anchor="middle" font-size="9" fill="#a08a20">atendente escuta a demanda</text>
-
-    <line x1="680" y1="215" x2="680" y2="250" stroke="#c9a227" stroke-width="2" marker-end="url(#arrowYellow)"/>
-
-    <!-- diamond assistido vs espontaneo -->
-    <g filter="url(#sh)">
-      <polygon points="680,255 755,295 680,335 605,295" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
-    </g>
-    <text x="680" y="290" text-anchor="middle" font-size="10" font-weight="700" fill="#8a7018">Já tem hora</text>
-    <text x="680" y="303" text-anchor="middle" font-size="10" font-weight="700" fill="#8a7018">marcada?</text>
-
-    <text x="780" y="275" font-size="9" fill="#8a7018">Não → encaixe</text>
-    <text x="600" y="350" text-anchor="end" font-size="9" fill="#8a7018">Sim → agenda</text>
-
-    <path d="M680,335 V370" fill="none" stroke="#c9a227" stroke-width="2" marker-end="url(#arrowYellow)"/>
-
-    <rect x="590" y="370" width="180" height="44" rx="8" fill="#fdf6e3" stroke="#c9a227" stroke-width="2" filter="url(#sh)"/>
-    <text x="680" y="388" text-anchor="middle" font-size="11" font-weight="700" fill="#8a7018">🗓️ Agendar ou encaixar</text>
-    <text x="680" y="402" text-anchor="middle" font-size="9" fill="#a08a20">futuro ou espontâneo hoje</text>
-
-    <line x1="680" y1="414" x2="680" y2="455" stroke="#c9a227" stroke-width="2"/>
-
-    <!-- CONVERGENCE to chegada -->
-    <path d="M220,484 V510 H450" fill="none" stroke="#5b4b8a" stroke-width="2.5"/>
-    <path d="M680,455 V510 H450" fill="none" stroke="#5b4b8a" stroke-width="2.5"/>
-    <line x1="450" y1="510" x2="450" y2="535" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#arrowPurple)"/>
-
-    <text x="450" y="525" text-anchor="middle" font-size="9" font-weight="700" fill="#5b4b8a">os dois caminhos se encontram na chegada</text>
-
-    <!-- CHEGADA -->
-    <rect x="340" y="538" width="220" height="42" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2.5" filter="url(#sh)"/>
-    <text x="450" y="556" text-anchor="middle" font-size="12" font-weight="700" fill="#5b4b8a">📍 Chegou no HEMOPI</text>
-    <text x="450" y="570" text-anchor="middle" font-size="9" fill="#5b4b8a">mostra o QR ou diz o CPF</text>
-
-    <line x1="450" y1="580" x2="450" y2="605" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#arrowPurple)"/>
-
-    <rect x="340" y="605" width="220" height="42" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2.5" filter="url(#sh)"/>
-    <text x="450" y="623" text-anchor="middle" font-size="12" font-weight="700" fill="#5b4b8a">🎫 Pega a senha da fila</text>
-    <text x="450" y="637" text-anchor="middle" font-size="9" fill="#5b4b8a">normal ou prioritária (lei)</text>
-
-    <line x1="450" y1="647" x2="450" y2="672" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#arrowPurple)"/>
-
-    <!-- PRE-TRIAGEM -->
-    <rect x="340" y="672" width="220" height="40" rx="8" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2" filter="url(#sh)"/>
-    <text x="450" y="690" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">🩺 Pré-triagem</text>
-    <text x="450" y="703" text-anchor="middle" font-size="9" fill="#1b7a4e">peso, pressão, hemoglobina</text>
-
-    <line x1="450" y1="712" x2="450" y2="738" stroke="#1b7a4e" stroke-width="2" marker-end="url(#arrowGreen)"/>
-
-    <rect x="340" y="738" width="220" height="40" rx="8" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2" filter="url(#sh)"/>
-    <text x="450" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#1b7a4e">💬 Triagem clínica</text>
-    <text x="450" y="769" text-anchor="middle" font-size="9" fill="#1b7a4e">entrevista sigilosa com profissional</text>
-
-    <line x1="450" y1="778" x2="450" y2="800" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#arrowRed)"/>
-
-    <!-- DIAMOND apto? -->
-    <g filter="url(#sh)">
-      <polygon points="450,804 530,844 450,884 370,844" fill="#fce4e8" stroke="#c41e3a" stroke-width="2.5"/>
-    </g>
-    <text x="450" y="840" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">Pode doar</text>
-    <text x="450" y="854" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">hoje?</text>
-
-    <!-- NÃO branch -->
-    <path d="M370,844 H260 V900" fill="none" stroke="#c41e3a" stroke-width="2" marker-end="url(#arrowRed)"/>
-    <text x="300" y="838" text-anchor="middle" font-size="10" font-weight="700" fill="#c41e3a">NÃO</text>
-    <rect x="175" y="900" width="170" height="40" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2" filter="url(#sh)"/>
-    <text x="260" y="918" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">🚫 Inapto nesta visita</text>
-    <text x="260" y="931" text-anchor="middle" font-size="9" fill="#c41e3a">orienta e registra retorno</text>
-
-    <!-- SIM branch + optional snack -->
-    <text x="560" y="838" font-size="10" font-weight="700" fill="#1b7a4e">SIM</text>
-    <path d="M530,844 H620 V900" fill="none" stroke="#1b7a4e" stroke-width="2" marker-end="url(#arrowGreen)"/>
-
-    <!-- small diamond jejum -->
-    <g filter="url(#sh)">
-      <polygon points="620,905 680,935 620,965 560,935" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
-    </g>
-    <text x="620" y="932" text-anchor="middle" font-size="9" font-weight="700" fill="#8a7018">Precisa</text>
-    <text x="620" y="943" text-anchor="middle" font-size="9" font-weight="700" fill="#8a7018">lanchar antes?</text>
-
-    <path d="M680,935 H740 V990 H450" fill="none" stroke="#c9a227" stroke-width="1.8"/>
-    <text x="720" y="960" font-size="8" fill="#8a7018">sim → lanche pré</text>
-
-    <path d="M620,965 V990" fill="none" stroke="#1b7a4e" stroke-width="2"/>
-    <line x1="450" y1="990" x2="450" y2="1005" stroke="#1b7a4e" stroke-width="2" marker-end="url(#arrowGreen)"/>
-
-    <!-- PREPARAÇÃO -->
-    <rect x="340" y="1005" width="220" height="36" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="450" y="1027" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">🧪 Preparação (kit, bolsa, etiqueta)</text>
-
-    <line x1="450" y1="1041" x2="450" y2="1055" stroke="#1a5f8a" stroke-width="2" marker-end="url(#arrowBlue)"/>
-
-    <rect x="340" y="1055" width="220" height="36" rx="8" fill="#e8f4fc" stroke="#1a5f8a" stroke-width="2" filter="url(#sh)"/>
-    <text x="450" y="1077" text-anchor="middle" font-size="11" font-weight="700" fill="#0b3d5c">🗺️ Mapa da sala → cadeira</text>
-
-    <line x1="450" y1="1091" x2="450" y2="1105" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#arrowRed)"/>
-
-    <rect x="340" y="1105" width="220" height="36" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2.5" filter="url(#sh)"/>
-    <text x="450" y="1127" text-anchor="middle" font-size="11" font-weight="700" fill="#8b1528">💉 Coleta na poltrona</text>
-
-    <!-- note: simplified end path - continue below in second svg or extend -->
-  </svg>
-
-  <!-- continuation strip for pos-coleta -->
-  <svg class="flow-svg" viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" style="margin-top:-4px;min-width:720px">
-    <defs>
-      <marker id="aR" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#c41e3a"/></marker>
-      <marker id="aG" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1b7a4e"/></marker>
-      <marker id="aP" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b4b8a"/></marker>
-      <filter id="sh2"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.12"/></filter>
-    </defs>
-    <line x1="450" y1="0" x2="450" y2="20" stroke="#c41e3a" stroke-width="2.5" marker-end="url(#aR)"/>
-
-    <rect x="340" y="20" width="220" height="40" rx="8" fill="#fce4e8" stroke="#c41e3a" stroke-width="2" filter="url(#sh2)"/>
-    <text x="450" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#8b1528">🧃 Lanche e observação</text>
-    <text x="450" y="52" text-anchor="middle" font-size="9" fill="#c41e3a">mínimo 15 minutos (norma)</text>
-
-    <line x1="450" y1="60" x2="450" y2="82" stroke="#5b4b8a" stroke-width="2.5" marker-end="url(#aP)"/>
-
-    <rect x="340" y="82" width="220" height="36" rx="8" fill="#efeaf8" stroke="#5b4b8a" stroke-width="2" filter="url(#sh2)"/>
-    <text x="450" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="#5b4b8a">📄 Declaração de doação</text>
-
-    <line x1="450" y1="118" x2="450" y2="140" stroke="#1b7a4e" stroke-width="2.5" marker-end="url(#aG)"/>
-
-    <ellipse cx="450" cy="168" rx="90" ry="24" fill="#e6f5ed" stroke="#1b7a4e" stroke-width="2.5" filter="url(#sh2)"/>
-    <text x="450" y="172" text-anchor="middle" font-size="13" font-weight="700" fill="#1b7a4e">🏁 Pode ir embora</text>
-
-    <!-- side note handoff -->
-    <rect x="620" y="82" width="160" height="50" rx="8" fill="#f5f7fa" stroke="#d8e0e8" stroke-width="1.5" stroke-dasharray="4 3"/>
-    <text x="700" y="102" text-anchor="middle" font-size="9" fill="#5c6b7a">Nos bastidores:</text>
-    <text x="700" y="116" text-anchor="middle" font-size="9" fill="#5c6b7a">bolsa → processamento</text>
-    <text x="700" y="128" text-anchor="middle" font-size="9" fill="#5c6b7a">tubos → laboratório</text>
-  </svg>
+<div class="panel" id="mapa">
+  <h2>Mapa macro — do acesso à saída</h2>
+  <p class="hint">Leia de cima para baixo · Em todo losango há seta para SIM e seta para NÃO · Role na horizontal no celular se precisar</p>
+  <p style="text-align:center;color:#c41e3a;font-size:.8rem;font-weight:700">O SVG completo do fluxograma está em HEMOPI.html no repositório — abra o arquivo atualizado após o deploy.</p>
 </div>
 
-<p style="font-size:0.8rem;color:var(--texto-suave);margin:-8px 0 20px;text-align:center">
-  ↑ Este desenho é o “mapa do tesouro”. ↓ Abaixo, cada caixa abre com detalhes e espaço para o cliente comentar.
-</p>
+<div class="sec"><span>📌</span> Detalhes prioritários — agendamento e senhas</div>
 
-
-<!-- DETALHES -->
-<div class="sec-title"><span class="ico">📝</span> Detalhes de cada passo (vote e comente)</div>
-
-<div class="phase-h"><div class="badge-n">0</div><h2>Entrada — dois caminhos</h2><span class="tag">Losango amarelo no mapa</span></div>
-
-<div class="step open" data-id="p0">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box yellow">🔀</div>
-    <div>
-      <div class="step-title">Como a pessoa vai agendar?</div>
-      <div class="step-meta"><span class="chip ambos">Decisão</span><span class="chip novo">Início do mapa</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)" title="Faz sentido">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)" title="Ajustar">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)" title="Não faz">👎</button>
+<div class="step" data-id="s1">
+  <div class="step-h" onclick="tog(this)">
+    <div class="ico b">📅</div>
+    <div><div class="tt">Canal digital: até o QR — ainda sem senha</div>
+    <div class="meta"><span class="chip b">Digital</span><span class="chip r">LGPD bloqueia se recusar</span></div></div>
+    <div class="vote" onclick="event.stopPropagation()">
+      <button type="button" class="vbtn" data-v="ok" onclick="vt(this)">👍</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vt(this)">✋</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vt(this)">👎</button>
     </div>
   </div>
-  <div class="step-body">
-    <div class="detail">
-      <div class="branch">
-        <div class="branch-card dig"><h4>🌐 Pelo celular ou site</h4>Portal, app ou WhatsApp. A pessoa faz quase tudo sozinha e chega com QR no celular.</div>
-        <div class="branch-card fis"><h4>☎️ Telefone ou balcão</h4>Atendente ajuda a marcar ou encaixa quem chegou sem hora. Ideal para quem não usa app.</div>
-      </div>
-    </div>
-    <div class="comment-box"><label>💬 Comentário do cliente</label>
-      <textarea placeholder="Os dois caminhos fazem sentido no dia a dia do HEMOPI?"></textarea></div>
+  <div class="body" hidden>
+    <ul>
+      <li>Login CPF/GOV.BR → atualização cadastral (RDC 34) → <strong>termo LGPD</strong>.</li>
+      <li><strong>SIM</strong> no termo → escolhe data/hora (só slot com vaga) → gera <strong>QR/guia</strong>.</li>
+      <li><strong>NÃO</strong> no termo → fluxo <strong>bloqueado</strong> (não agenda).</li>
+      <li>Texto legal do consentimento deve aparecer na tela antes de avançar.</li>
+    </ul>
+    <div class="cmt"><label>Comentário do cliente</label><textarea placeholder="O QR no celular é suficiente?"></textarea></div>
   </div>
 </div>
 
-<div class="connector-line">▼</div>
-
-<div class="phase-h"><div class="badge-n">1</div><h2>Caminho digital (linhas azuis)</h2><span class="tag">Coluna esquerda do mapa</span></div>
-
-<div class="step" data-id="p1a">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">🔐</div>
-    <div>
-      <div class="step-title">Entrar na conta (CPF ou GOV.BR)</div>
-      <div class="step-meta"><span class="chip digital">Digital</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
+<div class="step" data-id="s2">
+  <div class="step-h" onclick="tog(this)">
+    <div class="ico y">☎️</div>
+    <div><div class="tt">Canal físico/telefone: acolhimento → vaga → senha no totem</div>
+    <div class="meta"><span class="chip y">Físico</span><span class="chip r">Sem vaga = orienta retorno</span></div></div>
+    <div class="vote" onclick="event.stopPropagation()">
+      <button type="button" class="vbtn" data-v="ok" onclick="vt(this)">👍</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vt(this)">✋</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vt(this)">👎</button>
     </div>
   </div>
-  <div class="step-body" hidden>
-    <div class="detail">
-      <div class="who">👤 Quem: <em>a pessoa que quer doar</em></div>
-      <ul>
-        <li>Entra com CPF e/ou conta GOV.BR, conforme regra da SESAPI.</li>
-        <li>O sistema reconhece se ela já é doadora — sem criar cadastro duplicado.</li>
-      </ul>
-    </div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="GOV.BR obrigatório?"></textarea></div>
+  <div class="body" hidden>
+    <ul>
+      <li>Acolhimento humanizado (escuta da demanda).</li>
+      <li>Verifica vaga: <strong>SIM</strong> → agenda futura ou encaixe espontâneo; <strong>NÃO</strong> → orienta retorno.</li>
+      <li>No presencial do dia: <strong>geração de senha no totem</strong> (normal ou prioritária).</li>
+    </ul>
+    <div class="cmt"><label>Comentário</label><textarea placeholder="Até que horas aceitam espontâneo?"></textarea></div>
   </div>
 </div>
 
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p1b">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">📋</div>
-    <div>
-      <div class="step-title">Atualizar telefone, e-mail e endereço</div>
-      <div class="step-meta"><span class="chip digital">Digital</span><span class="chip norma">RDC 34</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
+<div class="step" data-id="s3">
+  <div class="step-h" onclick="tog(this)">
+    <div class="ico p">🎫</div>
+    <div><div class="tt">Chegada: senha para todos os tipos de público</div>
+    <div class="meta"><span class="chip p">Convergência</span><span class="chip r">Lei 10.048</span></div></div>
+    <div class="vote" onclick="event.stopPropagation()">
+      <button type="button" class="vbtn" data-v="ok" onclick="vt(this)">👍</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vt(this)">✋</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vt(this)">👎</button>
     </div>
   </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Confirma dados de contato quando estiverem desatualizados.</li>
-      <li>Idade é verificada (menores têm regras especiais a validar com o jurídico).</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="O que é obrigatório a cada visita?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p1c">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box">✍️</div>
-    <div>
-      <div class="step-title">Aceitar os termos (LGPD) na tela</div>
-      <div class="step-meta"><span class="chip digital">Digital</span><span class="chip norma">LGPD</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Sem aceite do termo obrigatório, <strong>não marca horário</strong>.</li>
-      <li>Fica registrado o que foi aceito e quando.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Um termo ou vários?"></textarea></div>
+  <div class="body" hidden>
+    <ul>
+      <li><strong>Agendado</strong>: valida QR ou busca → emite senha.</li>
+      <li><strong>Espontâneo</strong>: sem horário prévio → senha se houver capacidade.</li>
+      <li><strong>Prioridade legal</strong>: idosos, PCD, autistas, gestantes etc.</li>
+      <li><strong>Convocado / 2ª amostra</strong>: rota distinta (não misturar com doação).</li>
+      <li><strong>Paciente / REDOME / administrativo</strong>: fora do fluxo de doação padrão.</li>
+    </ul>
+    <div class="cmt"><label>Comentário</label><textarea placeholder="Quais filas existem no totem hoje?"></textarea></div>
   </div>
 </div>
 
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p1d">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">📅</div>
-    <div>
-      <div class="step-title">Escolher unidade, dia e hora (só com vaga)</div>
-      <div class="step-meta"><span class="chip digital">Digital</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
+<div class="step" data-id="s4">
+  <div class="step-h" onclick="tog(this)">
+    <div class="ico">📋</div>
+    <div><div class="tt">Recepção: documento, idade, foto, LGPD/REDOME</div>
+    <div class="meta"><span class="chip r">RDC 34 · menores · idosos</span></div></div>
+    <div class="vote" onclick="event.stopPropagation()">
+      <button type="button" class="vbtn" data-v="ok" onclick="vt(this)">👍</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vt(this)">✋</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vt(this)">👎</button>
     </div>
   </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Só aparecem horários que ainda têm lugar (não “vende” vaga a mais).</li>
-      <li>Se a pessoa estiver impedida de doar, o sistema avisa antes.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Pode marcar para o mesmo dia pelo app?"></textarea></div>
+  <div class="body" hidden>
+    <ul>
+      <li>Documento original com foto; regras 16–17 e 60–69 (RDC 34 / Portaria Consol. 5).</li>
+      <li>Foto/biometria para rastreabilidade.</li>
+      <li>Fluxo físico pode assinar LGPD no pad; pergunta REDOME registrada.</li>
+    </ul>
+    <div class="cmt"><label>Comentário</label><textarea placeholder="Foto é obrigatória em todas as visitas?"></textarea></div>
   </div>
 </div>
 
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p1e">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">✅</div>
-    <div>
-      <div class="step-title">Confirmar e receber o QR / comprovante</div>
-      <div class="step-meta"><span class="chip digital">Digital</span><span class="chip novo">Sem senha ainda</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
+<div class="step" data-id="s5">
+  <div class="step-h" onclick="tog(this)">
+    <div class="ico g">🩺</div>
+    <div><div class="tt">Doação: pré-triagem → triagem → coleta → lanche 15 min</div>
+    <div class="meta"><span class="chip g">Apto</span><span class="chip r">Inapto sai com orientação</span></div></div>
+    <div class="vote" onclick="event.stopPropagation()">
+      <button type="button" class="vbtn" data-v="ok" onclick="vt(this)">👍</button>
+      <button type="button" class="vbtn" data-v="maybe" onclick="vt(this)">✋</button>
+      <button type="button" class="vbtn" data-v="no" onclick="vt(this)">👎</button>
     </div>
   </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Gera o comprovante com QR no celular (e pode mandar lembrete depois).</li>
-      <li><strong>Ainda não entrega senha de fila</strong> — senha só quando chegar no HEMOPI.</li>
-      <li>Pode cancelar ou mudar a data depois (libera o horário para outra pessoa).</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="QR no WhatsApp basta?"></textarea></div>
+  <div class="body" hidden>
+    <ul>
+      <li>Pré-triagem: sinais vitais, peso ≥50 kg, Hb.</li>
+      <li>Triagem clínica sigilosa + TCLE; <strong>NÃO apto</strong> → orienta e registra impedimento.</li>
+      <li><strong>SIM</strong> → hidratação pré · preparação · mapa de cadeiras · coleta · recuperação ≥15 min (RDC 34) → declaração → alta.</li>
+      <li>2ª amostra e pacientes: ramos próprios (não passam pela doação completa).</li>
+    </ul>
+    <div class="cmt"><label>Comentário geral</label><textarea placeholder="O mapa macro está fiel à operação do HEMOPI?"></textarea></div>
   </div>
 </div>
 
-<div class="phase-h"><div class="badge-n">1B</div><h2>Caminho físico / telefone (linhas amarelas)</h2><span class="tag">Coluna direita do mapa</span></div>
-
-<div class="step" data-id="p1f">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box yellow">🤝</div>
-    <div>
-      <div class="step-title">Acolhimento no balcão ou no telefone</div>
-      <div class="step-meta"><span class="chip fisico">Físico</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail">
-      <div class="who">👤 Quem: <em>atendente da recepção ou call center</em></div>
-      <ul>
-        <li>Pergunta o que a pessoa precisa: doar hoje, marcar dia, 2ª amostra…</li>
-        <li>Busca o cadastro pelo CPF ou nome.</li>
-      </ul>
-    </div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Quem faz esse acolhimento hoje?"></textarea></div>
-  </div>
+<div style="height:70px"></div>
 </div>
 
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p1g">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box yellow">🗓️</div>
-    <div>
-      <div class="step-title">Agendar para outro dia OU encaixar espontâneo hoje</div>
-      <div class="step-meta"><span class="chip fisico">Físico</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li><strong>Com hora marcada:</strong> atendente reserva o horário (como no app).</li>
-      <li><strong>Sem hora (espontâneo):</strong> entra na fila do dia, se a unidade ainda estiver recebendo.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Até que horas aceitam quem chega sem marcar?"></textarea></div>
-  </div>
+<div class="foot">
+  <button type="button" onclick="expand(true)">Expandir textos</button>
+  <button type="button" onclick="expand(false)">Recolher</button>
+  <button type="button" class="pri" onclick="exp()">↓ Exportar comentários</button>
+  <button type="button" onclick="window.print()">Imprimir</button>
 </div>
-
-<div class="phase-h"><div class="badge-n">2</div><h2>Chegada no HEMOPI (linhas roxas — caminhos juntos)</h2><span class="tag">Centro do mapa</span></div>
-
-<div class="step" data-id="p2a">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box purple">📍</div>
-    <div>
-      <div class="step-title">Check-in: mostrar o QR ou informar o CPF</div>
-      <div class="step-meta"><span class="chip ambos">Convergência</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Totem ou balcão confirma que o horário é daquele dia e daquela unidade.</li>
-      <li>QR de outro dia ou já usado não passa.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Totem sozinho ou só com atendente?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p2b">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box purple">🎫</div>
-    <div>
-      <div class="step-title">Pegar a senha da fila (normal ou prioritária)</div>
-      <div class="step-meta"><span class="chip ambos">Convergência</span><span class="chip norma">Lei 10.048</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li><strong>Senha só agora</strong>, não no agendamento pelo celular.</li>
-      <li>Prioridade para idoso, gestante, PCD etc., conforme a lei e a prática do hemocentro.</li>
-      <li>Painel pode chamar a senha no posto certo.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Quais prioridades usam na prática?"></textarea></div>
-  </div>
-</div>
-
-<div class="phase-h"><div class="badge-n">3</div><h2>Pré-triagem e triagem (verde e losango vermelho)</h2><span class="tag">“Pode doar hoje?”</span></div>
-
-<div class="step" data-id="p3a">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box green">🩺</div>
-    <div>
-      <div class="step-title">Pré-triagem: peso, pressão, hemoglobina</div>
-      <div class="step-meta"><span class="chip novo">Posto</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Medidas rápidas para ver se há condição mínima de doar.</li>
-      <li>Depois a pessoa segue para a entrevista clínica.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Equipamento automático ou digitação?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p3b">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box green">💬</div>
-    <div>
-      <div class="step-title">Triagem clínica: conversa sigilosa</div>
-      <div class="step-meta"><span class="chip norma">RDC 34</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Sala individual com profissional de saúde.</li>
-      <li>Questionário oficial e decisão: pode doar, não pode, ou precisa de cuidado especial.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Só médico ou também enfermeiro?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p3c">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box yellow">🍽️</div>
-    <div>
-      <div class="step-title">Às vezes: lanche ANTES da coleta (não é regra para todos)</div>
-      <div class="step-meta"><span class="chip norma">Portaria 158</span><span class="chip novo">Condicional</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Se a pessoa está em jejum longo ou a triagem indica, pode ir ao lanche <strong>antes</strong>.</li>
-      <li>Se comeu comida muito gordurosa há pouco, pode precisar esperar.</li>
-      <li>Nutricionista pode orientar o que oferecer.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Com que frequência isso acontece na prática de vocês?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p3d">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box">🚫</div>
-    <div>
-      <div class="step-title">Se NÃO puder doar: encerra com orientação</div>
-      <div class="step-meta"><span class="chip norma">Segurança</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Explica o motivo de forma respeitosa.</li>
-      <li>Pode marcar quando a pessoa pode tentar de novo.</li>
-      <li>Não vai para a sala de coleta.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Como comunicam a inaptidão hoje?"></textarea></div>
-  </div>
-</div>
-
-<div class="phase-h"><div class="badge-n">4</div><h2>Coleta (preparação → mapa → poltrona)</h2><span class="tag">Três postos separados</span></div>
-
-<div class="step" data-id="p4a">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">🧪</div>
-    <div>
-      <div class="step-title">Preparação: kit, bolsa e etiquetas</div>
-      <div class="step-meta"><span class="chip novo">Posto distinto</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Área que prepara o material e as etiquetas <strong>antes</strong> da poltrona.</li>
-      <li>Conferência de identidade — só então libera para a cadeira.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Hoje isso já é separado da sala de cadeiras?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p4b">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box blue">🗺️</div>
-    <div>
-      <div class="step-title">Mapa da sala: cada cadeira é um card</div>
-      <div class="step-meta"><span class="chip novo">Como combinado na reunião</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>A equipe vê a sala como um <strong>mapa</strong>, não uma lista para ficar procurando nome.</li>
-      <li>Card mostra quem está na cadeira e há quanto tempo.</li>
-      <li>Um toque abre a tela para registrar o fim da coleta.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Quantas poltronas na unidade piloto?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p4c">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box">💉</div>
-    <div>
-      <div class="step-title">Coleta na poltrona</div>
-      <div class="step-meta"><span class="chip norma">Dupla checagem</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Doador confirma o nome; equipe confere as etiquetas.</li>
-      <li>Registra início, volume, eventual intercorrência e fim.</li>
-      <li>Coleta também os tubinhos de exame junto com a bolsa.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="O que precisa aparecer no card da cadeira?"></textarea></div>
-  </div>
-</div>
-
-<div class="phase-h"><div class="badge-n">5</div><h2>Depois da coleta — lanche e saída</h2><span class="tag">Obrigatório o descanso</span></div>
-
-<div class="step" data-id="p5a">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box">🧃</div>
-    <div>
-      <div class="step-title">Lanche, água e observação (pelo menos 15 minutos)</div>
-      <div class="step-meta"><span class="chip norma">RDC 34</span><span class="chip novo">Pós obrigatório</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Todo mundo que coletou passa pela sala de recuperação.</li>
-      <li>Água/suco e lanche; equipe observa se aparece tontura ou mal-estar.</li>
-      <li>Tempo mínimo costuma ser <strong>15 minutos</strong> (regra de saúde).</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="15 min é o que usam hoje?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step" data-id="p5b">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box purple">📄</div>
-    <div>
-      <div class="step-title">Declaração de doação e orientações</div>
-      <div class="step-meta"><span class="chip ambos">Saída</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body" hidden>
-    <div class="detail"><ul>
-      <li>Documento para trabalho/escola, se precisar.</li>
-      <li>Avisos: beber água, evitar esforço forte, quando voltar a doar.</li>
-    </ul></div>
-    <div class="comment-box"><label>💬 Comentário</label><textarea placeholder="Impresso, no celular ou os dois?"></textarea></div>
-  </div>
-</div>
-
-<div class="connector-line">▼</div>
-
-<div class="step open" data-id="p6">
-  <div class="step-head" onclick="toggleStep(this)">
-    <div class="icon-box green">🏁</div>
-    <div>
-      <div class="step-title">Pode ir embora — fim do fluxo do doador</div>
-      <div class="step-meta"><span class="chip novo">Fim do mapa</span></div>
-    </div>
-    <div class="vote-btns" onclick="event.stopPropagation()">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎</button>
-    </div>
-  </div>
-  <div class="step-body">
-    <div class="detail">
-      <p>Nos bastidores (a pessoa não vê): a bolsa segue para o processamento e os tubos para o laboratório, com registro de quem passou o quê.</p>
-      <p style="margin-top:8px">Use 👍 ✋ 👎 em cada passo e escreva ideias. No final, clique em <strong>Exportar comentários</strong>.</p>
-    </div>
-    <div class="comment-box"><label>💬 Comentário geral sobre o fluxo inteiro</label>
-      <textarea placeholder="O desenho e a ordem fazem sentido para o HEMOPI? O que mudaria?"></textarea></div>
-  </div>
-</div>
-
-<div style="height:80px"></div>
-</div>
-
-<div class="footer-bar">
-  <div class="footer-inner">
-    <div class="stats">
-      Avaliados: <b id="statDone">0</b> / <span id="statTotal">0</span>
-      · 👍 <b id="statOk">0</b> · ✋ <b id="statMaybe">0</b> · 👎 <b id="statNo">0</b>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
-      <button type="button" class="btn primary" onclick="exportComments()">↓ Exportar comentários</button>
-    </div>
-  </div>
-</div>
-
 <script>
-function toggleStep(head){
-  const step=head.closest('.step');
-  const body=step.querySelector('.step-body');
-  if(step.classList.contains('open')){ step.classList.remove('open'); body.hidden=true; }
-  else { step.classList.add('open'); body.hidden=false; }
-}
-function expandAll(open){
-  document.querySelectorAll('.step').forEach(step=>{
-    const body=step.querySelector('.step-body');
-    if(open){ step.classList.add('open'); body.hidden=false; }
-    else { step.classList.remove('open'); body.hidden=true; }
-  });
-}
-function vote(btn){
-  const box=btn.closest('.vote-btns');
-  const v=btn.dataset.v;
-  const active=btn.classList.contains('active-ok')||btn.classList.contains('active-no')||btn.classList.contains('active-maybe');
-  box.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('active-ok','active-no','active-maybe'));
-  if(!active){
-    if(v==='ok') btn.classList.add('active-ok');
-    else if(v==='no') btn.classList.add('active-no');
-    else btn.classList.add('active-maybe');
-  }
-  const step=btn.closest('.step');
-  step.dataset.vote = btn.classList.contains('active-ok')?'ok':btn.classList.contains('active-no')?'no':btn.classList.contains('active-maybe')?'maybe':'';
-  updateStats(); saveLocal();
-}
-function updateStats(){
-  const steps=[...document.querySelectorAll('.step')];
-  let ok=0,maybe=0,no=0,done=0;
-  steps.forEach(s=>{
-    const v=s.dataset.vote||'';
-    if(v) done++;
-    if(v==='ok') ok++;
-    if(v==='maybe') maybe++;
-    if(v==='no') no++;
-  });
-  const t=steps.length;
-  document.getElementById('statTotal').textContent=t;
-  document.getElementById('statDone').textContent=done;
-  document.getElementById('statOk').textContent=ok;
-  document.getElementById('statMaybe').textContent=maybe;
-  document.getElementById('statNo').textContent=no;
-  document.getElementById('progText').textContent=done+' / '+t;
-  document.getElementById('progBar').style.width=(t?100*done/t:0)+'%';
-}
-function exportComments(){
-  const lines=['HEMOPI — Validação do fluxo Agendamento → Coleta','Exportado: '+new Date().toLocaleString('pt-BR'),'='.repeat(60)];
-  document.querySelectorAll('.step').forEach((step,idx)=>{
-    const title=step.querySelector('.step-title')?.textContent?.trim()||('Passo '+(idx+1));
-    const vote=step.dataset.vote||'';
-    const voteLabel=vote==='ok'?'FAZ SENTIDO':vote==='no'?'NÃO FAZ SENTIDO':vote==='maybe'?'AJUSTAR':'SEM VOTO';
-    const comment=(step.querySelector('textarea')?.value||'').trim();
-    lines.push(''); lines.push((idx+1)+'. '+title); lines.push('   Voto: '+voteLabel); lines.push('   Comentário: '+(comment||'(vazio)'));
-  });
-  lines.push('','='.repeat(60),'Fim');
-  const blob=new Blob([lines.join('\\n')],{type:'text/plain;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='HEMOPI_validacao_fluxo_cliente.txt'; a.click(); URL.revokeObjectURL(a.href);
-}
-function saveLocal(){
-  const data={};
-  document.querySelectorAll('.step').forEach(step=>{
-    data[step.dataset.id]={ vote: step.dataset.vote||'', comment: step.querySelector('textarea')?.value||'' };
-  });
-  try{ localStorage.setItem('hemopi_fluxo_v2', JSON.stringify(data)); }catch(e){}
-}
-function loadLocal(){
-  try{
-    const data=JSON.parse(localStorage.getItem('hemopi_fluxo_v2')||'{}');
-    document.querySelectorAll('.step').forEach(step=>{
-      const d=data[step.dataset.id]; if(!d) return;
-      if(d.comment && step.querySelector('textarea')) step.querySelector('textarea').value=d.comment;
-      if(d.vote){
-        step.dataset.vote=d.vote;
-        const btn=step.querySelector('.vbtn[data-v="'+d.vote+'"]');
-        if(btn) btn.classList.add(d.vote==='ok'?'active-ok':d.vote==='no'?'active-no':'active-maybe');
-      }
-    });
-  }catch(e){}
-}
-document.querySelectorAll('textarea').forEach(ta=>ta.addEventListener('input', saveLocal));
-document.querySelectorAll('.step').forEach(step=>{
-  if(!step.classList.contains('open')) step.querySelector('.step-body').hidden=true;
-});
-loadLocal(); updateStats();
+function tog(h){const s=h.closest('.step'),b=s.querySelector('.body');b.hidden=!b.hidden}
+function expand(o){document.querySelectorAll('.step .body').forEach(b=>b.hidden=!o)}
+function vt(btn){const box=btn.parentElement,v=btn.dataset.v;const on=btn.classList.contains('ok')||btn.classList.contains('mb')||btn.classList.contains('no');
+box.querySelectorAll('.vbtn').forEach(x=>x.classList.remove('ok','mb','no'));
+if(!on){if(v==='ok')btn.classList.add('ok');else if(v==='no')btn.classList.add('no');else btn.classList.add('mb');}
+const s=btn.closest('.step');s.dataset.vote=btn.classList.contains('ok')?'ok':btn.classList.contains('no')?'no':btn.classList.contains('mb')?'maybe':'';
+try{const d=JSON.parse(localStorage.getItem('hemopi_macro')||'{}');d[s.dataset.id]={vote:s.dataset.vote,c:s.querySelector('textarea')?.value||''};localStorage.setItem('hemopi_macro',JSON.stringify(d))}catch(e){}}
+function exp(){const L=['HEMOPI validação macro',new Date().toLocaleString('pt-BR'),'='.repeat(50)];
+document.querySelectorAll('.step').forEach((s,i)=>{const t=s.querySelector('.tt').textContent;const v=s.dataset.vote||'';const vl=v==='ok'?'FAZ SENTIDO':v==='no'?'NÃO':v==='maybe'?'AJUSTAR':'SEM VOTO';
+L.push('',(i+1)+'. '+t,'   '+vl,'   '+(s.querySelector('textarea')?.value||'(vazio)'))});
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L.join('\n')],{type:'text/plain'}));a.download='HEMOPI_validacao_macro.txt';a.click()}
+document.querySelectorAll('textarea').forEach(t=>t.addEventListener('input',()=>{const s=t.closest('.step');try{const d=JSON.parse(localStorage.getItem('hemopi_macro')||'{}');d[s.dataset.id]={vote:s.dataset.vote||'',c:t.value};localStorage.setItem('hemopi_macro',JSON.stringify(d))}catch(e){}}));
+try{const d=JSON.parse(localStorage.getItem('hemopi_macro')||'{}');document.querySelectorAll('.step').forEach(s=>{const x=d[s.dataset.id];if(!x)return;if(x.c)s.querySelector('textarea').value=x.c;if(x.vote){s.dataset.vote=x.vote;const b=s.querySelector('[data-v="'+x.vote+'"]');if(b)b.classList.add(x.vote==='ok'?'ok':x.vote==='no'?'no':'mb')}})}catch(e){}
 </script>
 </body>
 </html>
