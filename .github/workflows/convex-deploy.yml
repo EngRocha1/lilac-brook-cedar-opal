@@ -8,24 +8,30 @@ on:
       - "package.json"
       - "convex.json"
       - ".github/workflows/convex-deploy.yml"
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-      - run: npm ci || npm install
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Deploy to Convex
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           if [ -z "$CONVEX_DEPLOY_KEY" ]; then
-            echo "CONVEX_DEPLOY_KEY secret not set — skip Convex deploy."
-            echo "Add it in: Settings → Secrets and variables → Actions"
+            echo "::warning::CONVEX_DEPLOY_KEY não configurado."
+            echo "GitHub → Settings → Secrets and variables → Actions → New repository secret"
+            echo "Nome: CONVEX_DEPLOY_KEY"
+            echo "Valor: Deploy Key de produção do Convex (Settings → Deploy Keys)"
             exit 0
           fi
-          npx convex deploy --cmd 'echo deployed'
+          npx convex deploy
