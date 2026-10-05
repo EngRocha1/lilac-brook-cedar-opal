@@ -15,7 +15,7 @@
       <div>
         <h1>HEMOPI — Visão do fluxo</h1>
         <p class="tagline">Esta página apresenta uma visão visual e interativa do processo de hemoterapia, permitindo compreender como as etapas se relacionam, onde existem decisões, transições e responsabilidades e quais pontos precisam ser validados pelas equipes.</p>
-        <p class="tagline">Arraste elementos e conectores para reorganizar a visão. Clique em etapas ou linhas para registrar avaliação e comentários. O objetivo é transformar o conhecimento do processo em uma representação colaborativa antes da definição detalhada da solução.</p>
+        <p class="tagline">Arraste elementos e conectores para reorganizar a visão. Clique em etapas ou linhas para abrir a avaliação. O objetivo é transformar o conhecimento do processo em uma representação colaborativa antes da definição detalhada da solução.</p>
       </div>
     </div>
     <div class="pills">
@@ -27,11 +27,11 @@
 
   <div class="toolbar">
     <div class="tool-group">
-      <button type="button" class="btn" id="btnAddProcess" title="Processo">▭ Processo</button>
-      <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇ Decisão</button>
-      <button type="button" class="btn" id="btnAddText" title="Texto">T Texto</button>
-      <button type="button" class="btn" id="btnAddMacro" title="Novo macro">+ Macro</button>
-      <button type="button" class="btn" id="btnConnect" title="Ligar dois nós">⟷ Ligar</button>
+      <button type="button" class="btn" id="btnAddProcess">▭ Processo</button>
+      <button type="button" class="btn" id="btnAddDecision">◇ Decisão</button>
+      <button type="button" class="btn" id="btnAddText">T Texto</button>
+      <button type="button" class="btn" id="btnAddMacro">+ Macro</button>
+      <button type="button" class="btn" id="btnConnect">⟷ Ligar</button>
     </div>
     <div class="tool-group prog-wrap">
       <div class="prog-label">Validação visual · <span id="progText">0%</span></div>
@@ -53,36 +53,38 @@
 
   <div class="workspace">
     <aside class="palette" id="macroBar"></aside>
-    <div class="canvas-wrap" id="canvasWrap">
+    <div class="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
-    <aside class="side" id="side">
-      <div class="side-h">
-        <span id="sideIco">📋</span>
-        <strong id="sideTitle">Selecione um elemento</strong>
-        <button type="button" class="x" onclick="clearSelection()">×</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h">
+      <span id="sideIco">📋</span>
+      <strong id="sideTitle">Avaliação</strong>
+      <button type="button" class="x" onclick="closeModal()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-b">
+      <p id="sideMeta" class="muted"></p>
+      <label>Título</label>
+      <input id="sideName" type="text"/>
+      <label id="colorLabel">Cor do macro</label>
+      <input id="sideColor" type="color" value="#e8f4fc"/>
+      <div class="vote-row">
+        <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button>
+        <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button>
       </div>
-      <div class="side-b">
-        <p id="sideMeta" class="muted"></p>
-        <label>Título</label>
-        <input id="sideName" type="text"/>
-        <label>Cor de fundo (macro)</label>
-        <input id="sideColor" type="color" value="#e8f4fc"/>
-        <div class="vote-row">
-          <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button>
-          <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button>
-        </div>
-        <div class="counts"><span class="ok">👍 <b id="sideOk">0</b></span> <span class="no">👎 <b id="sideNo">0</b></span></div>
-        <label>Comentário</label>
-        <textarea id="sideComment" placeholder="Sugestão, dúvida ou correção…"></textarea>
-        <button type="button" class="btn danger" id="btnDelete" onclick="deleteSelected()">Excluir elemento</button>
-      </div>
-    </aside>
+      <div class="counts"><span class="ok">👍 <b id="sideOk">0</b></span> <span class="no">👎 <b id="sideNo">0</b></span></div>
+      <label>Comentário</label>
+      <textarea id="sideComment" placeholder="Sugestão, dúvida ou correção…"></textarea>
+      <button type="button" class="btn danger" onclick="deleteSelected()">Excluir elemento</button>
+    </div>
   </div>
 </div>
 
 <div id="printRoot" class="print-root"></div>
-
 <script src="flow-data.js"></script>
 <script src="editor.js"></script>
 </body>
