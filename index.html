@@ -3,95 +3,308 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>HEMOPI — Jornada do Doador (Agendamento → Coleta)</title>
-<meta name="description" content="Fluxo macro HEMOPI: agendamento, senhas, chegada, triagem e coleta."/>
+<title>HEMOPI — Macrofluxo e Microfluxos</title>
 <meta name="theme-color" content="#c41e3a"/>
-<link rel="stylesheet" href="styles.css"/>
+<style>
+:root{--sangue:#c41e3a;--sangue-esc:#8b1528;--rosa:#fce4e8;--azul:#0b3d5c;--azul-m:#1a5f8a;--azul-c:#e8f4fc;--verde:#1b7a4e;--verde-c:#e6f5ed;--amarelo:#c9a227;--amarelo-c:#fdf6e3;--roxo:#5b4b8a;--roxo-c:#efeaf8;--cinza:#5c6b7a;--fundo:#f0f3f7;--branco:#fff;--texto:#1a2332;--borda:#d0d8e2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Segoe UI,system-ui,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 12px 100px}
+.hero{background:linear-gradient(135deg,var(--sangue-esc),var(--sangue));color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px}
+.hero h1{font-size:1.2rem}.hero h1 small{display:block;font-size:.75rem;opacity:.9;margin-top:4px;font-weight:500}
+.hero p{font-size:.84rem;margin-top:8px;opacity:.95;max-width:720px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pill{font-size:.65rem;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;position:sticky;top:0;z-index:20;background:rgba(240,243,247,.95);padding:8px 0;backdrop-filter:blur(6px)}
+.btn{border:1px solid var(--borda);background:#fff;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--sangue);color:var(--sangue)}
+.btn.pri{background:var(--sangue);color:#fff;border-color:var(--sangue)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.72rem;color:var(--cinza);margin-bottom:12px;background:#fff;border:1px solid var(--borda);border-radius:12px;padding:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.dot.macro{background:var(--azul-c);border:2px solid var(--azul-m)}
+.dot.micro{background:var(--amarelo-c);border:2px solid var(--amarelo)}
+.dot.dec{transform:rotate(45deg);background:var(--rosa);border:2px solid var(--sangue)}
+.dot.port{background:var(--roxo-c);border:2px dashed var(--roxo)}
+.port{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 10px;color:var(--roxo);font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.port::before,.port::after{content:"";flex:1;height:0;border-top:2px dashed var(--roxo);opacity:.45}
+.port span{background:var(--roxo-c);border:1px dashed var(--roxo);padding:4px 12px;border-radius:999px;white-space:nowrap}
+.zone{background:#fff;border:2px solid var(--azul-m);border-radius:16px;margin-bottom:4px;overflow:hidden;box-shadow:0 4px 16px rgba(11,61,92,.06)}
+.zone.z-fis{border-color:var(--amarelo)}.zone.z-cheg{border-color:var(--roxo)}.zone.z-pre{border-color:var(--verde)}.zone.z-col{border-color:var(--sangue)}
+.zone-h{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;user-select:none;background:linear-gradient(90deg,var(--azul-c),#fff)}
+.zone.z-fis .zone-h{background:linear-gradient(90deg,var(--amarelo-c),#fff)}
+.zone.z-cheg .zone-h{background:linear-gradient(90deg,var(--roxo-c),#fff)}
+.zone.z-pre .zone-h{background:linear-gradient(90deg,var(--verde-c),#fff)}
+.zone.z-col .zone-h{background:linear-gradient(90deg,var(--rosa),#fff)}
+.zone-h h2{font-size:.95rem;color:var(--azul)}
+.zone-h .tag{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.06);color:var(--cinza)}
+.zone-h .exp{border:1px solid var(--borda);background:#fff;border-radius:8px;padding:6px 10px;font-size:.72rem;font-weight:700;cursor:pointer}
+.zone.open .exp{background:var(--sangue);color:#fff;border-color:var(--sangue)}
+.cubes{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 14px}
+.cube{font-size:.7rem;font-weight:600;padding:6px 10px;border-radius:8px;background:var(--fundo);border:1px solid var(--borda)}
+.cube.d{background:var(--amarelo-c);border-color:var(--amarelo)}.cube.ok{background:var(--verde-c);border-color:var(--verde)}
+.zone-b{display:none;padding:0 14px 16px;border-top:1px solid var(--borda)}
+.zone.open .zone-b{display:block}
+.flow-row{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:12px 0}
+.step-card{flex:1 1 140px;min-width:120px;max-width:200px;background:var(--fundo);border:1.5px solid var(--borda);border-radius:12px;padding:10px;font-size:.78rem}
+.step-card.dec{background:var(--amarelo-c);border-color:var(--amarelo)}
+.step-card.bad{background:var(--rosa);border-color:var(--sangue)}
+.step-card.ok{background:var(--verde-c);border-color:var(--verde)}
+.step-card h4{font-size:.8rem;margin-bottom:4px}
+.step-card .acts{display:flex;gap:4px;margin-top:8px}
+.step-card button{flex:1;border:1px solid var(--borda);background:#fff;border-radius:6px;padding:4px;font-size:.7rem;cursor:pointer}
+.step-card button.on-ok{background:var(--verde-c);border-color:var(--verde)}
+.step-card button.on-maybe{background:var(--amarelo-c);border-color:var(--amarelo)}
+.step-card button.on-no{background:var(--rosa);border-color:var(--sangue)}
+.step-card textarea{width:100%;margin-top:6px;min-height:48px;font-size:.72rem;font-family:inherit;border:1px dashed var(--borda);border-radius:6px;padding:6px;resize:vertical}
+.arrow-h{display:flex;align-items:center;color:var(--cinza);font-size:1.2rem}
+.detail-note{font-size:.75rem;color:var(--cinza);margin:8px 0;padding:8px 10px;background:var(--fundo);border-radius:8px;border-left:3px solid var(--azul-m)}
+.branch-out{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:640px){.branch-out{grid-template-columns:1fr}}
+.branch-out .box{padding:8px;border-radius:10px;font-size:.75rem;border:1.5px solid var(--borda)}
+.branch-out .box.sim{background:var(--verde-c);border-color:var(--verde)}
+.branch-out .box.nao{background:var(--rosa);border-color:var(--sangue)}
+.foot{position:fixed;bottom:0;left:0;right:0;background:var(--azul);color:#fff;padding:10px 14px;z-index:30;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.foot .btn{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff}
+.foot .btn.pri{background:var(--sangue);border-color:var(--sangue)}
+.stats{font-size:.74rem;margin-right:auto}
+@media print{body{background:#fff}.toolbar,.foot,.exp{display:none!important}.zone{break-inside:avoid;page-break-inside:avoid;border-width:2px;margin-bottom:12px}.zone-b{display:block!important}.zone-h,.step-card,.cube,.port span,.branch-out .box,.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.step-card textarea{border:1px solid #999;min-height:36px}.wrap{max-width:100%;padding:0}}
+@page{size:A4;margin:12mm}
+</style>
 </head>
 <body>
 <div class="wrap">
-<div class="hero">
-  <div class="hero-row">
-    <div class="logo">🩸</div>
-    <div>
-      <h1>HEMOPI — Jornada do doador
-        <small>Agendamento · Senhas · Chegada · Triagem · Coleta · Validação com o cliente</small>
-      </h1>
-    </div>
-  </div>
-  <p>Clique em <strong>qualquer caixa do mapa</strong> para ver o detalhe, votar (👍 ✋ 👎) e comentar. Linhas SIM e NÃO ligam as decisões corretamente.</p>
-  <div class="pills">
-    <span class="pill">SESAPI / HEMOPI</span>
-    <span class="pill">RDC 34 · Portaria 158 · Lei 10.048 · LGPD</span>
-  </div>
+<header class="hero">
+  <h1>🩸 HEMOPI — Macrofluxo e microfluxos
+    <small>Agendamento completo · Senhas · Chegada · Pré-triagem · Coleta · PDF com comentários</small>
+  </h1>
+  <p>O <strong>macrofluxo</strong> mostra os blocos (portas entre diagramas). Expanda cada <strong>microfluxo</strong> para ver losangos, testes e comentários. Use <strong>Imprimir PDF</strong> com cores e comentários preenchidos.</p>
+  <div class="pills"><span class="pill">RDC 34 · Lei 10.048 · LGPD</span><span class="pill">Agendamento NÃO apagado</span></div>
+</header>
+<div class="toolbar">
+  <button type="button" class="btn" onclick="expandAll(true)">▣ Expandir microfluxos</button>
+  <button type="button" class="btn" onclick="expandAll(false)">□ Só macro</button>
+  <button type="button" class="btn pri" onclick="window.print()">🖨 Imprimir PDF colorido</button>
+  <button type="button" class="btn" onclick="exportComments()">↓ Exportar .txt</button>
 </div>
 <div class="legend">
-  <span><i class="s o"></i> Início / fim</span>
-  <span><i class="s"></i> Processo</span>
-  <span><i class="s d"></i> Decisão</span>
-  <span><i class="l b"></i> Digital</span>
-  <span><i class="l y"></i> Físico / telefone</span>
-  <span><i class="l p"></i> Convergência</span>
-  <span><i class="l r"></i> Norma / bloqueio</span>
-  <span><i class="l g"></i> Apto / segue</span>
+  <span><i class="dot macro"></i> Zona microfluxo</span>
+  <span><i class="dot port"></i> Porta entre fluxos</span>
+  <span><i class="dot micro"></i> Cubo no macro</span>
+  <span><i class="dot dec"></i> Decisão</span>
 </div>
-<div class="toolbar">
-  <button type="button" class="btn pri" onclick="exportComments()">↓ Exportar comentários</button>
-  <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
-  <div class="prog">
-    <label>Caixas avaliadas: <span id="progText">0</span></label>
-    <div class="bar"><i id="progBar"></i></div>
+
+<section class="zone" id="z-dig">
+  <div class="zone-h" onclick="toggleZone('z-dig')">
+    <h2>🌐 Microfluxo A — Canal digital (agendamento online)</h2>
+    <span class="tag">MACRO · Portal / App</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-dig')">Detalhar ▾</button>
   </div>
-</div>
-<div class="focus-box">
-  <strong>Foco:</strong> início da jornada — canais, agendamento, QR, chegada e <strong>quando a senha nasce</strong> (só no hemocentro / totem, não no app).
-</div>
-<div class="board">
-  <h2>Mapa macro — do acesso até a saída</h2>
-  <p class="hint">Clique nas caixas · Azul = digital · Amarelo = físico · Roxo = chegada · Vermelho = NÃO/norma · Verde = SIM/segue</p>
-  <div id="svgHost"></div>
-</div>
-<p style="text-align:center;font-size:.78rem;color:var(--cinza);margin-top:10px">Clique em uma caixa · Exportar gera .txt</p>
-</div>
-<div class="backdrop" id="backdrop" onclick="closePanel()"></div>
-<div class="panel" id="panel">
-  <div class="panel-h">
-    <span class="ico" id="pIco">📋</span>
-    <h3 id="pTitle">—</h3>
-    <button type="button" onclick="closePanel()" aria-label="Fechar">×</button>
+  <div class="cubes">
+    <span class="cube">Login CPF/GOV.BR</span><span class="cube">→</span>
+    <span class="cube">Cadastro RDC 34</span><span class="cube">→</span>
+    <span class="cube d">LGPD SIM/NÃO</span><span class="cube">→</span>
+    <span class="cube">Slot data/hora</span><span class="cube">→</span>
+    <span class="cube ok">QR / guia (sem senha)</span>
   </div>
-  <div class="panel-b">
-    <div class="meta" id="pMeta"></div>
-    <div class="who" id="pWho"></div>
-    <div id="pBody"></div>
-    <div class="vote-row">
-      <button type="button" class="vbtn" data-v="ok" onclick="vote(this)">👍 Faz sentido</button>
-      <button type="button" class="vbtn" data-v="maybe" onclick="vote(this)">✋ Ajustar</button>
-      <button type="button" class="vbtn" data-v="no" onclick="vote(this)">👎 Não faz</button>
-    </div>
-    <div class="comment-box">
-      <label>💬 Comentário do cliente neste passo</label>
-      <textarea id="pComment" placeholder="Sugestão, dúvida ou regra local…"></textarea>
+  <div class="zone-b">
+    <p class="detail-note">Autonomia. Gera QR. <strong>Não emite senha</strong> — senha só no Microfluxo C (chegada).</p>
+    <div class="flow-row">
+      <div class="step-card" data-id="d1"><h4>1. Autenticação</h4>CPF / GOV.BR<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="d2"><h4>2. Cadastro</h4>Contato · idade (RDC 34)<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="d3"><h4>3. LGPD aceita?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> → avança</div><div class="box nao"><strong>NÃO</strong> → bloqueia</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="d4"><h4>4. Data e hora</h4>Só slots com vaga<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card ok" data-id="d5"><h4>5. QR / Guia</h4>⚠ Sem senha de fila<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
     </div>
   </div>
+</section>
+
+<div class="port"><span>porta · mesmo destino na chegada</span></div>
+
+<section class="zone z-fis" id="z-fis">
+  <div class="zone-h" onclick="toggleZone('z-fis')">
+    <h2>☎️ Microfluxo B — Canal físico / telefone</h2>
+    <span class="tag">MACRO · Recepção · Call center</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-fis')">Detalhar ▾</button>
+  </div>
+  <div class="cubes">
+    <span class="cube">Acolhimento</span><span class="cube">→</span>
+    <span class="cube d">Tem hora?</span><span class="cube">→</span>
+    <span class="cube">Agenda ou encaixe</span><span class="cube">→</span>
+    <span class="cube">Senha totem (se hoje)</span>
+  </div>
+  <div class="zone-b">
+    <p class="detail-note">Quem só agendou pelo app ainda recebe senha no Microfluxo C.</p>
+    <div class="flow-row">
+      <div class="step-card" data-id="f1"><h4>1. Acolhimento</h4>Escuta da demanda<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="f2"><h4>2. Tem hora?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> agenda</div><div class="box nao"><strong>NÃO</strong> encaixe</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="f2b"><h4>3. Agenda / encaixe</h4>Capacidade do dia<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="f3"><h4>4. Senha no totem</h4>Se veio hoje · Lei 10.048<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+  </div>
+</section>
+
+<div class="port"><span>porta · chegada · emissão oficial de senha</span></div>
+
+<section class="zone z-cheg" id="z-cheg">
+  <div class="zone-h" onclick="toggleZone('z-cheg')">
+    <h2>🎫 Microfluxo C — Chegada e senhas</h2>
+    <span class="tag">MACRO · Convergência · Lei 10.048</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-cheg')">Detalhar ▾</button>
+  </div>
+  <div class="cubes">
+    <span class="cube">Chegada</span><span class="cube">→</span>
+    <span class="cube d">Agendado?</span><span class="cube">→</span>
+    <span class="cube">Check-in / espontâneo</span><span class="cube">→</span>
+    <span class="cube">SENHA</span><span class="cube">→</span>
+    <span class="cube d">Prioridade?</span>
+  </div>
+  <div class="zone-b">
+    <p class="detail-note"><strong>Regra de ouro:</strong> senha é ato de presença, não do app.</p>
+    <div class="flow-row">
+      <div class="step-card" data-id="c1"><h4>Chegada</h4>Totem / recepção<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="c2"><h4>Agendado?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> check-in QR</div><div class="box nao"><strong>NÃO</strong> espontâneo</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+ zb <div class="step-card ok" data-id="c3"><h4>Emissão de SENHA</h4>Para quem vai à fila<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="c4"><h4>Prioridade legal?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> prioritária</div><div class="box nao"><strong>NÃO</strong> normal</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+  </div>
+</section>
+
+<div class="port"><span>porta · guichê · identidade · rota</span></div>
+
+<section class="zone" id="z-rec">
+  <div class="zone-h" onclick="toggleZone('z-rec')">
+    <h2>🪪 Microfluxo D — Recepção, identidade e rota</h2>
+    <span class="tag">MACRO · Documento · Idade · Rota</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-rec')">Detalhar ▾</button>
+  </div>
+  <div class="cubes">
+    <span class="cube">Documento</span><span class="cube">→</span>
+    <span class="cube d">Idade ok?</span><span class="cube">→</span>
+    <span class="cube">Foto · LGPD · REDOME</span><span class="cube">→</span>
+    <span class="cube d">Rota</span>
+  </div>
+  <div class="zone-b">
+    <p class="detail-note">16–17 termo+responsável; 60–69 não 1ª doação (RDC 34). Rotas: doador · 2ª amostra · paciente.</p>
+    <div class="flow-row">
+      <div class="step-card" data-id="r1"><h4>Documento foto</h4>Original · RDC 34<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="r2"><h4>Idade na faixa?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong></div><div class="box nao"><strong>16–17 / 60–69</strong></div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="r3"><h4>Foto · LGPD · REDOME</h4>Rastreabilidade<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="r4"><h4>Rota da visita?</h4><div class="branch-out"><div class="box sim"><strong>Doador</strong></div><div class="box nao"><strong>2ª amostra / paciente</strong></div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+    <div class="flow-row">
+      <div class="step-card bad" data-id="r5"><h4>2ª amostra</h4>Serviço social · coleta protegida<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <div class="step-card" data-id="r6"><h4>Paciente / laudo</h4>Ambulatório<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+  </div>
+</section>
+
+<div class="port"><span>porta · rota doador · pré-triagem</span></div>
+
+<section class="zone z-pre" id="z-pre">
+  <div class="zone-h" onclick="toggleZone('z-pre')">
+    <h2>🩺 Microfluxo E — Pré-triagem e triagem</h2>
+    <span class="tag">MACRO · RDC 34 · dois níveis de inaptidão</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-pre')">Detalhar ▾</button>
+  </div>
+  <div class="cubes">
+    <span class="cube">Pré-triagem</span><span class="cube">→</span>
+    <span class="cube d">Apto na pré?</span><span class="cube">→</span>
+    <span class="cube">Triagem clínica</span><span class="cube">→</span>
+    <span class="cube d">Pode doar?</span>
+  </div>
+  <div class="zone-b">
+    <p class="detail-note">Pré-triagem também inapta (peso, PA, Hb). Só quem passa vai à triagem clínica.</p>
+    <div class="flow-row">
+      <div class="step-card" data-id="p1"><h4>Pré-triagem</h4>PA · peso ≥50 · Hb/Ht<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="p2"><h4>Apto na pré?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> triagem</div><div class="box nao"><strong>NÃO</strong> inapto pré</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="p3"><h4>Triagem clínica</h4>Sigilo · TCLE<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card dec" data-id="p4"><h4>Pode doar hoje?</h4><div class="branch-out"><div class="box sim"><strong>SIM</strong> coleta</div><div class="box nao"><strong>NÃO</strong> inapto</div></div><div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+  </div>
+</section>
+
+<div class="port"><span>porta · apto · preparação e coleta</span></div>
+
+<section class="zone z-col" id="z-col">
+  <div class="zone-h" onclick="toggleZone('z-col')">
+    <h2>💉 Microfluxo F — Preparação, coleta e pós</h2>
+    <span class="tag">MACRO · Mapa cadeiras · 15 min</span>
+    <button type="button" class="exp" onclick="event.stopPropagation();toggleZone('z-col')">Detalhar ▾</button>
+  </div>
+  <div class="cubes">
+    <span class="cube d">Lanche pré?</span><span class="cube">→</span>
+    <span class="cube">Preparação</span><span class="cube">→</span>
+    <span class="cube">Mapa/cadeira</span><span class="cube">→</span>
+    <span class="cube">Coleta</span><span class="cube">→</span>
+    <span class="cube ok">Lanche ≥15 min · alta</span>
+  </div>
+  <div class="zone-b">
+    <p class="detail-note">Postos distintos. Observação mínima 15 min (RDC 34).</p>
+    <div class="flow-row">
+      <div class="step-card dec" data-id="k1"><h4>Lanche ANTES?</h4>Condicional<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="k2"><h4>Preparação</h4>Kit · etiquetas<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="k3"><h4>Mapa da sala</h4>Microcard → modal<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card" data-id="k4"><h4>Coleta</h4>Dupla checagem<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+      <span class="arrow-h">→</span>
+      <div class="step-card ok" data-id="k5"><h4>Pós ≥15 min</h4>Lanche · declaração · alta<div class="acts"><button type="button" data-v="ok" onclick="vote(this)">👍</button><button type="button" data-v="maybe" onclick="vote(this)">✋</button><button type="button" data-v="no" onclick="vote(this)">👎</button></div><textarea placeholder="Comentário…"></textarea></div>
+    </div>
+  </div>
+</section>
+
+<div class="port"><span>fim da jornada do doador</span></div>
+<p style="text-align:center;font-size:.8rem;color:var(--cinza);margin-top:16px">Expanda, comente, depois <strong>Imprimir PDF colorido</strong> (ative “Gráficos de fundo” na impressora).</p>
 </div>
 <div class="foot">
-  <div class="foot-in">
-    <div class="stats">Avaliados: <b id="statDone">0</b>/<span id="statTotal">0</span> · 👍 <b id="statOk">0</b> · ✋ <b id="statMaybe">0</b> · 👎 <b id="statNo">0</b></div>
-    <div style="display:flex;gap:8px">
-      <button type="button" class="btn" onclick="window.print()">🖨 Imprimir</button>
-      <button type="button" class="btn pri" onclick="exportComments()">↓ Exportar</button>
-    </div>
-  </div>
+  <span class="stats">Votos: <b id="statDone">0</b></span>
+  <button type="button" class="btn" onclick="expandAll(true)">Expandir</button>
+  <button type="button" class="btn pri" onclick="window.print()">🖨 PDF</button>
+  <button type="button" class="btn" onclick="exportComments()">↓ .txt</button>
 </div>
-<script src="app.js"></script>
 <script>
-fetch('flow.svg').then(r=>r.text()).then(t=>{
-  document.getElementById('svgHost').innerHTML=t;
-  document.querySelectorAll('.node-hit').forEach(g=>{
-    g.addEventListener('click',()=>openPanel(g.getAttribute('data-id')));
-  });
-}).catch(e=>{document.getElementById('svgHost').innerHTML='<p style="color:red;text-align:center">Erro ao carregar o mapa. Atualize a página.</p>';});
+const KEY='hemopi_macro_micro_v1';
+let state=JSON.parse(localStorage.getItem(KEY)||'{}');
+function toggleZone(id){document.getElementById(id).classList.toggle('open')}
+function expandAll(o){document.querySelectorAll('.zone').forEach(z=>{if(o)z.classList.add('open');else z.classList.remove('open')})}
+function vote(btn){const card=btn.closest('.step-card');const id=card.dataset.id;const v=btn.dataset.v;const box=card.querySelector('.acts');
+const was=btn.classList.contains('on-ok')||btn.classList.contains('on-maybe')||btn.classList.contains('on-no');
+box.querySelectorAll('button').forEach(b=>b.classList.remove('on-ok','on-maybe','on-no'));
+if(!was){btn.classList.add(v==='ok'?'on-ok':v==='no'?'on-no':'on-maybe');if(!state[id])state[id]={};state[id].vote=v}else if(state[id])delete state[id].vote;
+localStorage.setItem(KEY,JSON.stringify(state));updateStats()}
+function saveComment(ta){const id=ta.closest('.step-card').dataset.id;if(!state[id])state[id]={};state[id].comment=ta.value;localStorage.setItem(KEY,JSON.stringify(state))}
+function updateStats(){let n=0;Object.keys(state).forEach(k=>{if(state[k].vote)n++});document.getElementById('statDone').textContent=n}
+function exportComments(){const lines=['HEMOPI validação macro/micro',new Date().toLocaleString('pt-BR'),'='.repeat(50)];
+document.querySelectorAll('.step-card').forEach((card,i)=>{const id=card.dataset.id;const title=card.querySelector('h4')?.textContent||id;
+const v=state[id]?.vote||'';const vl=v==='ok'?'FAZ SENTIDO':v==='no'?'NÃO':v==='maybe'?'AJUSTAR':'SEM VOTO';
+const c=(state[id]?.comment||card.querySelector('textarea')?.value||'').trim();
+lines.push('',(i+1)+'. '+title,'   Voto: '+vl,'   Comentário: '+(c||'(vazio)'))});
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join(String.fromCharCode(10))],{type:'text/plain'}));a.download='HEMOPI_validacao.txt';a.click()}
+document.querySelectorAll('.step-card').forEach(card=>{const id=card.dataset.id;const s=state[id];if(!s)return;
+if(s.comment)card.querySelector('textarea').value=s.comment;
+if(s.vote){const b=card.querySelector('[data-v="'+s.vote+'"]');if(b)b.classList.add(s.vote==='ok'?'on-ok':s.vote==='no'?'on-no':'on-maybe')}});
+document.querySelectorAll('.step-card textarea').forEach(ta=>ta.addEventListener('input',e=>saveComment(e.target)));
+document.getElementById('z-dig').classList.add('open');
+document.getElementById('z-cheg').classList.add('open');
+updateStats();
 </script>
 </body>
 </html>
