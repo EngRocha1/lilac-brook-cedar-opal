@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <link rel="stylesheet" href="editor.css"/>
-<style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden]{display:none!important}</style>
+<style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
 <div id="publicPage" class="public-page">
@@ -34,7 +34,7 @@
     <h2>Recursos</h2>
     <div class="cards">
       <article class="card"><h3>📐 Canvas modular</h3><p>Macros arrastáveis e redimensionáveis.</p></article>
-      <article class="card"><h3>🔗 Compartilhamento</h3><p>Convide e-mails para votar e comentar.</p></article>
+      <article class="card"><h3>🔗 Compartilhamento</h3><p>Convidados entram só com e-mail, sem conta.</p></article>
       <article class="card"><h3>✅ Selo de validação</h3><p>Feche a votação com autenticação.</p></article>
       <article class="card"><h3>📋 Modelos</h3><p>Templates por área de negócio.</p></article>
     </div>
@@ -52,13 +52,13 @@
   </section>
   <section class="section" id="sobre">
     <h2>Sobre o Fluxora</h2>
-    <p class="about">O Fluxora é uma ferramenta independente para análise visual de fluxos de projeto. Permite mapear etapas, decisões e responsabilidades, compartilhar o desenho com sponsors e stakeholders e registrar feedback estruturado — votos, comentários e selo de validação — em um único painel.</p>
+    <p class="about">O Fluxora é uma ferramenta independente para análise visual de fluxos de projeto.</p>
   </section>
   <footer class="footer">
     <div class="footer-grid">
-      <div><strong>◇ Fluxora</strong><p class="muted">Validação visual de fluxos de processo</p></div>
+      <div><strong>◇ Fluxora</strong><p class="muted">Validação visual de fluxos</p></div>
       <div><a href="#recursos">Recursos</a><a href="#modelos">Modelos</a><a href="#sobre">Sobre</a><a href="#" id="footerAdmin">Acesso administrativo</a></div>
-      <div><p class="muted">Privacidade · Uso responsável dos dados</p><p class="muted">© <span id="y"></span> Fluxora.</p></div>
+      <div><p class="muted">© <span id="y"></span> Fluxora.</p></div>
     </div>
   </footer>
 </div>
@@ -85,6 +85,19 @@
     <p class="auth-error" id="authError" hidden></p>
   </div>
 </div>
+<div id="guestModal" class="modal-overlay" hidden>
+  <div class="login-modal">
+    <h2>Acesso de convidado</h2>
+    <p class="login-free">Você foi convidado a <strong>validar um fluxo</strong>. Informe o e-mail do convite. <strong>Não precisa criar conta.</strong></p>
+    <form id="guestForm">
+      <label class="field"><span>E-mail do convite</span>
+        <input id="guestEmail" type="email" required placeholder="seu@email.com" autocomplete="username"/>
+      </label>
+      <button type="submit" class="btn-neon block">Entrar no fluxo</button>
+    </form>
+    <p class="auth-error" id="guestError" hidden></p>
+  </div>
+</div>
 <div id="adminGate" class="admin-gate" hidden>
   <div class="login-modal admin-login-card">
     <button type="button" class="modal-x" id="adminGateBack">×</button>
@@ -109,7 +122,7 @@
   <div id="flowManagerList" class="flow-mgr-list"></div>
 </div>
 <div class="app" id="appMain" hidden>
-  <header class="hero"><div class="hero-top"><div class="logo">◇</div><div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Segure e arraste · solte para parar · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button><button type="button" class="btn hero-btn" id="btnOpenMgr">Meus fluxos</button><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
+  <header class="hero"><div class="hero-top"><div class="logo">◇</div><div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Segure e arraste · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button><button type="button" class="btn hero-btn" id="btnOpenMgr">Meus fluxos</button><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
   <div class="toolbar">
     <div class="tool-group"><label class="flow-label">Fluxo</label><select id="flowSelect"></select><button type="button" class="btn" id="btnNewFlow">+ Novo</button></div>
     <div class="tool-group"><button type="button" class="btn" id="btnAddProcess">▭</button><button type="button" class="btn" id="btnAddDecision">◇</button><button type="button" class="btn" id="btnAddText">T</button><button type="button" class="btn" id="btnAddMacro">+ Macro</button><button type="button" class="btn" id="btnConnect">⟷</button></div>
