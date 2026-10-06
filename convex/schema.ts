@@ -4,7 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   flows: defineTable({
     key: v.string(),
-    title: v.string(),
+    title: v.optional(v.string()),
     ownerEmail: v.optional(v.string()),
     data: v.any(),
     updatedAt: v.number(),
