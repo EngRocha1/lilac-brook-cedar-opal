@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <link rel="stylesheet" href="editor.css"/>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden]{display:none!important}</style>
 </head>
 <body>
 <div id="publicPage" class="public-page">
@@ -52,13 +52,13 @@
   </section>
   <section class="section" id="sobre">
     <h2>Sobre o Fluxora</h2>
-    <p class="about">O Fluxora é uma ferramenta independente para análise visual de fluxos de projeto. Permite mapear etapas, decisões e responsabilidades, compartilhar o desenho com sponsors e stakeholders e registrar feedback estruturado — votos, comentários e selo de validação — em um único painel. Ideal para alinhamento entre produto, operação e liderança.</p>
+    <p class="about">O Fluxora é uma ferramenta independente para análise visual de fluxos de projeto. Permite mapear etapas, decisões e responsabilidades, compartilhar o desenho com sponsors e stakeholders e registrar feedback estruturado — votos, comentários e selo de validação — em um único painel.</p>
   </section>
   <footer class="footer">
     <div class="footer-grid">
       <div><strong>◇ Fluxora</strong><p class="muted">Validação visual de fluxos de processo</p></div>
       <div><a href="#recursos">Recursos</a><a href="#modelos">Modelos</a><a href="#sobre">Sobre</a><a href="#" id="footerAdmin">Acesso administrativo</a></div>
-      <div><p class="muted">Privacidade · Uso responsável dos dados</p><p class="muted">© <span id="y"></span> Fluxora. Todos os direitos reservados.</p></div>
+      <div><p class="muted">Privacidade · Uso responsável dos dados</p><p class="muted">© <span id="y"></span> Fluxora.</p></div>
     </div>
   </footer>
 </div>
@@ -69,18 +69,17 @@
   <div class="login-modal">
     <button type="button" class="modal-x" id="loginClose">×</button>
     <h2>Acesso gratuito</h2>
-    <p class="login-free">Ser membro é <strong>grátis</strong>.</p>
+    <p class="login-free">Ser membro é <strong>grátis</strong>. Cadastro com e-mail e senha.</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab active" id="tabLogin">Entrar</button>
       <button type="button" class="auth-tab" id="tabRegister">Criar conta</button>
     </div>
-    <div class="google-wrap"><div id="googleBtn"></div><p class="hint" id="googleHint">Opcional: Google Client ID</p></div>
-    <div class="or">ou e-mail</div>
     <form id="authForm">
-      <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text"/></label>
+      <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text" autocomplete="name"/></label>
       <label id="fieldCompany" class="field" style="display:none"><span>Empresa</span><input id="authCompany" type="text"/></label>
       <label id="fieldPhone" class="field" style="display:none"><span>Celular (WhatsApp do criador)</span><input id="authPhone" type="tel" placeholder="5586..."/></label>
-      <label class="field"><span>E-mail</span><input id="authEmail" type="email" required placeholder="seu@email.com"/></label>
+      <label class="field"><span>E-mail</span><input id="authEmail" type="email" required placeholder="seu@email.com" autocomplete="username"/></label>
+      <label class="field"><span>Senha</span><input id="authPassword" type="password" required minlength="6" placeholder="mín. 6 caracteres" autocomplete="current-password"/></label>
       <button type="submit" class="btn-neon block" id="authSubmit">Entrar</button>
     </form>
     <p class="auth-error" id="authError" hidden></p>
@@ -110,7 +109,7 @@
   <div id="flowManagerList" class="flow-mgr-list"></div>
 </div>
 <div class="app" id="appMain" hidden>
-  <header class="hero"><div class="hero-top"><div class="logo">◇</div><div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Arraste macros · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button><button type="button" class="btn hero-btn" id="btnOpenMgr">Meus fluxos</button><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
+  <header class="hero"><div class="hero-top"><div class="logo">◇</div><div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Segure e arraste · solte para parar · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button><button type="button" class="btn hero-btn" id="btnOpenMgr">Meus fluxos</button><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
   <div class="toolbar">
     <div class="tool-group"><label class="flow-label">Fluxo</label><select id="flowSelect"></select><button type="button" class="btn" id="btnNewFlow">+ Novo</button></div>
     <div class="tool-group"><button type="button" class="btn" id="btnAddProcess">▭</button><button type="button" class="btn" id="btnAddDecision">◇</button><button type="button" class="btn" id="btnAddText">T</button><button type="button" class="btn" id="btnAddMacro">+ Macro</button><button type="button" class="btn" id="btnConnect">⟷</button></div>
@@ -124,7 +123,7 @@
   <div class="workspace"><aside class="palette" id="macroBar"></aside><div class="canvas-wrap"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
 </div>
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal modal-grow"><div class="modal-h"><span>💬</span><strong id="sideTitle">Avaliação</strong><button type="button" class="x" onclick="closeModal()">×</button></div><div class="modal-b"><p id="sideMeta" class="muted"></p><label>Título</label><input id="sideName" type="text"/><label id="colorLabel">Cor do macro</label><input id="sideColor" type="color" value="#e8f4fc"/><div class="vote-row"><button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button><button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button></div><label>Comentário</label><textarea id="sideComment" rows="5" placeholder="Sugestão…"></textarea><button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button><button type="button" class="btn danger" id="btnModalDelete">Excluir elemento</button></div></div></div>
-<div class="modal-bg" id="profileModal" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal modal-grow"><div class="modal-h"><strong>Meu perfil</strong><button type="button" class="x" onclick="document.getElementById('profileModal').classList.remove('open')">×</button></div><div class="modal-b"><label>Nome</label><input id="profName" type="text"/><label>Empresa</label><input id="profCompany" type="text"/><label>Celular / WhatsApp</label><input id="profPhone" type="tel" placeholder="5586..."/><label>URL foto</label><input id="profPhoto" type="url"/><label>URL logo do projeto</label><input id="profLogo" type="url"/><button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button></div></div></div>
+<div class="modal-bg" id="profileModal" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal modal-grow"><div class="modal-h"><strong>Meu perfil</strong><button type="button" class="x" onclick="document.getElementById('profileModal').classList.remove('open')">×</button></div><div class="modal-b"><label>Nome</label><input id="profName" type="text"/><label>Empresa</label><input id="profCompany" type="text"/><label>Celular / WhatsApp</label><input id="profPhone" type="tel" placeholder="5586..."/><label>Foto de perfil</label><input id="profPhotoFile" type="file" accept="image/*"/><img id="profPhotoPrev" alt="" style="max-width:80px;max-height:80px;border-radius:50%;margin:6px 0;display:none"/><label>Logomarca do projeto</label><input id="profLogoFile" type="file" accept="image/*"/><img id="profLogoPrev" alt="" style="max-width:120px;max-height:48px;margin:6px 0;display:none"/><button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button></div></div></div>
 <div class="modal-bg" id="dupModal" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal modal-grow"><div class="modal-h"><strong>Duplicar fluxo</strong><button type="button" class="x" onclick="document.getElementById('dupModal').classList.remove('open')">×</button></div><div class="modal-b"><label>Nome / produto</label><input id="dupTitle" type="text"/><label>Empresa</label><input id="dupCompany" type="text"/><label>E-mails para compartilhar</label><input id="dupEmails" type="text"/><button type="button" class="btn btn-save" id="btnDupConfirm">Duplicar e abrir</button></div></div></div>
 <div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
@@ -132,5 +131,6 @@
 <script src="flow-data.js"></script>
 <script src="editor.js"></script>
 <script src="editor-patch.js"></script>
+<script src="editor-fix.js"></script>
 </body>
 </html>
