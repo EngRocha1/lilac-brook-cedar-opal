@@ -7,9 +7,10 @@ export const list = query({
   args: { ownerEmail: v.optional(v.string()) },
   handler: async (ctx, args) => {
     if (args.ownerEmail) {
+      const email = args.ownerEmail.toLowerCase().trim();
       return await ctx.db
         .query("flows")
-        .withIndex("by_owner", (q) => q.eq("ownerEmail", args.ownerEmail))
+        .withIndex("by_owner", (q) => q.eq("ownerEmail", email))
         .collect();
     }
     return await ctx.db.query("flows").collect();
@@ -48,10 +49,13 @@ export const save = mutation({
       .query("flows")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
+    const owner = (args.ownerEmail || existing?.ownerEmail || "")
+      .toLowerCase()
+      .trim() || undefined;
     const payload = {
       key,
       title: args.title ?? existing?.title ?? key,
-      ownerEmail: args.ownerEmail ?? existing?.ownerEmail,
+      ownerEmail: owner,
       data: args.data,
       updatedAt: Date.now(),
     };
@@ -75,10 +79,13 @@ export const create = mutation({
       Date.now().toString(36) +
       "-" +
       Math.random().toString(36).slice(2, 7);
-    const id = await ctx.db.insert("flows", {
+    const owner = args.ownerEmail
+      ? args.ownerEmail.toLowerCase().trim()
+      : undefined;
+    await ctx.db.insert("flows", {
       key,
       title: args.title,
-      ownerEmail: args.ownerEmail,
+      ownerEmail: owner,
       data:
         args.data ?? {
           macros: [],
@@ -89,7 +96,27 @@ export const create = mutation({
         },
       updatedAt: Date.now(),
     });
-    return { id, key };
+    return { key };
+  },
+});
+
+export const remove = mutation({
+  args: { key: v.string(), ownerEmail: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("flows")
+      .withIndex("by_key", (q) => q.eq("key", args.key))
+      .unique();
+    if (!row) return { ok: false };
+    if (
+      args.ownerEmail &&
+      row.ownerEmail &&
+      row.ownerEmail !== args.ownerEmail.toLowerCase().trim()
+    ) {
+      return { ok: false, error: "not_owner" };
+    }
+    await ctx.db.delete(row._id);
+    return { ok: true };
   },
 });
 

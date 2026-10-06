@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+/** Guests live in `shares` — never in `profiles` (no password). */
 export const create = mutation({
   args: {
     flowKey: v.string(),
@@ -17,9 +18,9 @@ export const create = mutation({
     await ctx.db.insert("shares", {
       token,
       flowKey: args.flowKey,
-      emails: args.emails.map((e) => e.toLowerCase().trim()),
+      emails: args.emails.map((e) => e.toLowerCase().trim()).filter(Boolean),
       canEdit: args.canEdit,
-      createdBy: args.createdBy,
+      createdBy: args.createdBy?.toLowerCase(),
       updatedAt: Date.now(),
     });
     return { token };
@@ -33,6 +34,40 @@ export const getByToken = query({
       .query("shares")
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .unique();
+  },
+});
+
+export const listByFlow = query({
+  args: { flowKey: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("shares")
+      .withIndex("by_flow", (q) => q.eq("flowKey", args.flowKey))
+      .collect();
+  },
+});
+
+export const revoke = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("shares")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!row) return { ok: false };
+    await ctx.db.delete(row._id);
+    return { ok: true };
+  },
+});
+
+export const listForGuest = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const all = await ctx.db.query("shares").collect();
+    return all.filter(
+      (s) => s.emails.includes(email) || (s.createdBy && s.createdBy === email)
+    );
   },
 });
 
