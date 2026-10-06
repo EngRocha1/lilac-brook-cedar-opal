@@ -1,4 +1,4 @@
-/* HEMOPI editor v2 — multi-fluxo, conta e-mail, ícone comentário, impressão */
+/* HEMOPI editor — login gate + multi-fluxo + 💬 */
 const STORAGE_KEY = 'hemopi_editor_v1';
 const USER_KEY = 'hemopi_user';
 const FLOW_KEY_STORE = 'hemopi_flow_key';
@@ -9,6 +9,7 @@ let flowTitle = 'HEMOPI principal';
 let user = null;
 try { user = JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch(e) { user = null; }
 const svgNS = 'http://www.w3.org/2000/svg';
+let authMode = 'login';
 
 async function initConvex(){
   try{
@@ -18,6 +19,30 @@ async function initConvex(){
   }catch(e){ console.warn('Convex offline', e); convexClient = null; }
 }
 function emptyFlow(){ return { macros:[], nodes:[], edges:[], votes:{}, comments:{} }; }
+
+function showApp(){
+  const a = document.getElementById('authScreen');
+  if(a){ a.hidden = true; a.style.display = 'none'; }
+  document.getElementById('appMain').hidden = false;
+  const lab = document.getElementById('userLabel');
+  if(lab && user) lab.textContent = (user.name || 'Membro') + ' · ' + user.email;
+}
+function showAuth(){
+  const a = document.getElementById('authScreen');
+  if(a){ a.hidden = false; a.style.display = 'flex'; }
+  document.getElementById('appMain').hidden = true;
+}
+function setAuthTab(mode){
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabRegister').classList.toggle('active', mode==='register');
+  document.getElementById('fieldName').style.display = mode==='register' ? 'flex' : 'none';
+  document.getElementById('authSubmit').textContent = mode==='register' ? 'Criar conta grátis' : 'Entrar com e-mail';
+  document.getElementById('authHint').textContent = mode==='register'
+    ? 'Membro gratuito. Use Gmail ou qualquer e-mail.'
+    : 'Já tem conta? Use o mesmo e-mail para entrar.';
+  document.getElementById('authError').hidden = true;
+}
 
 async function loadFlowList(){
   const sel = document.getElementById('flowSelect'); if(!sel) return;
@@ -41,7 +66,6 @@ async function loadFlowList(){
     flowKey = rows[0].key; localStorage.setItem(FLOW_KEY_STORE, flowKey); sel.value = flowKey;
   }
 }
-
 async function loadFlow(){
   if(convexClient){
     try{
@@ -51,7 +75,6 @@ async function loadFlow(){
         if(!flow.votes) flow.votes = {}; if(!flow.comments) flow.comments = {};
         localStorage.setItem(STORAGE_KEY, JSON.stringify(flow)); return;
       }
-      // compat: se data veio como o próprio fluxo (legado)
       if(remote && remote.nodes){ flow = remote; if(!flow.votes) flow.votes={}; if(!flow.comments) flow.comments={}; return; }
     }catch(e){ console.warn(e); }
   }
@@ -59,7 +82,6 @@ async function loadFlow(){
   flow = JSON.parse(JSON.stringify(window.DEFAULT_FLOW || emptyFlow()));
   if(!flow.votes) flow.votes = {}; if(!flow.comments) flow.comments = {};
 }
-
 function saveLocal(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
   if(convexClient){
@@ -108,7 +130,8 @@ function el(tag, attrs={}, kids=[]){
   kids.forEach(c=>n.appendChild(typeof c==='string'?document.createTextNode(c):c)); return n;
 }
 function renderMacroBar(){
-  const bar=document.getElementById('macroBar'); bar.innerHTML='<h3>Macros</h3>';
+  const bar=document.getElementById('macroBar'); if(!bar||!flow) return;
+  bar.innerHTML='<h3>Macros</h3>';
   flow.macros.forEach(m=>{
     const v=getVotes('macro', m.id);
     let short=(m.title||'').replace(/^MACRO\s*[A-Z]\s*·\s*/i,'').replace(/^MACRO\s*/i,'');
@@ -119,6 +142,7 @@ function renderMacroBar(){
   });
 }
 function render(){
+  if(!flow) return;
   const svg=document.getElementById('canvas'); svg.innerHTML='';
   const defs=el('defs');
   ['#1a5f8a','#c9a227','#5b4b8a','#c41e3a','#1b7a4e','#5c6b7a'].forEach((c,i)=>{
@@ -184,7 +208,7 @@ function render(){
   });
 }
 function clientToSvg(cx,cy){ const svg=document.getElementById('canvas'); const pt=svg.createSVGPoint(); pt.x=cx; pt.y=cy; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
-function onMove(ev){ if(!drag) return; const dx=ev.clientX-drag.sx, dy=ev.clientY-drag.sy;
+function onMove(ev){ if(!drag||!flow) return; const dx=ev.clientX-drag.sx, dy=ev.clientY-drag.sy;
   if(drag.type==='node'){ const n=nodeById(drag.id); n.x=drag.ox+dx; n.y=drag.oy+dy; render(); }
   else if(drag.type==='wp'){ const e=edgeById(drag.edgeId); e.points[drag.index]={x:drag.ox+dx,y:drag.oy+dy}; render(); }
 }
@@ -228,6 +252,7 @@ document.getElementById('btnAddText').onclick=()=>{ const n={id:uid('t'),macro:n
 document.getElementById('btnAddMacro').onclick=()=>{ const id=String.fromCharCode(65+flow.macros.length); flow.macros.push({id,title:'MACRO '+id+' · Novo',x:40,y:40+flow.macros.length*20,w:320,h:200,color:'#f0f3f7',border:'#5c6b7a'}); saveLocal(); render(); renderMacroBar(); };
 document.getElementById('btnConnect').onclick=()=>{ tool=tool==='connect'?'select':'connect'; connectFrom=null; document.getElementById('btnConnect').classList.toggle('active',tool==='connect'); flash(tool==='connect'?'Clique na origem e no destino':'Seleção'); };
 function updateProgress(){
+  if(!flow) return;
   const ids=[...flow.nodes.map(n=>voteKey('node',n.id)),...flow.edges.map(e=>voteKey('edge',e.id))];
   let done=0,ok=0,no=0; ids.forEach(k=>{ const v=flow.votes[k]; if(v&&v.mine){ done++; if(v.mine==='ok')ok++; if(v.mine==='no')no++; } });
   const pct=ids.length?Math.round(100*done/ids.length):0;
@@ -264,38 +289,58 @@ function printMode(mode){
   }
   window.print();
 }
-function refreshUserUI(){
-  const lab=document.getElementById('userLabel'), btnL=document.getElementById('btnLogin'), btnO=document.getElementById('btnLogout');
-  if(user){ lab.textContent=user.name+' ('+user.email+')'; btnL.style.display='none'; btnO.style.display=''; document.getElementById('inName').style.display='none'; document.getElementById('inEmail').style.display='none'; }
-  else { lab.textContent='Visitante'; btnL.style.display=''; btnO.style.display='none'; document.getElementById('inName').style.display=''; document.getElementById('inEmail').style.display=''; }
-}
-document.getElementById('btnLogin').onclick=async()=>{
-  const name=document.getElementById('inName').value.trim(); const email=document.getElementById('inEmail').value.trim().toLowerCase();
-  if(!name||!email||!email.includes('@')){ flash('Informe nome e e-mail válidos (ex.: Gmail)'); return; }
-  user={name,email}; localStorage.setItem(USER_KEY, JSON.stringify(user));
-  if(convexClient){ try{ await convexClient.mutation('flows:upsertProfile',{email,name}); }catch(e){ console.warn(e); } }
-  refreshUserUI(); await loadFlowList(); flash('Conta ativa: '+email);
+
+document.getElementById('tabLogin').onclick = ()=> setAuthTab('login');
+document.getElementById('tabRegister').onclick = ()=> setAuthTab('register');
+document.getElementById('authForm').onsubmit = async (ev)=>{
+  ev.preventDefault();
+  const err = document.getElementById('authError'); err.hidden = true;
+  const email = document.getElementById('authEmail').value.trim().toLowerCase();
+  let name = document.getElementById('authName').value.trim();
+  if(!email || !email.includes('@')){ err.textContent = 'Informe um e-mail válido (ex.: seu@gmail.com).'; err.hidden = false; return; }
+  if(authMode === 'register' && !name){ err.textContent = 'Informe seu nome para criar a conta.'; err.hidden = false; return; }
+  if(!name) name = email.split('@')[0];
+  user = { name, email };
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if(convexClient){ try{ await convexClient.mutation('flows:upsertProfile', { email, name }); }catch(e){ console.warn(e); } }
+  showApp();
+  await loadFlowList(); await loadFlow();
+  render(); renderMacroBar(); updateProgress();
+  flash(authMode==='register' ? 'Conta criada · bem-vindo!' : 'Bem-vindo de volta!');
 };
-document.getElementById('btnLogout').onclick=()=>{ user=null; localStorage.removeItem(USER_KEY); refreshUserUI(); flash('Saiu da conta'); };
-document.getElementById('btnNewFlow').onclick=async()=>{
-  const title=prompt('Nome do novo fluxo:','Novo fluxo HEMOPI'); if(!title) return;
+document.getElementById('btnLogout').onclick = ()=>{ user = null; localStorage.removeItem(USER_KEY); showAuth(); setAuthTab('login'); flash('Você saiu'); };
+document.getElementById('btnNewFlow').onclick = async ()=>{
+  const title = prompt('Nome do novo fluxo:', 'Novo fluxo HEMOPI'); if(!title) return;
   if(convexClient){
     try{
-      const r=await convexClient.mutation('flows:create',{title, ownerEmail:user?.email, data:emptyFlow()});
-      flowKey=r.key; flowTitle=title; localStorage.setItem(FLOW_KEY_STORE, flowKey); flow=emptyFlow();
+      const r = await convexClient.mutation('flows:create', { title, ownerEmail: user?.email, data: emptyFlow() });
+      flowKey = r.key; flowTitle = title; localStorage.setItem(FLOW_KEY_STORE, flowKey); flow = emptyFlow();
       await loadFlowList(); render(); renderMacroBar(); updateProgress(); flash('Fluxo criado: '+title); return;
     }catch(e){ console.warn(e); }
   }
-  flowKey='local-'+Date.now().toString(36); flowTitle=title; localStorage.setItem(FLOW_KEY_STORE, flowKey); flow=emptyFlow();
+  flowKey = 'local-'+Date.now().toString(36); flowTitle = title; localStorage.setItem(FLOW_KEY_STORE, flowKey); flow = emptyFlow();
   await loadFlowList(); render(); renderMacroBar(); updateProgress(); flash('Fluxo local: '+title);
 };
-document.getElementById('flowSelect').onchange=async(e)=>{
-  flowKey=e.target.value; localStorage.setItem(FLOW_KEY_STORE, flowKey);
-  const opt=e.target.selectedOptions[0]; flowTitle=opt?opt.textContent:flowKey;
+document.getElementById('flowSelect').onchange = async (e)=>{
+  flowKey = e.target.value; localStorage.setItem(FLOW_KEY_STORE, flowKey);
+  const opt = e.target.selectedOptions[0]; flowTitle = opt ? opt.textContent : flowKey;
   await loadFlow(); render(); renderMacroBar(); updateProgress(); flash('Fluxo: '+flowTitle);
 };
-(async function boot(){ refreshUserUI(); await initConvex(); await loadFlowList(); await loadFlow(); render(); renderMacroBar(); updateProgress(); })();
-window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
-document.getElementById('canvas').addEventListener('mousedown',()=>{ selected=null; closeModal(); render(); });
+
+(async function boot(){
+  setAuthTab('login');
+  await initConvex();
+  if(user && user.email){
+    showApp();
+    await loadFlowList();
+    await loadFlow();
+    render(); renderMacroBar(); updateProgress();
+  } else {
+    showAuth();
+  }
+})();
+window.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
+document.getElementById('canvas').addEventListener('mousedown', ()=>{ selected=null; closeModal(); render(); });
 window.saveLocal=saveLocal; window.exportJSON=exportJSON; window.printMode=printMode;
 window.voteSelected=voteSelected; window.clearSelection=clearSelection; window.closeModal=closeModal; window.deleteSelected=deleteSelected;
