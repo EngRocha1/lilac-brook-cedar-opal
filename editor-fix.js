@@ -1,4 +1,4 @@
-/* Fluxora fix v7 — debounce save, profile, multi-flow list, drag release */
+/* Fluxora fix v8 — raw Convex API, list flows, profile, null-safe */
 (function(){
   function $(id){ return document.getElementById(id); }
   function isGuest(){ return window.HEMOPI_SHARE_MODE==='guest'; }
@@ -20,58 +20,47 @@
     return f;
   }
 
-  /* ========== DEBOUNCED SAVE (fixes write conflicts) ========== */
-  let _saveTimer = null;
-  let _saveInFlight = false;
-  let _saveQueued = false;
-  window.saveLocal = function(){
+  // Wait until convex-api.js set window.convexClient
+  function cx(){ return window.convexClient; }
+
+  /* ---- debounced save ---- */
+  let _saveTimer=null, _saving=false, _queued=false;
+  window.saveLocal=function(){
     try{ if(flow) localStorage.setItem(STORAGE_KEY, JSON.stringify(flow)); }catch(e){}
-    if(!convexClient || !flowKey) return;
-    // never spam Convex
+    if(!cx()||!flowKey||String(flowKey).startsWith('local-')) return;
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(flushSave, 800);
+    _saveTimer=setTimeout(flushSave, 900);
   };
   async function flushSave(){
-    if(_saveInFlight){ _saveQueued = true; return; }
-    if(!convexClient || !flowKey || !flow) return;
-    // skip pure-local keys until promoted
-    if(String(flowKey).startsWith('local-')) return;
-    _saveInFlight = true;
+    if(_saving){ _queued=true; return; }
+    if(!cx()||!flowKey||!flow||String(flowKey).startsWith('local-')) return;
+    _saving=true;
     try{
-      await convexClient.mutation('flows:save', {
-        key: flowKey,
-        title: flowTitle,
-        ownerEmail: (user?.email||'').toLowerCase() || undefined,
-        data: flow
+      await cx().mutation('flows:save',{
+        key:flowKey, title:flowTitle,
+        ownerEmail:(user?.email||'').toLowerCase()||undefined,
+        data:flow
       });
-    }catch(e){
-      console.warn('flows:save', e);
-    }finally{
-      _saveInFlight = false;
-      if(_saveQueued){ _saveQueued = false; _saveTimer = setTimeout(flushSave, 500); }
+    }catch(e){ console.warn('save', e); }
+    finally{
+      _saving=false;
+      if(_queued){ _queued=false; _saveTimer=setTimeout(flushSave,600); }
     }
   }
-  window.flushSave = flushSave;
 
-  /* ========== DRAG: only while button held; always release ========== */
+  /* ---- drag release ---- */
   function endDrag(){
-    const was = (typeof drag!=='undefined' && drag) || window.drag;
-    window.drag = null;
-    try{ drag = null; }catch(e){}
-    if(was){
-      try{ saveLocal(); }catch(e){}
-    }
+    const was=(typeof drag!=='undefined'&&drag)||window.drag;
+    window.drag=null; try{ drag=null; }catch(e){}
+    if(was) try{ saveLocal(); }catch(e){}
   }
-  window.onUp = endDrag;
-  // capture phase so nothing can block release
-  window.addEventListener('mouseup', endDrag, true);
-  window.addEventListener('pointerup', endDrag, true);
-  window.addEventListener('pointercancel', endDrag, true);
-  window.addEventListener('blur', endDrag, true);
-  document.addEventListener('mouseup', endDrag, true);
+  window.onUp=endDrag;
+  window.addEventListener('mouseup',endDrag,true);
+  window.addEventListener('pointerup',endDrag,true);
+  window.addEventListener('blur',endDrag,true);
 
-  /* ========== refreshSide null-safe (vote works) ========== */
-  window.refreshSide = function(){
+  /* ---- refreshSide / vote ---- */
+  window.refreshSide=function(){
     const title=$('sideTitle'), meta=$('sideMeta'), name=$('sideName'), comment=$('sideComment');
     document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('on-ok','on-no'));
     if(!selected){
@@ -81,10 +70,10 @@
       if(comment) comment.value='';
       return;
     }
-    const v = (typeof getVotes==='function') ? getVotes(selected.kind, selected.id) : {ok:0,no:0,mine:null};
+    const v=(typeof getVotes==='function')?getVotes(selected.kind,selected.id):{ok:0,no:0,mine:null};
     if(v.mine==='ok') document.querySelector('.vbtn[data-v="ok"]')?.classList.add('on-ok');
     if(v.mine==='no') document.querySelector('.vbtn[data-v="no"]')?.classList.add('on-no');
-    if(comment) comment.value = (flow?.comments && flow.comments[selected.kind+':'+selected.id]) || '';
+    if(comment) comment.value=(flow?.comments&&flow.comments[selected.kind+':'+selected.id])||'';
     if(selected.kind==='node'){
       const n=nodeById(selected.id);
       if(title) title.textContent=(n?.title||'').replace(/\n/g,' · ');
@@ -97,65 +86,154 @@
     } else if(selected.kind==='macro'){
       const m=macroById(selected.id);
       if(title) title.textContent=m?.title||selected.id;
-      if(meta) meta.textContent='Macro '+selected.id;
       if(name){ name.value=m?.title||''; name.readOnly=isGuest(); }
     }
     const del=$('btnModalDelete');
     if(del) del.style.display=isGuest()?'none':'';
     const isM=selected.kind==='macro';
-    const cl=$('colorLabel'), sc=$('sideColor');
-    if(cl) cl.style.display=(isM&&!isGuest())?'block':'none';
-    if(sc) sc.style.display=(isM&&!isGuest())?'block':'none';
+    if($('colorLabel')) $('colorLabel').style.display=(isM&&!isGuest())?'block':'none';
+    if($('sideColor')) $('sideColor').style.display=(isM&&!isGuest())?'block':'none';
   };
   window.openModal=function(){ try{ refreshSide(); }catch(e){} $('modalBg')?.classList.add('open'); };
   window.closeModal=function(){ $('modalBg')?.classList.remove('open'); };
   window.voteSelected=function(val){
     if(!selected||!flow) return;
-    if(typeof setMyVote==='function') setMyVote(selected.kind, selected.id, val);
-    else {
-      const key=selected.kind+':'+selected.id;
-      if(!flow.votes[key]) flow.votes[key]={ok:0,no:0,mine:null};
-      const v=flow.votes[key];
-      if(v.mine===val){ if(val==='ok')v.ok=Math.max(0,v.ok-1); if(val==='no')v.no=Math.max(0,v.no-1); v.mine=null; }
-      else { if(v.mine==='ok')v.ok=Math.max(0,v.ok-1); if(v.mine==='no')v.no=Math.max(0,v.no-1); if(val==='ok')v.ok++; if(val==='no')v.no++; v.mine=val; }
-      saveLocal(); try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
-    }
+    if(typeof setMyVote==='function') setMyVote(selected.kind,selected.id,val);
     try{ refreshSide(); }catch(e){}
     if(typeof toast==='function') toast(val==='ok'?'👍':'👎');
   };
 
-  /* ========== PROFILE — force Convex update ========== */
+  /* ---- LIST FLOWS FROM CONVEX ---- */
+  async function loadFlowListSafe(){
+    const sel=$('flowSelect');
+    const email=(user?.email||'').toLowerCase().trim();
+    console.log('[Fluxora] list flows for', email, 'cx=', !!cx());
+    let rows=[];
+    if(cx()&&email&&!isGuest()){
+      try{
+        rows = await cx().query('flows:list', { ownerEmail: email }) || [];
+        console.log('[Fluxora] flows listed', rows.length, rows.map(r=>r.key));
+      }catch(e){
+        console.error('[Fluxora] list error', e);
+        if(typeof toast==='function') toast('Erro ao listar fluxos', true);
+      }
+    }
+    if(sel){
+      sel.innerHTML='';
+      if(!rows.length){
+        const o=document.createElement('option');
+        o.value=flowKey||'hemopi-main';
+        o.textContent=flowTitle||'(nenhum na nuvem)';
+        sel.appendChild(o);
+      } else {
+        rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+        rows.forEach(r=>{
+          const o=document.createElement('option');
+          o.value=r.key; o.textContent=r.title||r.key;
+          if(r.key===flowKey) o.selected=true;
+          sel.appendChild(o);
+        });
+      }
+    }
+    return rows;
+  }
+  window.loadFlowList = loadFlowListSafe;
+
+  async function renderFlowManager(){
+    const list=$('flowManagerList'); if(!list) return;
+    const email=(user?.email||'').toLowerCase().trim();
+    list.innerHTML='<p class="muted">Consultando Convex…</p>';
+    if(!cx()){
+      list.innerHTML='<p class="muted">Cliente Convex não carregou. Recarregue a página.</p>';
+      return;
+    }
+    if(!email){
+      list.innerHTML='<p class="muted">Faça login.</p>';
+      return;
+    }
+    let rows=[];
+    try{
+      rows = await cx().query('flows:list', { ownerEmail: email }) || [];
+    }catch(e){
+      list.innerHTML='<p class="muted">Erro: '+String(e.message||e)+'</p>';
+      return;
+    }
+    if(!rows.length){
+      list.innerHTML='<p class="muted">Nenhum fluxo para <b>'+email+'</b>. Use + Novo (cria no Convex).</p>';
+      return;
+    }
+    rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    list.innerHTML='';
+    rows.forEach(r=>{
+      const card=document.createElement('div');
+      card.className='flow-mgr-card';
+      const nodes=r.data?.nodes?.length||0;
+      const macros=r.data?.macros?.length||0;
+      card.innerHTML='<div><h4>'+(r.title||r.key)+'</h4><div class="flow-mgr-meta">'+r.key+' · '+macros+' macros · '+nodes+' nós</div></div>';
+      const actions=document.createElement('div');
+      actions.style.cssText='display:flex;gap:6px';
+      const open=document.createElement('button'); open.className='btn pri'; open.textContent='Abrir';
+      open.onclick=async()=>{
+        flowKey=r.key; localStorage.setItem(FLOW_KEY_STORE,flowKey); flowTitle=r.title||r.key;
+        if($('flowManager')) $('flowManager').hidden=true;
+        onlyShow('appMain');
+        await loadFlow();
+        try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader?.(); }catch(e){}
+      };
+      const del=document.createElement('button'); del.className='btn danger'; del.textContent='Excluir';
+      del.style.cssText='width:auto;margin:0';
+      del.onclick=async()=>{
+        if(!confirm('Excluir "'+(r.title||r.key)+'"?')) return;
+        try{ await cx().mutation('flows:remove',{key:r.key, ownerEmail:email}); }catch(e){ console.error(e); }
+        await renderFlowManager(); await loadFlowListSafe();
+      };
+      actions.append(open,del); card.appendChild(actions); list.appendChild(card);
+    });
+  }
+
+  async function createNewFlow(title){
+    const email=(user?.email||'').toLowerCase().trim();
+    if(!email){ if(typeof toast==='function') toast('Faça login',true); return null; }
+    if(!cx()){ if(typeof toast==='function') toast('Convex offline',true); return null; }
+    const data=(typeof emptyFlow==='function')?emptyFlow():{macros:[],nodes:[],edges:[],votes:{},comments:{},header:{}};
+    data.header={projectName:title};
+    try{
+      const r=await cx().mutation('flows:create',{title, ownerEmail:email, data});
+      const rows=await cx().query('flows:list',{ownerEmail:email});
+      console.log('[Fluxora] after create', rows?.length, r);
+      flowKey=r.key; flowTitle=title; flow=data;
+      localStorage.setItem(FLOW_KEY_STORE, flowKey);
+      await loadFlowListSafe();
+      if(typeof toast==='function') toast('Na nuvem: '+title+' · total '+rows.length);
+      return r.key;
+    }catch(e){
+      console.error(e);
+      if(typeof toast==='function') toast('Erro create: '+e.message, true);
+      return null;
+    }
+  }
+
+  /* ---- PROFILE ---- */
   async function hashPass(pw){
     const data=new TextEncoder().encode('fluxora:'+pw);
     const buf=await crypto.subtle.digest('SHA-256',data);
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  async function uploadFile(file){
-    if(!file||!convexClient) return null;
-    const uploadUrl=await convexClient.mutation('files:generateUploadUrl',{});
-    const res=await fetch(uploadUrl,{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
-    const json=await res.json();
-    const storageId=json.storageId;
-    const url=await convexClient.mutation('files:getUrl',{storageId});
-    return {url, storageId:String(storageId)};
   }
   function wireProfile(){
     const openBtn=$('btnOpenProfile');
     if(openBtn) openBtn.onclick=async function(ev){
       ev.preventDefault();
       if(!user) return;
-      // refresh from convex
-      if(convexClient){
+      if(cx()){
         try{
-          const p=await convexClient.query('auth:getByEmail',{email:user.email});
+          const p=await cx().query('auth:getByEmail',{email:user.email});
           if(p){
             user.name=p.name||user.name;
             user.company=p.company||'';
             user.phone=p.phone||'';
-            user.photoStorageId=p.photoStorageId||user.photoStorageId;
-            user.logoStorageId=p.logoStorageId||user.logoStorageId;
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
           }
-        }catch(e){}
+        }catch(e){ console.warn(e); }
       }
       if($('profName')) $('profName').value=user.name||'';
       if($('profCompany')) $('profCompany').value=user.company||'';
@@ -164,64 +242,32 @@
     };
     const saveBtn=$('btnSaveProfile');
     if(saveBtn) saveBtn.onclick=async function(){
-      if(!user?.email){ if(typeof toast==='function') toast('Faça login',true); return; }
+      if(!user?.email) return;
       const name=($('profName')?.value||'').trim()||user.name;
       const company=($('profCompany')?.value||'').trim();
       const phone=($('profPhone')?.value||'').trim();
       user.name=name; user.company=company; user.phone=phone;
       localStorage.setItem(USER_KEY, JSON.stringify(user));
-      if(!convexClient){ if(typeof toast==='function') toast('Convex offline',true); return; }
+      if(!cx()){ if(typeof toast==='function') toast('Convex offline',true); return; }
       try{
-        await convexClient.mutation('auth:updateProfile',{
-          email: user.email.toLowerCase(),
-          name, company, phone,
-          photoStorageId: user.photoStorageId ? String(user.photoStorageId) : undefined,
-          logoStorageId: user.logoStorageId ? String(user.logoStorageId) : undefined
+        await cx().mutation('auth:updateProfile',{
+          email:user.email.toLowerCase(), name, company, phone,
+          photoStorageId: user.photoStorageId?String(user.photoStorageId):undefined,
+          logoStorageId: user.logoStorageId?String(user.logoStorageId):undefined
         });
-        // verify
-        const p=await convexClient.query('auth:getByEmail',{email:user.email});
-        console.log('profile after save', p);
-        if(typeof toast==='function') toast('Perfil salvo: '+(p?.company||company||'ok'));
+        const p=await cx().query('auth:getByEmail',{email:user.email});
+        console.log('[Fluxora] profile saved', p);
+        if(typeof toast==='function') toast('Perfil OK: '+(p?.company||company));
         $('profileModal')?.classList.remove('open');
-        const lab=$('userLabel'); if(lab) lab.textContent=user.name+' · '+user.email;
+        if($('userLabel')) $('userLabel').textContent=user.name+' · '+user.email;
       }catch(e){
-        console.error('updateProfile', e);
-        if(typeof toast==='function') toast('Erro perfil: '+String(e?.message||e), true);
+        console.error(e);
+        if(typeof toast==='function') toast('Erro perfil: '+e.message, true);
       }
-    };
-    const pf=$('profPhotoFile');
-    if(pf) pf.onchange=async(e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      try{
-        if(user.photoStorageId){
-          try{ await convexClient.mutation('files:deleteFile',{storageId:user.photoStorageId}); }catch(err){}
-        }
-        const up=await uploadFile(f);
-        if(up){
-          user.photo=up.url; user.photoStorageId=up.storageId;
-          const img=$('profPhotoPrev'); if(img){ img.src=up.url; img.style.display='block'; }
-          if(typeof toast==='function') toast('Foto ok — clique Salvar perfil');
-        }
-      }catch(err){ console.error(err); if(typeof toast==='function') toast('Upload falhou',true); }
-    };
-    const lf=$('profLogoFile');
-    if(lf) lf.onchange=async(e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      try{
-        if(user.logoStorageId){
-          try{ await convexClient.mutation('files:deleteFile',{storageId:user.logoStorageId}); }catch(err){}
-        }
-        const up=await uploadFile(f);
-        if(up){
-          user.logo=up.url; user.logoStorageId=up.storageId;
-          const img=$('profLogoPrev'); if(img){ img.src=up.url; img.style.display='block'; }
-          if(typeof toast==='function') toast('Logo ok — clique Salvar perfil');
-        }
-      }catch(err){ console.error(err); }
     };
   }
 
-  /* ========== AUTH register / login ========== */
+  /* ---- AUTH ---- */
   const form=$('authForm');
   if(form) form.onsubmit=async(ev)=>{
     ev.preventDefault();
@@ -238,17 +284,13 @@
     const phone=($('authPhone')?.value||'').trim();
     if(mode==='register'){
       if(!name) name=email.split('@')[0];
-      if(convexClient){
+      if(cx()){
         try{
-          const existing=await convexClient.query('auth:getByEmail',{email});
-          if(existing?.hasPassword){ showErr('Cadastro já existe para este e-mail. Use Entrar.'); return; }
-        }catch(e){}
-        try{
-          await convexClient.mutation('auth:register',{email,name,passwordHash,company,phone});
+          const existing=await cx().query('auth:getByEmail',{email});
+          if(existing?.hasPassword){ showErr('Cadastro já existe. Use Entrar.'); return; }
+          await cx().mutation('auth:register',{email,name,passwordHash,company,phone});
         }catch(e){
-          if(String(e?.message||e).includes('EMAIL_EXISTS')){
-            showErr('Cadastro já existe para este e-mail. Use Entrar.'); return;
-          }
+          if(String(e.message||e).includes('EMAIL_EXISTS')){ showErr('Cadastro já existe. Use Entrar.'); return; }
           console.warn(e);
         }
       }
@@ -259,16 +301,17 @@
       return;
     }
     let ok=null;
-    if(convexClient){ try{ ok=await convexClient.query('auth:login',{email,passwordHash}); }catch(e){} }
-    if(!ok && convexClient){
-      // complete password only if profile has NO password yet
-      try{
-        const existing=await convexClient.query('auth:getByEmail',{email});
-        if(existing && !existing.hasPassword){
-          await convexClient.mutation('auth:register',{email,name:existing.name||email.split('@')[0],passwordHash,company:existing.company||'',phone:existing.phone||''});
-          ok=await convexClient.query('auth:login',{email,passwordHash});
-        }
-      }catch(e){}
+    if(cx()){
+      try{ ok=await cx().query('auth:login',{email,passwordHash}); }catch(e){}
+      if(!ok){
+        try{
+          const existing=await cx().query('auth:getByEmail',{email});
+          if(existing && !existing.hasPassword){
+            await cx().mutation('auth:register',{email,name:existing.name||email.split('@')[0],passwordHash,company:existing.company||'',phone:existing.phone||''});
+            ok=await cx().query('auth:login',{email,passwordHash});
+          }
+        }catch(e){}
+      }
     }
     if(!ok){ showErr('E-mail ou senha incorretos'); return; }
     user={email:ok.email,name:ok.name,company:ok.company||'',phone:ok.phone||''};
@@ -277,144 +320,16 @@
     await window.enterApp();
   };
 
-  /* ========== FLOWS: list ALL + create appends ========== */
-  async function loadFlowListSafe(){
-    const sel=$('flowSelect'); if(!sel) return;
-    const email=(user?.email||'').toLowerCase().trim();
-    let rows=[];
-    if(convexClient&&email&&!isGuest()){
-      try{ rows=await convexClient.query('flows:list',{ownerEmail:email}); }catch(e){ console.warn(e); }
-    }
-    sel.innerHTML='';
-    if(!rows?.length){
-      const o=document.createElement('option');
-      o.value=flowKey||'hemopi-main'; o.textContent=flowTitle||'HEMOPI principal';
-      sel.appendChild(o);
-      return rows||[];
-    }
-    rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    rows.forEach(r=>{
-      const o=document.createElement('option');
-      o.value=r.key; o.textContent=r.title||r.key;
-      if(r.key===flowKey) o.selected=true;
-      sel.appendChild(o);
-    });
-    return rows;
-  }
-  window.loadFlowList=loadFlowListSafe;
-
-  async function createNewFlow(title){
-    const email=(user?.email||'').toLowerCase().trim();
-    if(!email){ if(typeof toast==='function') toast('Faça login',true); return null; }
-    if(!convexClient){ if(typeof toast==='function') toast('Convex offline — não cria na nuvem',true); return null; }
-    const data=(typeof emptyFlow==='function')?emptyFlow():{macros:[],nodes:[],edges:[],votes:{},comments:{},header:{}};
-    data.header={projectName:title};
-    try{
-      const r=await convexClient.mutation('flows:create',{title, ownerEmail:email, data});
-      // verify it appears in list
-      const rows=await convexClient.query('flows:list',{ownerEmail:email});
-      console.log('flows after create', rows?.map(x=>x.key+' '+x.title));
-      flowKey=r.key; flowTitle=title; flow=data;
-      localStorage.setItem(FLOW_KEY_STORE, flowKey);
-      await loadFlowListSafe();
-      if(typeof toast==='function') toast('Criado na nuvem: '+title+' ('+rows.length+' fluxos)');
-      return r.key;
-    }catch(e){
-      console.error('create flow', e);
-      if(typeof toast==='function') toast('Erro ao criar: '+String(e?.message||e), true);
-      return null;
-    }
-  }
-
-  async function renderFlowManager(){
-    const list=$('flowManagerList'); if(!list) return;
-    list.innerHTML='<p class="muted">Carregando do Convex…</p>';
-    const email=(user?.email||'').toLowerCase().trim();
-    let rows=[];
-    if(convexClient&&email){
-      try{ rows=await convexClient.query('flows:list',{ownerEmail:email}); }catch(e){}
-    }
-    if(!rows?.length){
-      list.innerHTML='<p class="muted">Nenhum fluxo na nuvem para '+email+'. Use + Novo.</p>';
-      return;
-    }
-    rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    list.innerHTML='';
-    rows.forEach(r=>{
-      const card=document.createElement('div');
-      card.className='flow-mgr-card';
-      card.innerHTML='<div><h4>'+(r.title||r.key)+'</h4><div class="flow-mgr-meta">'+r.key+'</div></div>';
-      const actions=document.createElement('div');
-      actions.style.cssText='display:flex;gap:6px';
-      const open=document.createElement('button'); open.className='btn pri'; open.textContent='Abrir';
-      open.onclick=async()=>{
-        flowKey=r.key; localStorage.setItem(FLOW_KEY_STORE,flowKey); flowTitle=r.title||r.key;
-        $('flowManager').hidden=true; onlyShow('appMain');
-        await loadFlow(); try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader(); }catch(e){}
-      };
-      const del=document.createElement('button'); del.className='btn danger'; del.textContent='Excluir';
-      del.style.cssText='width:auto;margin:0';
-      del.onclick=async()=>{
-        if(!confirm('Excluir "'+(r.title||r.key)+'"?')) return;
-        try{ await convexClient.mutation('flows:remove',{key:r.key,ownerEmail:email}); }catch(e){}
-        await renderFlowManager(); await loadFlowListSafe();
-      };
-      actions.append(open,del); card.appendChild(actions); list.appendChild(card);
-    });
-  }
-
-  /* ========== Guest lock header ========== */
-  function lockHeaderForGuest(){
-    const box=$('projectHeader'); if(!box) return;
-    box.querySelectorAll('input,textarea,select').forEach(inp=>{
-      inp.readOnly=true; inp.disabled=true;
-      inp.style.pointerEvents='none'; inp.style.background='#eef1f4';
-      inp.title='Somente o criador edita o cabeçalho';
-    });
-  }
-  function applyGuestUI(){
-    if(!isGuest()) return;
-    ['btnNewFlow','btnAddProcess','btnAddDecision','btnAddText','btnAddMacro','btnConnect',
-     'btnOpenMgr','btnOpenProfile','btnShare','btnSeal','btnRestoreHemopi'].forEach(id=>{
-      const el=$(id); if(el) el.style.display='none';
-    });
-    lockHeaderForGuest();
-  }
-
-  /* ========== Presence ========== */
-  async function presenceTick(){
-    if(!convexClient||!flowKey||!user?.email) return;
-    if(String(flowKey).startsWith('local')) return;
-    const email=user.email.toLowerCase();
-    try{ await convexClient.mutation('shares:heartbeat',{flowKey,email,name:user.name||email.split('@')[0]}); }catch(e){}
-    try{
-      const list=await convexClient.query('shares:listPresence',{flowKey});
-      const bar=$('presenceBar');
-      if(!bar) return;
-      if(!list?.length){ bar.innerHTML='<strong>Online:</strong> —'; return; }
-      bar.innerHTML='<strong>Online:</strong> '+list.map(p=>
-        '<span style="display:inline-flex;align-items:center;gap:4px;margin:0 6px;padding:2px 8px;border-radius:999px;background:#e8f4fc;font-size:12px">'+
-        '<span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span>'+(p.name||p.email)+
-        (p.email===email?' (você)':'')+'</span>'
-      ).join('');
-    }catch(e){}
-  }
-
   window.loadFlow=async function(){
-    if(convexClient){
+    if(cx()){
       try{
-        const remote=await convexClient.query('flows:get',{key:flowKey});
+        const remote=await cx().query('flows:get',{key:flowKey});
         if(remote?.data && flowHasContent(remote.data)){
           flow=remote.data; flowTitle=remote.title||flowKey;
           if(!flow.votes)flow.votes={}; if(!flow.comments)flow.comments={};
           return;
         }
-        if(remote && !flowHasContent(remote.data||{})){
-          flow=cloneDefaultFlow(); flowTitle=remote.title||'HEMOPI';
-          if(!isGuest()){ try{ await convexClient.mutation('flows:save',{key:flowKey,title:flowTitle,ownerEmail:(user?.email||'').toLowerCase(),data:flow}); }catch(e){} }
-          return;
-        }
-      }catch(e){}
+      }catch(e){ console.warn(e); }
     }
     try{
       const raw=localStorage.getItem(STORAGE_KEY);
@@ -423,125 +338,165 @@
     flow=cloneDefaultFlow();
   };
 
-  window.restoreHemopiFlow=async function(){
-    if(isGuest()) return;
-    flow=cloneDefaultFlow(); flowTitle=flow.title||'HEMOPI';
-    if(!flowKey||String(flowKey).startsWith('local')) flowKey='hemopi-main';
-    localStorage.setItem(FLOW_KEY_STORE,flowKey);
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(flow));
-    try{ await flushSave(); }catch(e){}
-    try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
-    if(typeof toast==='function') toast('HEMOPI restaurado');
-  };
-
-  async function enterAsGuest(token,email){
-    email=email.toLowerCase().trim();
-    const err=$('guestError');
-    const showErr=(t)=>{ if(err){ err.textContent=t; err.hidden=false; } };
-    if(!email.includes('@')){ showErr('E-mail inválido'); return; }
-    let sh=null;
-    if(convexClient){ try{ sh=await convexClient.query('shares:getByToken',{token}); }catch(e){} }
-    if(!sh){ showErr('Convite inválido — peça um novo link ao criador'); return; }
-    if(!sh.emails.includes(email)&&sh.createdBy!==email){ showErr('E-mail não está neste convite'); return; }
-    flowKey=sh.flowKey;
-    localStorage.setItem(FLOW_KEY_STORE,flowKey);
-    user={name:email.split('@')[0],email,isGuest:true};
-    window.HEMOPI_SHARE_MODE='guest';
-    if($('guestModal')) $('guestModal').hidden=true;
-    await loadFlow();
-    onlyShow('appMain');
-    const lab=$('userLabel'); if(lab) lab.textContent='Convidado · '+email;
-    applyGuestUI();
-    try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader?.(); }catch(e){}
-    lockHeaderForGuest();
-    presenceTick();
+  function applyGuestUI(){
+    if(!isGuest()) return;
+    ['btnNewFlow','btnAddMacro','btnOpenMgr','btnOpenProfile','btnShare','btnSeal'].forEach(id=>{
+      const el=$(id); if(el) el.style.display='none';
+    });
+    const box=$('projectHeader');
+    if(box) box.querySelectorAll('input').forEach(i=>{ i.disabled=true; i.readOnly=true; });
   }
-  async function tryShareEntry(){
-    const token=new URLSearchParams(location.search).get('share');
-    if(!token) return false;
-    if($('publicPage')) $('publicPage').hidden=true;
-    if($('appMain')) $('appMain').hidden=true;
-    if($('loginModal')) $('loginModal').hidden=true;
-    const gm=$('guestModal'); if(gm) gm.hidden=false;
-    window._shareToken=token;
-    return true;
-  }
-  $('guestForm')?.addEventListener('submit',async(ev)=>{
-    ev.preventDefault();
-    await enterAsGuest(window._shareToken, $('guestEmail')?.value||'');
-  });
 
-  window.shareFlow=async function(){
-    if(isGuest()||!user||!convexClient) return;
-    if(String(flowKey).startsWith('local')){
-      if(typeof toast==='function') toast('Salve o fluxo na nuvem antes',true); return;
-    }
-    await flushSave();
-    const raw=prompt('E-mails convidados:',(flow.sharedEmails||[]).join(', '));
-    if(raw==null) return;
-    const emails=raw.split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes('@'));
-    if(!emails.length) return;
+  async function presenceTick(){
+    if(!cx()||!flowKey||!user?.email||String(flowKey).startsWith('local')) return;
     try{
-      const r=await convexClient.mutation('shares:create',{flowKey,emails,canEdit:false,createdBy:user.email.toLowerCase()});
-      const url=location.origin+location.pathname.replace(/\/index\.html$/,'/')+'?share='+encodeURIComponent(r.token);
-      try{ await navigator.clipboard.writeText(url); }catch(e){}
-      prompt('Link convidado:', url);
-    }catch(e){ if(typeof toast==='function') toast('Erro ao compartilhar',true); }
-  };
+      await cx().mutation('shares:heartbeat',{flowKey,email:user.email.toLowerCase(),name:user.name||user.email});
+      const list=await cx().query('shares:listPresence',{flowKey});
+      const bar=$('presenceBar');
+      if(bar){
+        bar.innerHTML=list?.length
+          ? '<strong>Online:</strong> '+list.map(p=>p.name||p.email).join(', ')
+          : '<strong>Online:</strong> —';
+      }
+    }catch(e){}
+  }
 
   function rebindAll(){
     wireProfile();
-    const bn=$('btnNewFlow');
-    if(bn) bn.onclick=async()=>{
+    if($('btnNewFlow')) $('btnNewFlow').onclick=async()=>{
       const title=prompt('Nome do novo fluxo','Novo fluxo');
       if(!title) return;
       const key=await createNewFlow(title);
-      if(key){ try{ render(); renderMacroBar(); updateProgress(); }catch(e){} }
+      if(key) try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
     };
-    const bm=$('btnOpenMgr');
-    if(bm) bm.onclick=async()=>{ $('appMain').hidden=true; $('flowManager').hidden=false; await renderFlowManager(); };
-    const bc=$('btnMgrClose');
-    if(bc) bc.onclick=()=>{ $('flowManager').hidden=true; onlyShow('appMain'); };
-    const bmn=$('btnMgrNew');
-    if(bmn) bmn.onclick=async()=>{
+    if($('btnOpenMgr')) $('btnOpenMgr').onclick=async()=>{
+      if($('appMain')) $('appMain').hidden=true;
+      if($('flowManager')) $('flowManager').hidden=false;
+      await renderFlowManager();
+    };
+    if($('btnMgrClose')) $('btnMgrClose').onclick=()=>{
+      if($('flowManager')) $('flowManager').hidden=true;
+      onlyShow('appMain');
+    };
+    if($('btnMgrNew')) $('btnMgrNew').onclick=async()=>{
       const title=prompt('Nome do novo fluxo','Novo fluxo');
       if(!title) return;
       await createNewFlow(title);
       await renderFlowManager();
     };
-    const bs=$('btnShare');
-    if(bs) bs.onclick=()=>shareFlow();
-    if(!$('btnRestoreHemopi')){
-      const g=document.querySelector('.toolbar .tool-group');
-      if(g){
-        const b=document.createElement('button');
-        b.type='button'; b.className='btn'; b.id='btnRestoreHemopi'; b.textContent='↻ HEMOPI';
-        b.onclick=()=>{ if(confirm('Restaurar HEMOPI?')) restoreHemopiFlow(); };
-        g.appendChild(b);
-      }
-    }
+    if($('btnShare')) $('btnShare').onclick=async()=>{
+      if(isGuest()||!user||!cx()) return;
+      if(String(flowKey).startsWith('local')){ if(typeof toast==='function') toast('Salve na nuvem antes',true); return; }
+      await flushSave();
+      const raw=prompt('E-mails convidados:',(flow.sharedEmails||[]).join(', '));
+      if(raw==null) return;
+      const emails=raw.split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes('@'));
+      if(!emails.length) return;
+      try{
+        const r=await cx().mutation('shares:create',{flowKey,emails,canEdit:false,createdBy:user.email.toLowerCase()});
+        const url=location.origin+location.pathname.replace(/\/index\.html$/,'/')+'?share='+encodeURIComponent(r.token);
+        try{ await navigator.clipboard.writeText(url); }catch(e){}
+        prompt('Link convidado:', url);
+      }catch(e){ if(typeof toast==='function') toast('Erro share',true); }
+    };
   }
 
   const _enterApp=window.enterApp;
   window.enterApp=async function(){
     onlyShow('appMain');
-    if(typeof _enterApp==='function') await _enterApp();
+    if(typeof _enterApp==='function'){
+      try{ await _enterApp(); }catch(e){ console.warn(e); }
+    }
     onlyShow('appMain');
+    // Force our convex client (override esm if broken)
+    if(!window.__convexReady){
+      console.warn('convex-api not ready');
+    }
     rebindAll();
-    try{ await loadFlowListSafe(); }catch(e){}
+    try{ await loadFlowListSafe(); }catch(e){ console.error(e); }
     try{ await loadFlow(); }catch(e){}
-    if(!flowHasContent(flow)&&!isGuest()) try{ await restoreHemopiFlow(); }catch(e){}
+    if(!flowHasContent(flow)&&!isGuest()){
+      flow=cloneDefaultFlow();
+      flowKey=flowKey||'hemopi-main';
+      flowTitle='HEMOPI principal';
+      try{
+        if(cx()&&user?.email){
+          await cx().mutation('flows:save',{key:'hemopi-main',title:'HEMOPI principal',ownerEmail:user.email.toLowerCase(),data:flow});
+          flowKey='hemopi-main';
+          await loadFlowListSafe();
+        }
+      }catch(e){}
+    }
     try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader?.(); }catch(e){}
     applyGuestUI();
     presenceTick();
     if(!window._presenceTimer) window._presenceTimer=setInterval(()=>{ try{ presenceTick(); }catch(e){} }, 15000);
   };
 
+  // Neutralize broken handlers that crash on missing DOM nodes
   window.initGoogleBtn=function(){};
+  try{
+    const safe = (id, fn)=>{
+      const el=$(id);
+      if(el) el.onclick=fn;
+    };
+    // prevent editor.js btnMaster crash by defining dummy if missing
+    if(!$('btnMaster')){
+      const d=document.createElement('button');
+      d.id='btnMaster'; d.hidden=true; document.body.appendChild(d);
+    }
+    if(!$('masterPass')){
+      const d=document.createElement('input');
+      d.id='masterPass'; d.hidden=true; document.body.appendChild(d);
+    }
+    if(!$('masterMsg')){
+      const d=document.createElement('p');
+      d.id='masterMsg'; d.hidden=true; document.body.appendChild(d);
+    }
+    if(!$('googleBtn')){
+      const d=document.createElement('div');
+      d.id='googleBtn'; d.hidden=true; document.body.appendChild(d);
+    }
+    if(!$('googleHint')){
+      const d=document.createElement('p');
+      d.id='googleHint'; d.hidden=true; document.body.appendChild(d);
+    }
+  }catch(e){}
 
   async function boot(){
     rebindAll();
-    if(await tryShareEntry()) return;
+    // share entry
+    const token=new URLSearchParams(location.search).get('share');
+    if(token){
+      if($('publicPage')) $('publicPage').hidden=true;
+      if($('appMain')) $('appMain').hidden=true;
+      if($('loginModal')) $('loginModal').hidden=true;
+      const gm=$('guestModal'); if(gm) gm.hidden=false;
+      window._shareToken=token;
+      $('guestForm')?.addEventListener('submit', async(ev)=>{
+        ev.preventDefault();
+        const email=($('guestEmail')?.value||'').trim().toLowerCase();
+        if(!email.includes('@')) return;
+        try{
+          const sh=await cx().query('shares:getByToken',{token});
+          if(!sh||(!sh.emails.includes(email)&&sh.createdBy!==email)){
+            if($('guestError')){ $('guestError').textContent='E-mail não autorizado'; $('guestError').hidden=false; }
+            return;
+          }
+          flowKey=sh.flowKey;
+          user={name:email.split('@')[0],email,isGuest:true};
+          window.HEMOPI_SHARE_MODE='guest';
+          if(gm) gm.hidden=true;
+          await loadFlow();
+          onlyShow('appMain');
+          if($('userLabel')) $('userLabel').textContent='Convidado · '+email;
+          applyGuestUI();
+          try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
+          presenceTick();
+        }catch(e){ console.error(e); }
+      });
+      return;
+    }
     try{
       const u=JSON.parse(localStorage.getItem(USER_KEY)||'null');
       if(u&&u.email){ user=u; await window.enterApp(); }
@@ -549,6 +504,6 @@
     }catch(e){ onlyShow('publicPage'); }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
-  else setTimeout(boot, 100);
-  setTimeout(rebindAll, 900);
+  else setTimeout(boot, 50);
+  setTimeout(rebindAll, 800);
 })();
