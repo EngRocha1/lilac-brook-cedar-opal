@@ -15,7 +15,17 @@ export const register = mutation({
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
-    if (existing) throw new Error("E-mail já cadastrado");
+    if (existing) {
+      if (!existing.passwordHash && args.passwordHash) {
+        await ctx.db.patch(existing._id, {
+          passwordHash: args.passwordHash,
+          name: args.name || existing.name,
+          updatedAt: Date.now(),
+        });
+        return { ok: true, updated: true };
+      }
+      throw new Error("E-mail já cadastrado");
+    }
     await ctx.db.insert("profiles", {
       email,
       name: args.name,
@@ -36,7 +46,9 @@ export const login = query({
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
-    if (!row || row.passwordHash !== args.passwordHash) return null;
+    if (!row || !row.passwordHash || row.passwordHash !== args.passwordHash) {
+      return null;
+    }
     return {
       email: row.email,
       name: row.name,
@@ -45,6 +57,38 @@ export const login = query({
       photoStorageId: row.photoStorageId,
       logoStorageId: row.logoStorageId,
     };
+  },
+});
+
+export const setPassword = mutation({
+  args: {
+    email: v.string(),
+    name: v.optional(v.string()),
+    passwordHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const row = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+    if (row) {
+      await ctx.db.patch(row._id, {
+        passwordHash: args.passwordHash,
+        name: args.name || row.name,
+        updatedAt: Date.now(),
+      });
+      return { ok: true };
+    }
+    await ctx.db.insert("profiles", {
+      email,
+      name: args.name || email.split("@")[0],
+      passwordHash: args.passwordHash,
+      company: "",
+      phone: "",
+      updatedAt: Date.now(),
+    });
+    return { ok: true, created: true };
   },
 });
 
