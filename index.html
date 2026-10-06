@@ -34,14 +34,14 @@
     <h2>Recursos</h2>
     <div class="cards">
       <article class="card"><h3>💬 Comentários</h3><p>Avalie etapas e linhas.</p></article>
-      <article class="card"><h3>📐 Macros</h3><p>Módulos e impressão com conectores.</p></article>
-      <article class="card"><h3>☁️ Convex</h3><p>Salve na nuvem.</p></article>
-      <article class="card"><h3>📋 Modelos</h3><p>Templates prontos.</p></article>
+      <article class="card"><h3>📐 Macros</h3><p>Arraste e redimensione módulos.</p></article>
+      <article class="card"><h3>🔗 Compartilhar</h3><p>Convide e-mails para validar.</p></article>
+      <article class="card"><h3>✅ Selo</h3><p>Autentique a votação final.</p></article>
     </div>
   </section>
   <section class="section" id="modelos">
     <h2>Modelos de fluxo</h2>
-    <div class="cards" id="templateCards">
+    <div class="cards">
       <article class="card template" data-tpl="jornada"><h3>Jornada do doador</h3><p>Agendamento até coleta.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
       <article class="card template" data-tpl="agendamento"><h3>Só agendamento</h3><p>Canal digital/físico.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
       <article class="card template" data-tpl="vazio"><h3>Canvas em branco</h3><p>Do zero.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
@@ -49,7 +49,7 @@
   </section>
   <section class="section" id="sobre">
     <h2>Sobre</h2>
-    <p class="about">Apoio à modelagem do HEMOPI 2.0. Validação de processo com a equipe.</p>
+    <p class="about">Apoio à modelagem do HEMOPI 2.0.</p>
   </section>
   <footer class="footer">
     <div class="footer-grid">
@@ -59,22 +59,22 @@
     </div>
   </footer>
 </div>
-<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener" title="WhatsApp"><span>WhatsApp</span></a>
+<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener"><span>WhatsApp</span></a>
 <div id="loginModal" class="modal-overlay" hidden>
-  <div class="login-modal" role="dialog">
+  <div class="login-modal">
     <button type="button" class="modal-x" id="loginClose">×</button>
     <h2>Acesso gratuito</h2>
-    <p class="login-free">Ser membro é <strong>grátis</strong>. Gmail ou e-mail.</p>
+    <p class="login-free">Ser membro é <strong>grátis</strong>.</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab active" id="tabLogin">Entrar</button>
       <button type="button" class="auth-tab" id="tabRegister">Criar conta</button>
     </div>
-    <div id="googleBtnWrap" class="google-wrap"><div id="googleBtn"></div><p class="hint" id="googleHint">Configure Google Client ID em config.js</p></div>
+    <div class="google-wrap"><div id="googleBtn"></div><p class="hint" id="googleHint">Configure Google Client ID em config.js</p></div>
     <div class="or">ou e-mail</div>
     <form id="authForm">
-      <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text" autocomplete="name"/></label>
-      <label class="field"><span>E-mail (Gmail)</span><input id="authEmail" type="email" required autocomplete="email" placeholder="seu@gmail.com"/></label>
-      <button type="submit" class="btn-neon block" id="authSubmit">Entrar com e-mail</button>
+      <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text"/></label>
+      <label class="field"><span>E-mail</span><input id="authEmail" type="email" required placeholder="seu@gmail.com"/></label>
+      <button type="submit" class="btn-neon block" id="authSubmit">Entrar</button>
     </form>
     <p class="auth-error" id="authError" hidden></p>
   </div>
@@ -82,20 +82,24 @@
 <div id="adminPage" class="admin-page" hidden>
   <header class="admin-top"><strong>⚙️ Admin</strong><button type="button" class="btn-ghost" id="adminClose">Voltar</button></header>
   <div class="admin-grid">
-    <section class="admin-card"><h3>Senha master</h3><input id="masterPass" type="password" placeholder="Senha master"/><button type="button" class="btn-neon" id="btnMaster">Desbloquear</button><p id="masterMsg" class="auth-error" hidden></p></section>
+    <section class="admin-card"><h3>Senha master</h3><input id="masterPass" type="password"/><button type="button" class="btn-neon" id="btnMaster">Desbloquear</button><p id="masterMsg" class="auth-error" hidden></p></section>
     <section class="admin-card admin-locked" id="adminUsers"><h3>Usuários</h3><div id="userList" class="user-list"></div><div class="row"><input id="newUserEmail" type="email" placeholder="email"/><input id="newUserName" type="text" placeholder="Nome"/><button type="button" class="btn-neon sm" id="btnAddUser">Add</button></div></section>
-    <section class="admin-card admin-locked" id="adminStyle"><h3>Estilo</h3><label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label><label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label><label>WhatsApp <input type="text" id="styleWa" placeholder="5586..."/></label><button type="button" class="btn-neon" id="btnSaveStyle">Salvar estilo</button></section>
+    <section class="admin-card admin-locked" id="adminStyle"><h3>Estilo</h3><label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label><label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label><label>WhatsApp <input type="text" id="styleWa"/></label><button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button></section>
     <section class="admin-card admin-locked" id="adminMaster"><h3>Nova senha master</h3><input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button></section>
   </div>
 </div>
 <div class="app" id="appMain" hidden>
-  <header class="hero"><div class="hero-top"><div class="logo">🩸</div><div style="flex:1"><h1>HEMOPI — Editor</h1><p class="tagline">💬 comentar · arrastar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
+  <header class="hero"><div class="hero-top"><div class="logo">🩸</div><div style="flex:1"><h1>HEMOPI — Editor</h1><p class="tagline">Arraste macros · redimensione · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
   <div class="toolbar">
     <div class="tool-group"><label class="flow-label">Fluxo</label><select id="flowSelect"></select><button type="button" class="btn" id="btnNewFlow">+ Novo</button></div>
     <div class="tool-group"><button type="button" class="btn" id="btnAddProcess">▭</button><button type="button" class="btn" id="btnAddDecision">◇</button><button type="button" class="btn" id="btnAddText">T</button><button type="button" class="btn" id="btnAddMacro">+ Macro</button><button type="button" class="btn" id="btnConnect">⟷</button></div>
-    <div class="tool-group prog-wrap"><div class="prog-label">Validação · <span id="progText">0%</span></div><div class="prog"><i id="progBar"></i></div><div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · <span class="ok">👍 <b id="statOk">0</b></span> · <span class="no">👎 <b id="statNo">0</b></span></div></div>
+    <div class="tool-group prog-wrap"><div class="prog-label">Validação · <span id="progText">0%</span></div><div class="prog"><i id="progBar"></i></div><div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div></div>
     <div class="tool-group"><button type="button" class="btn" onclick="printMode('overview')">🖨</button><button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button><button type="button" class="btn pri" onclick="exportJSON()">↓</button><button type="button" class="btn" onclick="saveLocal()">💾</button></div>
   </div>
+  <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
+  <div id="projectHeader" class="project-header"></div>
+  <div id="sealBox"></div>
+  <div class="share-panel"><button type="button" class="btn" id="btnShare">🔗 Compartilhar por e-mail</button> <button type="button" class="btn pri" id="btnSeal">✅ Finalizar votação e carimbar selo</button></div>
   <div class="workspace"><aside class="palette" id="macroBar"></aside><div class="canvas-wrap"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
 </div>
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><span>💬</span><strong id="sideTitle">Avaliação</strong><button type="button" class="x" onclick="closeModal()">×</button></div><div class="modal-b"><p id="sideMeta" class="muted"></p><label>Título</label><input id="sideName" type="text"/><label id="colorLabel">Cor</label><input id="sideColor" type="color" value="#e8f4fc"/><div class="vote-row"><button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍</button><button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎</button></div><div class="counts"><span class="ok">👍 <b id="sideOk">0</b></span> <span class="no">👎 <b id="sideNo">0</b></span></div><label>Comentário</label><textarea id="sideComment"></textarea><button type="button" class="btn danger" onclick="deleteSelected()">Excluir</button></div></div></div>
@@ -103,5 +107,6 @@
 <script src="config.js"></script>
 <script src="flow-data.js"></script>
 <script src="editor.js"></script>
+<script src="editor-patch.js"></script>
 </body>
 </html>
