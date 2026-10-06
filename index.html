@@ -9,36 +9,60 @@
 <link rel="stylesheet" href="editor.css"/>
 </head>
 <body>
-<div class="app">
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="auth-logo">🩸</span>
+      <h1>HEMOPI</h1>
+      <p class="auth-sub">Visão colaborativa do fluxo de hemoterapia</p>
+    </div>
+    <p class="auth-free">Ser membro é <strong>gratuito</strong>. Use seu Gmail (ou outro e-mail) para entrar ou criar sua conta.</p>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="login" id="tabLogin">Entrar</button>
+      <button type="button" class="auth-tab" data-tab="register" id="tabRegister">Criar conta</button>
+    </div>
+    <form id="authForm" class="auth-form" autocomplete="on">
+      <label class="auth-field" id="fieldName" style="display:none">
+        <span>Nome completo</span>
+        <input id="authName" type="text" placeholder="Como devemos te chamar" autocomplete="name"/>
+      </label>
+      <label class="auth-field">
+        <span>E-mail (Gmail ou outro)</span>
+        <input id="authEmail" type="email" placeholder="seu@gmail.com" required autocomplete="email"/>
+      </label>
+      <button type="submit" class="btn pri auth-submit" id="authSubmit">Entrar com e-mail</button>
+    </form>
+    <p class="auth-hint" id="authHint">Já tem conta? Use o mesmo e-mail para entrar.</p>
+    <p class="auth-error" id="authError" hidden></p>
+  </div>
+</div>
+
+<div class="app" id="appMain" hidden>
   <header class="hero">
     <div class="hero-top">
       <div class="logo">🩸</div>
-      <div>
+      <div style="flex:1">
         <h1>HEMOPI — Visão do fluxo</h1>
-        <p class="tagline">Esta página apresenta uma visão visual e interativa do processo de hemoterapia, permitindo compreender como as etapas se relacionam, onde existem decisões, transições e responsabilidades e quais pontos precisam ser validados pelas equipes.</p>
-        <p class="tagline">Arraste elementos. Clique no ícone 💬 para comentar. Crie fluxos e entre com seu e-mail (Gmail). Conexões entre macros são impressas como conectores de circuito.</p>
+        <p class="tagline">Arraste elementos. Clique no ícone 💬 para comentar. Crie fluxos e valide o processo com a equipe.</p>
+      </div>
+      <div class="hero-user">
+        <span id="userLabel" class="user-chip">—</span>
+        <button type="button" class="btn hero-btn" id="btnLogout">Sair</button>
       </div>
     </div>
     <div class="pills">
       <span class="pill">SESAPI / HEMOPI</span>
       <span class="pill">RDC 34 · Lei 10.048 · LGPD</span>
-      <span class="pill">Editor · Convex</span>
+      <span class="pill">Membro gratuito</span>
     </div>
   </header>
 
-  <div class="account-bar" id="accountBar">
-    <span id="userLabel" class="user">Visitante</span>
-    <input id="inName" type="text" placeholder="Seu nome" style="width:120px"/>
-    <input id="inEmail" type="email" placeholder="seu@gmail.com" style="width:180px"/>
-    <button type="button" class="btn pri" id="btnLogin">Entrar</button>
-    <button type="button" class="btn" id="btnLogout" style="display:none">Sair</button>
-    <span style="opacity:.4">|</span>
-    <label>Fluxo</label>
-    <select id="flowSelect" style="min-width:160px"></select>
-    <button type="button" class="btn" id="btnNewFlow">+ Novo fluxo</button>
-  </div>
-
   <div class="toolbar">
+    <div class="tool-group">
+      <label class="flow-label">Fluxo</label>
+      <select id="flowSelect" style="min-width:160px"></select>
+      <button type="button" class="btn" id="btnNewFlow">+ Novo fluxo</button>
+    </div>
     <div class="tool-group">
       <button type="button" class="btn" id="btnAddProcess">▭ Processo</button>
       <button type="button" class="btn" id="btnAddDecision">◇ Decisão</button>
