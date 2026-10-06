@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>HEMOPI Flow — Editor colaborativo</title>
+<title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <link rel="stylesheet" href="editor.css"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div id="publicPage" class="public-page">
-  <nav class="nav" id="mainNav">
-    <div class="nav-brand">🩸 <span>HEMOPI Flow</span></div>
+  <nav class="nav">
+    <div class="nav-brand"><span class="brand-mark">◇</span> <span>Fluxora</span></div>
     <button type="button" class="nav-burger" id="navBurger" aria-label="Menu">☰</button>
     <div class="nav-links" id="navLinks">
       <a href="#recursos">Recursos</a>
@@ -22,44 +22,49 @@
   </nav>
   <section class="hero-public">
     <div class="hero-glow"></div>
-    <p class="eyebrow">SESAPI · RDC 34 · LGPD · Membro gratuito</p>
-    <h1>Desenhe o fluxo da <span class="neon">hemoterapia</span> com a equipe</h1>
-    <p class="lead">Validação visual, comentários, multi-fluxo e impressão por módulo.</p>
+    <p class="eyebrow">Validação colaborativa · Membro gratuito</p>
+    <h1>Transforme ideias de processo em <span class="neon">fluxos validados</span></h1>
+    <p class="lead">Desenhe jornadas, compartilhe com sponsors e stakeholders e registre decisões com clareza.</p>
     <div class="hero-cta">
       <button type="button" class="btn-neon lg" id="btnHeroStart">Começar grátis</button>
-      <a class="btn-ghost lg" href="#modelos">Ver modelos</a>
+      <a class="btn-ghost lg" href="#modelos">Explorar modelos</a>
     </div>
   </section>
   <section class="section" id="recursos">
     <h2>Recursos</h2>
     <div class="cards">
-      <article class="card"><h3>💬 Comentários</h3><p>Avalie etapas e linhas.</p></article>
-      <article class="card"><h3>📐 Macros</h3><p>Arraste e redimensione módulos.</p></article>
-      <article class="card"><h3>🔗 Compartilhar</h3><p>Convide e-mails para validar.</p></article>
-      <article class="card"><h3>✅ Selo</h3><p>Autentique a votação final.</p></article>
+      <article class="card"><h3>📐 Canvas modular</h3><p>Macros arrastáveis e redimensionáveis.</p></article>
+      <article class="card"><h3>🔗 Compartilhamento</h3><p>Convide e-mails para votar e comentar.</p></article>
+      <article class="card"><h3>✅ Selo de validação</h3><p>Feche a votação com autenticação.</p></article>
+      <article class="card"><h3>📋 Modelos</h3><p>Templates por área de negócio.</p></article>
     </div>
   </section>
   <section class="section" id="modelos">
-    <h2>Modelos de fluxo</h2>
+    <h2>Modelos por área</h2>
     <div class="cards">
-      <article class="card template" data-tpl="jornada"><h3>Jornada do doador</h3><p>Agendamento até coleta.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
-      <article class="card template" data-tpl="agendamento"><h3>Só agendamento</h3><p>Canal digital/físico.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
-      <article class="card template" data-tpl="vazio"><h3>Canvas em branco</h3><p>Do zero.</p><button type="button" class="btn-neon sm use-tpl">Usar modelo</button></article>
+      <article class="card template" data-tpl="jornada"><h3>Saúde · Jornada</h3><p>Canal → decisão → retorno.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
+      <article class="card template" data-tpl="agendamento"><h3>Atendimento · Agenda</h3><p>Escolha e confirmação.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
+      <article class="card template" data-tpl="produto"><h3>Produto · Discovery</h3><p>Hipótese → validação.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
+      <article class="card template" data-tpl="ops"><h3>Operações · Incidente</h3><p>Detecção → resolução.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
+      <article class="card template" data-tpl="rh"><h3>RH · Onboarding</h3><p>Admissão → integração.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
+      <article class="card template" data-tpl="vazio"><h3>Canvas em branco</h3><p>Do zero.</p><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
     </div>
   </section>
   <section class="section" id="sobre">
-    <h2>Sobre</h2>
-    <p class="about">Apoio à modelagem do HEMOPI 2.0.</p>
+    <h2>Sobre o Fluxora</h2>
+    <p class="about">O Fluxora é uma ferramenta independente para análise visual de fluxos de projeto. Permite mapear etapas, decisões e responsabilidades, compartilhar o desenho com sponsors e stakeholders e registrar feedback estruturado — votos, comentários e selo de validação — em um único painel. Ideal para alinhamento entre produto, operação e liderança.</p>
   </section>
   <footer class="footer">
     <div class="footer-grid">
-      <div><strong>🩸 HEMOPI Flow</strong><p>Membro gratuito</p></div>
-      <div><a href="#recursos">Recursos</a><a href="#modelos">Modelos</a><a href="#" id="footerAdmin">Área admin</a></div>
-      <div><p>RDC 34 · LGPD</p><p class="muted">© <span id="y"></span> SESAPI / HEMOPI</p></div>
+      <div><strong>◇ Fluxora</strong><p class="muted">Validação visual de fluxos de processo</p></div>
+      <div><a href="#recursos">Recursos</a><a href="#modelos">Modelos</a><a href="#sobre">Sobre</a><a href="#" id="footerAdmin">Acesso administrativo</a></div>
+      <div><p class="muted">Privacidade · Uso responsável dos dados</p><p class="muted">© <span id="y"></span> Fluxora. Todos os direitos reservados.</p></div>
     </div>
   </footer>
 </div>
-<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener"><span>WhatsApp</span></a>
+<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 32 32" width="28" height="28"><path fill="#fff" d="M16.004 3C9.38 3 4 8.38 4 15.004c0 2.12.55 4.11 1.52 5.84L4 29l8.36-1.48A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.62 28 15.004 28 8.38 22.63 3 16.004 3zm0 21.8c-1.86 0-3.6-.5-5.1-1.37l-.36-.22-4.96.88.9-4.84-.24-.38A9.76 9.76 0 0 1 6.2 15c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8zm5.38-7.34c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/></svg>
+</a>
 <div id="loginModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <button type="button" class="modal-x" id="loginClose">×</button>
@@ -69,41 +74,60 @@
       <button type="button" class="auth-tab active" id="tabLogin">Entrar</button>
       <button type="button" class="auth-tab" id="tabRegister">Criar conta</button>
     </div>
-    <div class="google-wrap"><div id="googleBtn"></div><p class="hint" id="googleHint">Configure Google Client ID em config.js</p></div>
+    <div class="google-wrap"><div id="googleBtn"></div><p class="hint" id="googleHint">Opcional: Google Client ID</p></div>
     <div class="or">ou e-mail</div>
     <form id="authForm">
       <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text"/></label>
-      <label class="field"><span>E-mail</span><input id="authEmail" type="email" required placeholder="seu@gmail.com"/></label>
+      <label id="fieldCompany" class="field" style="display:none"><span>Empresa</span><input id="authCompany" type="text"/></label>
+      <label id="fieldPhone" class="field" style="display:none"><span>Celular (WhatsApp do criador)</span><input id="authPhone" type="tel" placeholder="5586..."/></label>
+      <label class="field"><span>E-mail</span><input id="authEmail" type="email" required placeholder="seu@email.com"/></label>
       <button type="submit" class="btn-neon block" id="authSubmit">Entrar</button>
     </form>
     <p class="auth-error" id="authError" hidden></p>
   </div>
 </div>
-<div id="adminPage" class="admin-page" hidden>
-  <header class="admin-top"><strong>⚙️ Admin</strong><button type="button" class="btn-ghost" id="adminClose">Voltar</button></header>
-  <div class="admin-grid">
-    <section class="admin-card"><h3>Senha master</h3><input id="masterPass" type="password"/><button type="button" class="btn-neon" id="btnMaster">Desbloquear</button><p id="masterMsg" class="auth-error" hidden></p></section>
-    <section class="admin-card admin-locked" id="adminUsers"><h3>Usuários</h3><div id="userList" class="user-list"></div><div class="row"><input id="newUserEmail" type="email" placeholder="email"/><input id="newUserName" type="text" placeholder="Nome"/><button type="button" class="btn-neon sm" id="btnAddUser">Add</button></div></section>
-    <section class="admin-card admin-locked" id="adminStyle"><h3>Estilo</h3><label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label><label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label><label>WhatsApp <input type="text" id="styleWa"/></label><button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button></section>
-    <section class="admin-card admin-locked" id="adminMaster"><h3>Nova senha master</h3><input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button></section>
+<div id="adminGate" class="admin-gate" hidden>
+  <div class="login-modal admin-login-card">
+    <button type="button" class="modal-x" id="adminGateBack">×</button>
+    <h2>Administração</h2>
+    <p class="login-free">Acesso restrito ao administrador.</p>
+    <label class="field"><span>E-mail admin</span><input id="adminEmail" type="email"/></label>
+    <label class="field"><span>Senha</span><input id="adminPass" type="password"/></label>
+    <button type="button" class="btn-neon block" id="btnAdminLogin">Entrar no painel</button>
+    <p class="auth-error" id="adminGateMsg" hidden></p>
   </div>
 </div>
+<div id="adminPage" class="admin-page" hidden>
+  <header class="admin-top"><strong>⚙️ Painel Fluxora</strong><button type="button" class="btn-ghost" id="adminClose">Sair do admin</button></header>
+  <div class="admin-grid">
+    <section class="admin-card"><h3>Usuários</h3><div id="userList" class="user-list"></div><div class="row"><input id="newUserEmail" type="email" placeholder="email"/><input id="newUserName" type="text" placeholder="Nome"/><button type="button" class="btn-neon sm" id="btnAddUser">Add</button></div></section>
+    <section class="admin-card"><h3>Estilo</h3><label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label><label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label><label>WhatsApp do site <input type="text" id="styleWa"/></label><button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button></section>
+    <section class="admin-card"><h3>Nova senha admin</h3><input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button></section>
+  </div>
+</div>
+<div id="flowManager" class="flow-manager" hidden>
+  <header class="admin-top"><strong>📁 Meus fluxos</strong><div><button type="button" class="btn-neon sm" id="btnMgrNew">+ Novo</button> <button type="button" class="btn-ghost" id="btnMgrClose">Voltar</button></div></header>
+  <div id="flowManagerList" class="flow-mgr-list"></div>
+</div>
 <div class="app" id="appMain" hidden>
-  <header class="hero"><div class="hero-top"><div class="logo">🩸</div><div style="flex:1"><h1>HEMOPI — Editor</h1><p class="tagline">Arraste macros · redimensione · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
+  <header class="hero"><div class="hero-top"><div class="logo">◇</div><div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Arraste macros · 💬 comentar</p></div><div class="hero-user"><span id="userLabel" class="user-chip">—</span><button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button><button type="button" class="btn hero-btn" id="btnOpenMgr">Meus fluxos</button><button type="button" class="btn hero-btn" id="btnLogout">Sair</button></div></div></header>
   <div class="toolbar">
     <div class="tool-group"><label class="flow-label">Fluxo</label><select id="flowSelect"></select><button type="button" class="btn" id="btnNewFlow">+ Novo</button></div>
     <div class="tool-group"><button type="button" class="btn" id="btnAddProcess">▭</button><button type="button" class="btn" id="btnAddDecision">◇</button><button type="button" class="btn" id="btnAddText">T</button><button type="button" class="btn" id="btnAddMacro">+ Macro</button><button type="button" class="btn" id="btnConnect">⟷</button></div>
     <div class="tool-group prog-wrap"><div class="prog-label">Validação · <span id="progText">0%</span></div><div class="prog"><i id="progBar"></i></div><div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div></div>
-    <div class="tool-group"><button type="button" class="btn" onclick="printMode('overview')">🖨</button><button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button><button type="button" class="btn pri" onclick="exportJSON()">↓</button><button type="button" class="btn" onclick="saveLocal()">💾</button></div>
+    <div class="tool-group"><button type="button" class="btn" onclick="printMode('overview')">🖨</button><button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button><button type="button" class="btn pri" onclick="exportJSON()">↓</button><button type="button" class="btn" onclick="saveLocal();toast('Salvo')">💾</button></div>
   </div>
   <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
   <div id="projectHeader" class="project-header"></div>
   <div id="sealBox"></div>
-  <div class="share-panel"><button type="button" class="btn" id="btnShare">🔗 Compartilhar por e-mail</button> <button type="button" class="btn pri" id="btnSeal">✅ Finalizar votação e carimbar selo</button></div>
+  <div class="share-panel"><button type="button" class="btn" id="btnShare">🔗 Compartilhar</button> <button type="button" class="btn pri" id="btnSeal">✅ Carimbar selo</button> <a id="waFlowOwner" class="wa-inline" href="#" target="_blank" hidden>WhatsApp do criador</a></div>
   <div class="workspace"><aside class="palette" id="macroBar"></aside><div class="canvas-wrap"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
 </div>
-<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><span>💬</span><strong id="sideTitle">Avaliação</strong><button type="button" class="x" onclick="closeModal()">×</button></div><div class="modal-b"><p id="sideMeta" class="muted"></p><label>Título</label><input id="sideName" type="text"/><label id="colorLabel">Cor</label><input id="sideColor" type="color" value="#e8f4fc"/><div class="vote-row"><button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍</button><button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎</button></div><div class="counts"><span class="ok">👍 <b id="sideOk">0</b></span> <span class="no">👎 <b id="sideNo">0</b></span></div><label>Comentário</label><textarea id="sideComment"></textarea><button type="button" class="btn danger" onclick="deleteSelected()">Excluir</button></div></div></div>
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal modal-grow"><div class="modal-h"><span>💬</span><strong id="sideTitle">Avaliação</strong><button type="button" class="x" onclick="closeModal()">×</button></div><div class="modal-b"><p id="sideMeta" class="muted"></p><label>Título</label><input id="sideName" type="text"/><label id="colorLabel">Cor do macro</label><input id="sideColor" type="color" value="#e8f4fc"/><div class="vote-row"><button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button><button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button></div><label>Comentário</label><textarea id="sideComment" rows="5" placeholder="Sugestão…"></textarea><button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button><button type="button" class="btn danger" id="btnModalDelete">Excluir elemento</button></div></div></div>
+<div class="modal-bg" id="profileModal" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal modal-grow"><div class="modal-h"><strong>Meu perfil</strong><button type="button" class="x" onclick="document.getElementById('profileModal').classList.remove('open')">×</button></div><div class="modal-b"><label>Nome</label><input id="profName" type="text"/><label>Empresa</label><input id="profCompany" type="text"/><label>Celular / WhatsApp</label><input id="profPhone" type="tel" placeholder="5586..."/><label>URL foto</label><input id="profPhoto" type="url"/><label>URL logo do projeto</label><input id="profLogo" type="url"/><button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button></div></div></div>
+<div class="modal-bg" id="dupModal" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal modal-grow"><div class="modal-h"><strong>Duplicar fluxo</strong><button type="button" class="x" onclick="document.getElementById('dupModal').classList.remove('open')">×</button></div><div class="modal-b"><label>Nome / produto</label><input id="dupTitle" type="text"/><label>Empresa</label><input id="dupCompany" type="text"/><label>E-mails para compartilhar</label><input id="dupEmails" type="text"/><button type="button" class="btn btn-save" id="btnDupConfirm">Duplicar e abrir</button></div></div></div>
 <div id="printRoot" class="print-root"></div>
+<div id="toast" class="toast" hidden></div>
 <script src="config.js"></script>
 <script src="flow-data.js"></script>
 <script src="editor.js"></script>
