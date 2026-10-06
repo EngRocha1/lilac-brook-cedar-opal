@@ -159,6 +159,7 @@
   <div id="projectHeader" class="project-header"></div>
   <div id="sealBox"></div>
   <div class="share-panel">
+    <button type="button" class="btn" id="btnEditHeader">✎ Alterar cabeçalho</button>
     <button type="button" class="btn" id="btnShare">🔗 Compartilhar</button>
     <button type="button" class="btn pri" id="btnSeal">✅ Carimbar selo</button>
     <a id="waFlowOwner" class="wa-inline" href="#" target="_blank" hidden>WhatsApp do criador</a>
@@ -199,6 +200,35 @@
       <label>Logo</label><input id="profLogoFile" type="file" accept="image/*"/>
       <img id="profLogoPrev" alt="" style="max-width:120px;display:none"/>
       <button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button>
+    </div>
+  </div>
+</div>
+<!-- Modal edição de fluxo: cabeçalho + compartilhamentos -->
+<div class="modal-bg" id="flowEditModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal modal-grow" style="max-width:560px">
+    <div class="modal-h"><strong id="flowEditTitle">Editar fluxo</strong>
+      <button type="button" class="x" id="flowEditClose">×</button></div>
+    <div class="modal-b">
+      <h4 class="modal-section-title">Dados do projeto</h4>
+      <label>Nome do fluxo</label><input id="feTitle" type="text"/>
+      <label>Projeto</label><input id="feProject" type="text"/>
+      <label>Gerente</label><input id="feManager" type="text"/>
+      <label>Diretor</label><input id="feDirector" type="text"/>
+      <label>PO</label><input id="fePo" type="text"/>
+      <label>PM</label><input id="fePm" type="text"/>
+      <label>Stakeholders</label><input id="feStakeholders" type="text"/>
+      <button type="button" class="btn btn-save" id="btnFeSaveHeader">💾 Salvar cabeçalho</button>
+
+      <h4 class="modal-section-title" style="margin-top:18px">Compartilhamentos</h4>
+      <div id="feSharesList" class="fe-shares-list"></div>
+      <div class="fe-add-share">
+        <label>Novo e-mail convidado</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
+          <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado. O convidado entra só com o e-mail.</p>
+      </div>
     </div>
   </div>
 </div>
