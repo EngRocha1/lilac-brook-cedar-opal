@@ -20,6 +20,7 @@ export const create = mutation({
       flowKey: args.flowKey,
       emails: args.emails.map((e) => e.toLowerCase().trim()).filter(Boolean),
       canEdit: args.canEdit,
+      active: true,
       createdBy: args.createdBy?.toLowerCase(),
       updatedAt: Date.now(),
     });
@@ -30,10 +31,13 @@ export const create = mutation({
 export const getByToken = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const row = await ctx.db
       .query("shares")
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .unique();
+    if (!row) return null;
+    if (row.active === false) return null;
+    return row;
   },
 });
 
@@ -47,6 +51,19 @@ export const listByFlow = query({
   },
 });
 
+export const setActive = mutation({
+  args: { token: v.string(), active: v.boolean() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("shares")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!row) return { ok: false };
+    await ctx.db.patch(row._id, { active: args.active, updatedAt: Date.now() });
+    return { ok: true };
+  },
+});
+
 export const revoke = mutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
@@ -55,7 +72,7 @@ export const revoke = mutation({
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .unique();
     if (!row) return { ok: false };
-    await ctx.db.delete(row._id);
+    await ctx.db.patch(row._id, { active: false, updatedAt: Date.now() });
     return { ok: true };
   },
 });
@@ -66,7 +83,9 @@ export const listForGuest = query({
     const email = args.email.toLowerCase().trim();
     const all = await ctx.db.query("shares").collect();
     return all.filter(
-      (s) => s.emails.includes(email) || (s.createdBy && s.createdBy === email)
+      (s) =>
+        s.active !== false &&
+        (s.emails.includes(email) || (s.createdBy && s.createdBy === email))
     );
   },
 });

@@ -26,6 +26,7 @@ export default defineSchema({
     flowKey: v.string(),
     emails: v.array(v.string()),
     canEdit: v.boolean(),
+    active: v.optional(v.boolean()),
     createdBy: v.optional(v.string()),
     updatedAt: v.number(),
   })
