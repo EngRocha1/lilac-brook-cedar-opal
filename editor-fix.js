@@ -1,4 +1,4 @@
-/* Fluxora fix v8 — raw Convex API, list flows, profile, null-safe */
+/* Fluxora fix v9 — avatar, logo, macro cascade vote, client seal */
 (function(){
   function $(id){ return document.getElementById(id); }
   function isGuest(){ return window.HEMOPI_SHARE_MODE==='guest'; }
@@ -19,9 +19,175 @@
     if(!f.header)f.header={projectName:'HEMOPI 2.0',manager:'',director:'',po:'',pm:'',stakeholders:''};
     return f;
   }
-
-  // Wait until convex-api.js set window.convexClient
   function cx(){ return window.convexClient; }
+  function voteKey(k,id){ return k+':'+id; }
+
+  /* ===== URL cache for storage ===== */
+  const urlCache = {};
+  async function resolveStorageUrl(storageId){
+    if(!storageId) return null;
+    const id = String(storageId);
+    if(urlCache[id]) return urlCache[id];
+    if(!cx()) return null;
+    try{
+      const url = await cx().mutation('files:getUrl', { storageId: id });
+      if(url) urlCache[id] = url;
+      return url;
+    }catch(e){
+      console.warn('getUrl', e);
+      return null;
+    }
+  }
+
+  /* ===== Avatar + user chip ===== */
+  async function refreshUserChrome(){
+    const lab = $('userLabel');
+    if(!lab || !user) return;
+    let photoUrl = user.photo || null;
+    if(!photoUrl && user.photoStorageId){
+      photoUrl = await resolveStorageUrl(user.photoStorageId);
+      if(photoUrl) user.photo = photoUrl;
+    }
+    const name = user.name || user.email || '—';
+    const email = user.email || '';
+    const badge = isGuest() ? 'Convidado' : name;
+    lab.innerHTML =
+      (photoUrl
+        ? '<img class="user-avatar" src="'+photoUrl+'" alt="" />'
+        : '<span class="user-avatar user-avatar--ph">'+(name.charAt(0)||'?').toUpperCase()+'</span>') +
+      '<span class="user-chip-text">'+badge+(isGuest()?' · '+email:' · '+email)+'</span>';
+  }
+
+  /* ===== Project header with logo ===== */
+  function lockHeaderForGuest(){
+    const box = $('projectHeader');
+    if(!box) return;
+    box.querySelectorAll('input,textarea,select').forEach(inp=>{
+      inp.readOnly = true;
+      inp.disabled = true;
+      inp.style.pointerEvents = 'none';
+      inp.style.background = '#eef1f4';
+      inp.style.cursor = 'not-allowed';
+      inp.title = 'Somente o criador pode editar o cabeçalho';
+    });
+  }
+
+  window.renderProjectHeader = async function(){
+    const box = $('projectHeader');
+    if(!box || !flow) return;
+    if(!flow.header) flow.header = {projectName:'',manager:'',director:'',po:'',pm:'',stakeholders:''};
+    const h = flow.header;
+
+    // logo: flow.header.logoUrl or creator logo
+    let logoUrl = h.logoUrl || user?.logo || null;
+    if(!logoUrl && (h.logoStorageId || user?.logoStorageId)){
+      logoUrl = await resolveStorageUrl(h.logoStorageId || user.logoStorageId);
+      if(logoUrl){
+        if(h.logoStorageId) h.logoUrl = logoUrl;
+        else if(user) user.logo = logoUrl;
+      }
+    }
+
+    const fields = [
+      ['projectName','Projeto'],['manager','Gerente'],['director','Diretor'],
+      ['po','PO'],['pm','PM'],['stakeholders','Stakeholders']
+    ];
+    const logoHtml = logoUrl
+      ? '<div class="header-logo-wrap"><img class="header-logo" src="'+logoUrl+'" alt="Logo"/></div>'
+      : '<div class="header-logo-wrap header-logo-wrap--empty" title="Logo da empresa">◇</div>';
+
+    box.innerHTML = logoHtml + fields.map(([k,lab])=>
+      '<label class="hdr-field"><span>'+lab+'</span>'+
+      '<input data-hk="'+k+'" value="'+String(h[k]||'').replace(/"/g,'"')+'" /></label>'
+    ).join('');
+
+    box.querySelectorAll('input[data-hk]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        if(isGuest()) return;
+        if(!flow.header) flow.header = {};
+        flow.header[inp.getAttribute('data-hk')] = inp.value;
+        saveLocal();
+      });
+    });
+
+    if(isGuest()) lockHeaderForGuest();
+    renderSealBox();
+  };
+
+  /* ===== SEAL ===== */
+  function renderSealBox(){
+    const box = $('sealBox');
+    if(!box) return;
+    const s = flow && flow.seal;
+    if(!s){
+      box.innerHTML = '';
+      return;
+    }
+    const color = s.status === 'green' ? 'green' : (s.status === 'red' ? 'red' : 'yellow');
+    const label = s.status === 'green' ? '✓ REVISADO / APROVADO' : (s.status === 'red' ? '✗ REPROVADO' : '⚠ REVISÃO PARCIAL');
+    box.innerHTML = '<div class="seal '+color+'">'+label+
+      '<br/><small>'+(s.name||'')+' · '+(s.email||'')+
+      (s.at ? ' · '+new Date(s.at).toLocaleString('pt-BR') : '')+
+      '</small></div>';
+  }
+
+  function applyVoteToKey(key, val){
+    if(!flow.votes) flow.votes = {};
+    if(!flow.votes[key]) flow.votes[key] = {ok:0,no:0,mine:null};
+    const v = flow.votes[key];
+    // reset previous mine
+    if(v.mine === 'ok') v.ok = Math.max(0, v.ok-1);
+    if(v.mine === 'no') v.no = Math.max(0, v.no-1);
+    if(val === 'ok'){ v.ok++; v.mine = 'ok'; }
+    else if(val === 'no'){ v.no++; v.mine = 'no'; }
+    else { v.mine = null; }
+  }
+
+  /** Macro OK → all nodes inside inherit OK */
+  window.setMyVote = function(k, id, val){
+    if(!flow) return;
+    if(!flow.votes) flow.votes = {};
+    const key = voteKey(k, id);
+    const cur = flow.votes[key] || {ok:0,no:0,mine:null};
+    // toggle off if same
+    if(cur.mine === val){
+      applyVoteToKey(key, null);
+      // if macro un-voted, do not force children
+    } else {
+      applyVoteToKey(key, val);
+      if(k === 'macro' && val === 'ok'){
+        (flow.nodes||[]).forEach(n=>{
+          if(n.macro === id || n.macro === String(id)){
+            applyVoteToKey(voteKey('node', n.id), 'ok');
+          }
+        });
+      }
+      if(k === 'macro' && val === 'no'){
+        // only mark macro; children stay individual
+      }
+    }
+    saveLocal();
+    try{ render(); renderMacroBar(); updateProgress(); refreshSide(); }catch(e){}
+  };
+
+  /** Client seal → all macros + nodes OK / green */
+  window.applyClientSeal = function(status){
+    if(!flow || !user) return;
+    status = status || 'green';
+    if(status === 'green'){
+      (flow.macros||[]).forEach(m=> applyVoteToKey(voteKey('macro', m.id), 'ok'));
+      (flow.nodes||[]).forEach(n=> applyVoteToKey(voteKey('node', n.id), 'ok'));
+    }
+    flow.seal = {
+      status: status,
+      name: user.name || user.email,
+      email: user.email,
+      at: Date.now()
+    };
+    saveLocal();
+    try{ render(); renderMacroBar(); updateProgress(); renderSealBox(); }catch(e){}
+    if(typeof toast==='function') toast(status==='green'?'Selo verde aplicado — tudo OK':'Selo registrado');
+  };
 
   /* ---- debounced save ---- */
   let _saveTimer=null, _saving=false, _queued=false;
@@ -70,10 +236,10 @@
       if(comment) comment.value='';
       return;
     }
-    const v=(typeof getVotes==='function')?getVotes(selected.kind,selected.id):{ok:0,no:0,mine:null};
+    const v = (typeof getVotes==='function') ? getVotes(selected.kind, selected.id) : (flow.votes[voteKey(selected.kind,selected.id)]||{ok:0,no:0,mine:null});
     if(v.mine==='ok') document.querySelector('.vbtn[data-v="ok"]')?.classList.add('on-ok');
     if(v.mine==='no') document.querySelector('.vbtn[data-v="no"]')?.classList.add('on-no');
-    if(comment) comment.value=(flow?.comments&&flow.comments[selected.kind+':'+selected.id])||'';
+    if(comment) comment.value=(flow?.comments&&flow.comments[voteKey(selected.kind,selected.id)])||'';
     if(selected.kind==='node'){
       const n=nodeById(selected.id);
       if(title) title.textContent=(n?.title||'').replace(/\n/g,' · ');
@@ -86,6 +252,7 @@
     } else if(selected.kind==='macro'){
       const m=macroById(selected.id);
       if(title) title.textContent=m?.title||selected.id;
+      if(meta) meta.textContent='Macro '+(selected.id)+(isGuest()?'':' · 👍 aplica a todos os blocos');
       if(name){ name.value=m?.title||''; name.readOnly=isGuest(); }
     }
     const del=$('btnModalDelete');
@@ -98,25 +265,22 @@
   window.closeModal=function(){ $('modalBg')?.classList.remove('open'); };
   window.voteSelected=function(val){
     if(!selected||!flow) return;
-    if(typeof setMyVote==='function') setMyVote(selected.kind,selected.id,val);
+    window.setMyVote(selected.kind, selected.id, val);
     try{ refreshSide(); }catch(e){}
-    if(typeof toast==='function') toast(val==='ok'?'👍':'👎');
+    if(typeof toast==='function'){
+      if(selected.kind==='macro' && val==='ok') toast('Macro OK — blocos internos herdaram 👍');
+      else toast(val==='ok'?'👍':'👎');
+    }
   };
 
-  /* ---- LIST FLOWS FROM CONVEX ---- */
+  /* ---- LIST FLOWS + logo ---- */
   async function loadFlowListSafe(){
     const sel=$('flowSelect');
     const email=(user?.email||'').toLowerCase().trim();
-    console.log('[Fluxora] list flows for', email, 'cx=', !!cx());
     let rows=[];
     if(cx()&&email&&!isGuest()){
-      try{
-        rows = await cx().query('flows:list', { ownerEmail: email }) || [];
-        console.log('[Fluxora] flows listed', rows.length, rows.map(r=>r.key));
-      }catch(e){
-        console.error('[Fluxora] list error', e);
-        if(typeof toast==='function') toast('Erro ao listar fluxos', true);
-      }
+      try{ rows = await cx().query('flows:list', { ownerEmail: email }) || []; }
+      catch(e){ console.error(e); }
     }
     if(sel){
       sel.innerHTML='';
@@ -139,85 +303,102 @@
   }
   window.loadFlowList = loadFlowListSafe;
 
+  async function cardLogoUrl(r){
+    const h = r?.data?.header || {};
+    if(h.logoUrl) return h.logoUrl;
+    if(h.logoStorageId) return await resolveStorageUrl(h.logoStorageId);
+    if(user?.logo) return user.logo;
+    if(user?.logoStorageId) return await resolveStorageUrl(user.logoStorageId);
+    return null;
+  }
+
   async function renderFlowManager(){
     const list=$('flowManagerList'); if(!list) return;
     const email=(user?.email||'').toLowerCase().trim();
     list.innerHTML='<p class="muted">Consultando Convex…</p>';
-    if(!cx()){
-      list.innerHTML='<p class="muted">Cliente Convex não carregou. Recarregue a página.</p>';
-      return;
-    }
-    if(!email){
-      list.innerHTML='<p class="muted">Faça login.</p>';
+    if(!cx()||!email){
+      list.innerHTML='<p class="muted">Faça login / Convex offline.</p>';
       return;
     }
     let rows=[];
-    try{
-      rows = await cx().query('flows:list', { ownerEmail: email }) || [];
-    }catch(e){
-      list.innerHTML='<p class="muted">Erro: '+String(e.message||e)+'</p>';
-      return;
-    }
+    try{ rows = await cx().query('flows:list', { ownerEmail: email }) || []; }
+    catch(e){ list.innerHTML='<p class="muted">Erro: '+String(e.message||e)+'</p>'; return; }
     if(!rows.length){
-      list.innerHTML='<p class="muted">Nenhum fluxo para <b>'+email+'</b>. Use + Novo (cria no Convex).</p>';
+      list.innerHTML='<p class="muted">Nenhum fluxo. Use + Novo.</p>';
       return;
     }
     rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
     list.innerHTML='';
-    rows.forEach(r=>{
+    for(const r of rows){
       const card=document.createElement('div');
       card.className='flow-mgr-card';
       const nodes=r.data?.nodes?.length||0;
       const macros=r.data?.macros?.length||0;
-      card.innerHTML='<div><h4>'+(r.title||r.key)+'</h4><div class="flow-mgr-meta">'+r.key+' · '+macros+' macros · '+nodes+' nós</div></div>';
+      const logo = await cardLogoUrl(r);
+      const logoHtml = logo
+        ? '<img class="flow-card-logo" src="'+logo+'" alt=""/>'
+        : '<div class="flow-card-logo flow-card-logo--ph">◇</div>';
+      card.innerHTML =
+        '<div class="flow-card-left">'+logoHtml+
+        '<div><h4>'+(r.title||r.key)+'</h4>'+
+        '<div class="flow-mgr-meta">'+r.key+' · '+macros+' macros · '+nodes+' nós</div></div></div>';
       const actions=document.createElement('div');
-      actions.style.cssText='display:flex;gap:6px';
+      actions.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
       const open=document.createElement('button'); open.className='btn pri'; open.textContent='Abrir';
       open.onclick=async()=>{
         flowKey=r.key; localStorage.setItem(FLOW_KEY_STORE,flowKey); flowTitle=r.title||r.key;
         if($('flowManager')) $('flowManager').hidden=true;
         onlyShow('appMain');
         await loadFlow();
-        try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader?.(); }catch(e){}
+        try{ render(); renderMacroBar(); updateProgress(); await renderProjectHeader(); }catch(e){}
       };
       const del=document.createElement('button'); del.className='btn danger'; del.textContent='Excluir';
       del.style.cssText='width:auto;margin:0';
       del.onclick=async()=>{
         if(!confirm('Excluir "'+(r.title||r.key)+'"?')) return;
-        try{ await cx().mutation('flows:remove',{key:r.key, ownerEmail:email}); }catch(e){ console.error(e); }
+        try{ await cx().mutation('flows:remove',{key:r.key, ownerEmail:email}); }catch(e){}
         await renderFlowManager(); await loadFlowListSafe();
       };
       actions.append(open,del); card.appendChild(actions); list.appendChild(card);
-    });
+    }
   }
 
   async function createNewFlow(title){
     const email=(user?.email||'').toLowerCase().trim();
-    if(!email){ if(typeof toast==='function') toast('Faça login',true); return null; }
-    if(!cx()){ if(typeof toast==='function') toast('Convex offline',true); return null; }
+    if(!email||!cx()){ if(typeof toast==='function') toast('Login/Convex necessário',true); return null; }
     const data=(typeof emptyFlow==='function')?emptyFlow():{macros:[],nodes:[],edges:[],votes:{},comments:{},header:{}};
     data.header={projectName:title};
+    // attach creator logo to new flow header if available
+    if(user.logoStorageId) data.header.logoStorageId = String(user.logoStorageId);
+    if(user.logo) data.header.logoUrl = user.logo;
     try{
       const r=await cx().mutation('flows:create',{title, ownerEmail:email, data});
       const rows=await cx().query('flows:list',{ownerEmail:email});
-      console.log('[Fluxora] after create', rows?.length, r);
       flowKey=r.key; flowTitle=title; flow=data;
       localStorage.setItem(FLOW_KEY_STORE, flowKey);
       await loadFlowListSafe();
       if(typeof toast==='function') toast('Na nuvem: '+title+' · total '+rows.length);
       return r.key;
     }catch(e){
-      console.error(e);
       if(typeof toast==='function') toast('Erro create: '+e.message, true);
       return null;
     }
   }
 
-  /* ---- PROFILE ---- */
+  /* ---- PROFILE with photo/logo upload ---- */
   async function hashPass(pw){
     const data=new TextEncoder().encode('fluxora:'+pw);
     const buf=await crypto.subtle.digest('SHA-256',data);
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  async function uploadFile(file){
+    if(!file||!cx()) return null;
+    const uploadUrl=await cx().mutation('files:generateUploadUrl',{});
+    const res=await fetch(uploadUrl,{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
+    const json=await res.json();
+    const storageId=json.storageId;
+    const url=await cx().mutation('files:getUrl',{storageId});
+    return {url, storageId:String(storageId)};
   }
   function wireProfile(){
     const openBtn=$('btnOpenProfile');
@@ -231,13 +412,23 @@
             user.name=p.name||user.name;
             user.company=p.company||'';
             user.phone=p.phone||'';
+            user.photoStorageId=p.photoStorageId||user.photoStorageId;
+            user.logoStorageId=p.logoStorageId||user.logoStorageId;
             localStorage.setItem(USER_KEY, JSON.stringify(user));
           }
-        }catch(e){ console.warn(e); }
+        }catch(e){}
       }
       if($('profName')) $('profName').value=user.name||'';
       if($('profCompany')) $('profCompany').value=user.company||'';
       if($('profPhone')) $('profPhone').value=user.phone||'';
+      if(user.photoStorageId){
+        const u=await resolveStorageUrl(user.photoStorageId);
+        if(u && $('profPhotoPrev')){ $('profPhotoPrev').src=u; $('profPhotoPrev').style.display='block'; user.photo=u; }
+      }
+      if(user.logoStorageId){
+        const u=await resolveStorageUrl(user.logoStorageId);
+        if(u && $('profLogoPrev')){ $('profLogoPrev').src=u; $('profLogoPrev').style.display='block'; user.logo=u; }
+      }
       $('profileModal')?.classList.add('open');
     };
     const saveBtn=$('btnSaveProfile');
@@ -255,19 +446,45 @@
           photoStorageId: user.photoStorageId?String(user.photoStorageId):undefined,
           logoStorageId: user.logoStorageId?String(user.logoStorageId):undefined
         });
-        const p=await cx().query('auth:getByEmail',{email:user.email});
-        console.log('[Fluxora] profile saved', p);
-        if(typeof toast==='function') toast('Perfil OK: '+(p?.company||company));
+        // attach logo to current flow header for presentation
+        if(flow && flow.header){
+          if(user.logoStorageId) flow.header.logoStorageId = String(user.logoStorageId);
+          if(user.logo) flow.header.logoUrl = user.logo;
+          saveLocal();
+        }
+        await refreshUserChrome();
+        await renderProjectHeader();
+        if(typeof toast==='function') toast('Perfil salvo');
         $('profileModal')?.classList.remove('open');
-        if($('userLabel')) $('userLabel').textContent=user.name+' · '+user.email;
       }catch(e){
-        console.error(e);
         if(typeof toast==='function') toast('Erro perfil: '+e.message, true);
       }
     };
+    if($('profPhotoFile')) $('profPhotoFile').onchange=async(e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{
+        const up=await uploadFile(f);
+        if(up){
+          user.photo=up.url; user.photoStorageId=up.storageId;
+          if($('profPhotoPrev')){ $('profPhotoPrev').src=up.url; $('profPhotoPrev').style.display='block'; }
+          if(typeof toast==='function') toast('Foto pronta — Salvar perfil');
+        }
+      }catch(err){ if(typeof toast==='function') toast('Upload falhou',true); }
+    };
+    if($('profLogoFile')) $('profLogoFile').onchange=async(e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{
+        const up=await uploadFile(f);
+        if(up){
+          user.logo=up.url; user.logoStorageId=up.storageId;
+          if($('profLogoPrev')){ $('profLogoPrev').src=up.url; $('profLogoPrev').style.display='block'; }
+          if(typeof toast==='function') toast('Logo pronta — Salvar perfil');
+        }
+      }catch(err){}
+    };
   }
 
-  /* ---- AUTH ---- */
+  /* ---- AUTH (keep) ---- */
   const form=$('authForm');
   if(form) form.onsubmit=async(ev)=>{
     ev.preventDefault();
@@ -291,7 +508,6 @@
           await cx().mutation('auth:register',{email,name,passwordHash,company,phone});
         }catch(e){
           if(String(e.message||e).includes('EMAIL_EXISTS')){ showErr('Cadastro já existe. Use Entrar.'); return; }
-          console.warn(e);
         }
       }
       user={email,name,company,phone};
@@ -314,7 +530,7 @@
       }
     }
     if(!ok){ showErr('E-mail ou senha incorretos'); return; }
-    user={email:ok.email,name:ok.name,company:ok.company||'',phone:ok.phone||''};
+    user={email:ok.email,name:ok.name,company:ok.company||'',phone:ok.phone||'',photoStorageId:ok.photoStorageId,logoStorageId:ok.logoStorageId};
     localStorage.setItem(USER_KEY,JSON.stringify(user));
     if($('loginModal')) $('loginModal').hidden=true;
     await window.enterApp();
@@ -329,7 +545,7 @@
           if(!flow.votes)flow.votes={}; if(!flow.comments)flow.comments={};
           return;
         }
-      }catch(e){ console.warn(e); }
+      }catch(e){}
     }
     try{
       const raw=localStorage.getItem(STORAGE_KEY);
@@ -340,11 +556,11 @@
 
   function applyGuestUI(){
     if(!isGuest()) return;
-    ['btnNewFlow','btnAddMacro','btnOpenMgr','btnOpenProfile','btnShare','btnSeal'].forEach(id=>{
+    ['btnNewFlow','btnAddMacro','btnOpenMgr','btnOpenProfile','btnShare'].forEach(id=>{
       const el=$(id); if(el) el.style.display='none';
     });
-    const box=$('projectHeader');
-    if(box) box.querySelectorAll('input').forEach(i=>{ i.disabled=true; i.readOnly=true; });
+    // seal remains available for guest client
+    lockHeaderForGuest();
   }
 
   async function presenceTick(){
@@ -367,7 +583,7 @@
       const title=prompt('Nome do novo fluxo','Novo fluxo');
       if(!title) return;
       const key=await createNewFlow(title);
-      if(key) try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
+      if(key) try{ render(); renderMacroBar(); updateProgress(); await renderProjectHeader(); }catch(e){}
     };
     if($('btnOpenMgr')) $('btnOpenMgr').onclick=async()=>{
       if($('appMain')) $('appMain').hidden=true;
@@ -399,73 +615,90 @@
         prompt('Link convidado:', url);
       }catch(e){ if(typeof toast==='function') toast('Erro share',true); }
     };
+    // Seal: creator OR guest client
+    if($('btnSeal')){
+      $('btnSeal').onclick=function(){
+        if(!user){ if(typeof toast==='function') toast('Identifique-se',true); return; }
+        if(!confirm('Aplicar SELO VERDE de revisão? Todos os macros e blocos ficarão OK.')) return;
+        applyClientSeal('green');
+      };
+      // Guest can also seal
+      if(isGuest()) $('btnSeal').style.display='';
+    }
   }
 
   const _enterApp=window.enterApp;
   window.enterApp=async function(){
     onlyShow('appMain');
     if(typeof _enterApp==='function'){
-      try{ await _enterApp(); }catch(e){ console.warn(e); }
+      try{ await _enterApp(); }catch(e){}
     }
     onlyShow('appMain');
-    // Force our convex client (override esm if broken)
-    if(!window.__convexReady){
-      console.warn('convex-api not ready');
-    }
     rebindAll();
-    try{ await loadFlowListSafe(); }catch(e){ console.error(e); }
+    // load profile media ids
+    if(cx()&&user?.email){
+      try{
+        const p=await cx().query('auth:getByEmail',{email:user.email});
+        if(p){
+          user.name=p.name||user.name;
+          user.company=p.company||user.company;
+          user.phone=p.phone||user.phone;
+          user.photoStorageId=p.photoStorageId||user.photoStorageId;
+          user.logoStorageId=p.logoStorageId||user.logoStorageId;
+          localStorage.setItem(USER_KEY, JSON.stringify(user));
+        }
+      }catch(e){}
+    }
+    await refreshUserChrome();
+    try{ await loadFlowListSafe(); }catch(e){}
     try{ await loadFlow(); }catch(e){}
     if(!flowHasContent(flow)&&!isGuest()){
       flow=cloneDefaultFlow();
       flowKey=flowKey||'hemopi-main';
       flowTitle='HEMOPI principal';
-      try{
-        if(cx()&&user?.email){
-          await cx().mutation('flows:save',{key:'hemopi-main',title:'HEMOPI principal',ownerEmail:user.email.toLowerCase(),data:flow});
-          flowKey='hemopi-main';
-          await loadFlowListSafe();
-        }
-      }catch(e){}
     }
-    try{ render(); renderMacroBar(); updateProgress(); renderProjectHeader?.(); }catch(e){}
+    try{ render(); renderMacroBar(); updateProgress(); await renderProjectHeader(); }catch(e){}
     applyGuestUI();
     presenceTick();
     if(!window._presenceTimer) window._presenceTimer=setInterval(()=>{ try{ presenceTick(); }catch(e){} }, 15000);
   };
 
-  // Neutralize broken handlers that crash on missing DOM nodes
   window.initGoogleBtn=function(){};
   try{
-    const safe = (id, fn)=>{
-      const el=$(id);
-      if(el) el.onclick=fn;
-    };
-    // prevent editor.js btnMaster crash by defining dummy if missing
-    if(!$('btnMaster')){
-      const d=document.createElement('button');
-      d.id='btnMaster'; d.hidden=true; document.body.appendChild(d);
-    }
-    if(!$('masterPass')){
-      const d=document.createElement('input');
-      d.id='masterPass'; d.hidden=true; document.body.appendChild(d);
-    }
-    if(!$('masterMsg')){
-      const d=document.createElement('p');
-      d.id='masterMsg'; d.hidden=true; document.body.appendChild(d);
-    }
-    if(!$('googleBtn')){
-      const d=document.createElement('div');
-      d.id='googleBtn'; d.hidden=true; document.body.appendChild(d);
-    }
-    if(!$('googleHint')){
-      const d=document.createElement('p');
-      d.id='googleHint'; d.hidden=true; document.body.appendChild(d);
-    }
+    ['btnMaster','masterPass','masterMsg','googleBtn','googleHint'].forEach(id=>{
+      if(!$(id)){
+        const d=document.createElement(id.includes('Pass')||id.includes('Email')?'input':'div');
+        d.id=id; d.hidden=true; document.body.appendChild(d);
+      }
+    });
   }catch(e){}
+
+  // CSS inject for avatar/logo
+  if(!document.getElementById('fluxora-v9-css')){
+    const st=document.createElement('style');
+    st.id='fluxora-v9-css';
+    st.textContent=`
+      .user-chip{display:inline-flex!important;align-items:center;gap:8px;max-width:280px}
+      .user-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.5);flex-shrink:0}
+      .user-avatar--ph{display:inline-flex;align-items:center;justify-content:center;background:#ff2d95;color:#fff;font-weight:800;font-size:14px}
+      .user-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .header-logo-wrap{width:52px;height:52px;border-radius:10px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;border:1px solid #d0d7de}
+      .header-logo{max-width:100%;max-height:100%;object-fit:contain}
+      .header-logo-wrap--empty{color:#94a3b8;font-size:20px}
+      #projectHeader{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+      .hdr-field{display:flex;flex-direction:column;font-size:11px;gap:2px;min-width:120px;flex:1}
+      .hdr-field input{padding:6px 8px;border:1px solid #cfd8e3;border-radius:8px}
+      .flow-mgr-card{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;background:#fff}
+      .flow-card-left{display:flex;align-items:center;gap:12px;min-width:0}
+      .flow-card-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#f8fafc;border:1px solid #e2e8f0}
+      .flow-card-logo--ph{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:18px}
+      #sealBox{padding:0 16px}
+    `;
+    document.head.appendChild(st);
+  }
 
   async function boot(){
     rebindAll();
-    // share entry
     const token=new URLSearchParams(location.search).get('share');
     if(token){
       if($('publicPage')) $('publicPage').hidden=true;
@@ -489,9 +722,11 @@
           if(gm) gm.hidden=true;
           await loadFlow();
           onlyShow('appMain');
-          if($('userLabel')) $('userLabel').textContent='Convidado · '+email;
+          await refreshUserChrome();
           applyGuestUI();
-          try{ render(); renderMacroBar(); updateProgress(); }catch(e){}
+          try{ render(); renderMacroBar(); updateProgress(); await renderProjectHeader(); }catch(e){}
+          // show seal button for guest
+          if($('btnSeal')) $('btnSeal').style.display='';
           presenceTick();
         }catch(e){ console.error(e); }
       });
