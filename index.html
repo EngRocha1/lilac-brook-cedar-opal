@@ -203,7 +203,6 @@
     </div>
   </div>
 </div>
-<!-- Modal edição de fluxo: cabeçalho + compartilhamentos -->
 <div class="modal-bg" id="flowEditModal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal modal-grow" style="max-width:560px">
     <div class="modal-h"><strong id="flowEditTitle">Editar fluxo</strong>
@@ -218,7 +217,6 @@
       <label>PM</label><input id="fePm" type="text"/>
       <label>Stakeholders</label><input id="feStakeholders" type="text"/>
       <button type="button" class="btn btn-save" id="btnFeSaveHeader">💾 Salvar cabeçalho</button>
-
       <h4 class="modal-section-title" style="margin-top:18px">Compartilhamentos</h4>
       <div id="feSharesList" class="fe-shares-list"></div>
       <div class="fe-add-share">
@@ -227,7 +225,7 @@
           <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
           <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado. O convidado entra só com o e-mail.</p>
+        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado. Convidado entra só com o e-mail.</p>
       </div>
     </div>
   </div>
@@ -252,5 +250,6 @@
 <script src="editor.js"></script>
 <script src="editor-patch.js"></script>
 <script src="editor-fix.js"></script>
+<script src="flow-edit-modal.js"></script>
 </body>
 </html>
