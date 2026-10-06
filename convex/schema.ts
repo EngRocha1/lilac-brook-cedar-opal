@@ -14,6 +14,11 @@ export default defineSchema({
   profiles: defineTable({
     email: v.string(),
     name: v.string(),
+    passwordHash: v.optional(v.string()),
+    company: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    photoStorageId: v.optional(v.string()),
+    logoStorageId: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_email", ["email"]),
   shares: defineTable({
