@@ -1,6 +1,27 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+export const getByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const row = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+    if (!row) return null;
+    return {
+      email: row.email,
+      name: row.name,
+      company: row.company || "",
+      phone: row.phone || "",
+      hasPassword: !!row.passwordHash,
+      photoStorageId: row.photoStorageId,
+      logoStorageId: row.logoStorageId,
+    };
+  },
+});
+
 export const register = mutation({
   args: {
     email: v.string(),
@@ -15,17 +36,21 @@ export const register = mutation({
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
+
     if (existing) {
-      if (!existing.passwordHash && args.passwordHash) {
-        await ctx.db.patch(existing._id, {
-          passwordHash: args.passwordHash,
-          name: args.name || existing.name,
-          updatedAt: Date.now(),
-        });
-        return { ok: true, updated: true };
+      if (existing.passwordHash) {
+        throw new Error("EMAIL_EXISTS");
       }
-      throw new Error("E-mail já cadastrado");
+      await ctx.db.patch(existing._id, {
+        passwordHash: args.passwordHash,
+        name: args.name || existing.name,
+        company: args.company ?? existing.company ?? "",
+        phone: args.phone ?? existing.phone ?? "",
+        updatedAt: Date.now(),
+      });
+      return { ok: true, completed: true };
     }
+
     await ctx.db.insert("profiles", {
       email,
       name: args.name,
@@ -34,7 +59,7 @@ export const register = mutation({
       phone: args.phone || "",
       updatedAt: Date.now(),
     });
-    return { ok: true };
+    return { ok: true, created: true };
   },
 });
 
@@ -60,38 +85,6 @@ export const login = query({
   },
 });
 
-export const setPassword = mutation({
-  args: {
-    email: v.string(),
-    name: v.optional(v.string()),
-    passwordHash: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const email = args.email.toLowerCase().trim();
-    const row = await ctx.db
-      .query("profiles")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .unique();
-    if (row) {
-      await ctx.db.patch(row._id, {
-        passwordHash: args.passwordHash,
-        name: args.name || row.name,
-        updatedAt: Date.now(),
-      });
-      return { ok: true };
-    }
-    await ctx.db.insert("profiles", {
-      email,
-      name: args.name || email.split("@")[0],
-      passwordHash: args.passwordHash,
-      company: "",
-      phone: "",
-      updatedAt: Date.now(),
-    });
-    return { ok: true, created: true };
-  },
-});
-
 export const updateProfile = mutation({
   args: {
     email: v.string(),
@@ -107,7 +100,7 @@ export const updateProfile = mutation({
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
-    if (!row) throw new Error("Perfil não encontrado");
+    if (!row) throw new Error("PROFILE_NOT_FOUND");
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     if (args.name !== undefined) patch.name = args.name;
     if (args.company !== undefined) patch.company = args.company;
