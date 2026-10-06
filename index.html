@@ -16,16 +16,27 @@
       <div>
         <h1>HEMOPI — Visão do fluxo</h1>
         <p class="tagline">Esta página apresenta uma visão visual e interativa do processo de hemoterapia, permitindo compreender como as etapas se relacionam, onde existem decisões, transições e responsabilidades e quais pontos precisam ser validados pelas equipes.</p>
-        <p class="tagline">Arraste elementos e conectores para reorganizar a visão. Use duplo clique em etapas ou linhas para abrir a avaliação. O objetivo é transformar o conhecimento do processo em uma representação colaborativa antes da definição detalhada da solução.</p>
+        <p class="tagline">Arraste elementos. Clique no ícone 💬 para comentar. Crie fluxos e entre com seu e-mail (Gmail). Conexões entre macros são impressas como conectores de circuito.</p>
       </div>
     </div>
     <div class="pills">
       <span class="pill">SESAPI / HEMOPI</span>
       <span class="pill">RDC 34 · Lei 10.048 · LGPD</span>
-      <span class="pill">Editor visual · validação</span>
-      <span class="pill">Convex online</span>
+      <span class="pill">Editor · Convex</span>
     </div>
   </header>
+
+  <div class="account-bar" id="accountBar">
+    <span id="userLabel" class="user">Visitante</span>
+    <input id="inName" type="text" placeholder="Seu nome" style="width:120px"/>
+    <input id="inEmail" type="email" placeholder="seu@gmail.com" style="width:180px"/>
+    <button type="button" class="btn pri" id="btnLogin">Entrar</button>
+    <button type="button" class="btn" id="btnLogout" style="display:none">Sair</button>
+    <span style="opacity:.4">|</span>
+    <label>Fluxo</label>
+    <select id="flowSelect" style="min-width:160px"></select>
+    <button type="button" class="btn" id="btnNewFlow">+ Novo fluxo</button>
+  </div>
 
   <div class="toolbar">
     <div class="tool-group">
@@ -64,7 +75,7 @@
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-h">
-      <span id="sideIco">📋</span>
+      <span id="sideIco">💬</span>
       <strong id="sideTitle">Avaliação</strong>
       <button type="button" class="x" onclick="closeModal()" aria-label="Fechar">×</button>
     </div>
