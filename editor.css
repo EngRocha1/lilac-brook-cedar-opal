@@ -9,6 +9,9 @@ body{font-family:Segoe UI,system-ui,sans-serif;background:var(--fundo);color:var
 .tagline{font-size:.8rem;opacity:.95;max-width:900px;margin-top:4px}
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pill{font-size:.65rem;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)}
+.account-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--borda);border-radius:12px;padding:8px 10px;margin-bottom:8px;font-size:.75rem}
+.account-bar input,.account-bar select{border:1px solid var(--borda);border-radius:8px;padding:6px 8px;font:inherit;font-size:.75rem}
+.account-bar .user{font-weight:700;color:var(--azul)}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border:1px solid var(--borda);border-radius:12px;padding:8px 10px;margin-bottom:10px;position:sticky;top:0;z-index:20}
 .tool-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .btn{border:1px solid var(--borda);background:#fff;border-radius:8px;padding:6px 10px;font-size:.75rem;font-weight:600;cursor:pointer}
@@ -56,6 +59,7 @@ body{font-family:Segoe UI,system-ui,sans-serif;background:var(--fundo);color:var
 .node.bad .shape{fill:#fce4e8;stroke:#c41e3a}
 .node.ok .shape{fill:#e6f5ed;stroke:#1b7a4e}
 .node text{font-size:11px;font-weight:600;fill:#1a2332;pointer-events:none}
+.comment-btn{cursor:pointer}
 .edge{fill:none;stroke:#5c6b7a;stroke-width:2;cursor:pointer;pointer-events:stroke}
 .edge.selected{stroke:#0b3d5c;stroke-width:3}
 .edge-hit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer;pointer-events:stroke}
@@ -63,5 +67,8 @@ body{font-family:Segoe UI,system-ui,sans-serif;background:var(--fundo);color:var
 .macro-box{fill-opacity:.25;stroke-width:2;stroke-dasharray:8 5;pointer-events:none}
 .macro-label{font-size:11px;font-weight:700;pointer-events:none}
 .print-root{display:none}
-@media print{.hero,.toolbar,.palette,.modal-bg,.canvas-wrap{display:none!important}.print-root{display:block!important}.print-page{page-break-after:always;padding:12px}.print-page:last-child{page-break-after:auto}body{background:#fff}}
+.print-mod{border-left:4px solid var(--sangue);padding-left:10px;margin-bottom:12px}
+.print-conn{font-family:ui-monospace,monospace;font-size:.8rem;background:#f4f6f8;border:1px solid var(--borda);border-radius:8px;padding:8px;margin:6px 0}
+.print-conn .tag{display:inline-block;background:#e8f0fe;color:#1a5f8a;border-radius:4px;padding:1px 6px;font-weight:700;margin-right:4px}
+@media print{.hero,.toolbar,.palette,.modal-bg,.canvas-wrap,.account-bar{display:none!important}.print-root{display:block!important}.print-page{page-break-after:always;padding:12px}.print-page:last-child{page-break-after:auto}body{background:#fff}}
 @page{size:A4;margin:10mm}
