@@ -124,7 +124,7 @@
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
     <div class="logo">◇</div>
-    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Versão estável restaurada</p></div>
+    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Estável + zoom</p></div>
     <div class="hero-user">
       <span id="userLabel" class="user-chip">—</span>
       <button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button>
@@ -247,7 +247,7 @@
 </div>
 <div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
-<!-- DOWNGRADE: pin all runtime JS to stable commit 9c55ef5 -->
+<!-- Core estável 9c55ef5 -->
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
@@ -262,5 +262,8 @@
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/view-controls.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/macro-comment-autosave.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
+<!-- Patches seguros: dedupe Editar + zoom -->
+<script src="list-dedupe.js?v=restore-zoom1"></script>
+<script src="board-viewport.js?v=restore-zoom1"></script>
 </body>
 </html>
