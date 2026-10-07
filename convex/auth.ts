@@ -22,6 +22,23 @@ export const getByEmail = query({
   },
 });
 
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("profiles").collect();
+    return rows
+      .map((r) => ({
+        email: r.email,
+        name: r.name,
+        company: r.company || "",
+        phone: r.phone || "",
+        hasPassword: !!r.passwordHash,
+        updatedAt: r.updatedAt,
+      }))
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  },
+});
+
 export const register = mutation({
   args: {
     email: v.string(),
@@ -100,7 +117,7 @@ export const updateProfile = mutation({
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
-    if (!row) throw new Error("PROFILE_NOT_FOUND");
+    if (!row) throw new Error("NOT_FOUND");
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     if (args.name !== undefined) patch.name = args.name;
     if (args.company !== undefined) patch.company = args.company;
@@ -108,6 +125,22 @@ export const updateProfile = mutation({
     if (args.photoStorageId !== undefined) patch.photoStorageId = args.photoStorageId;
     if (args.logoStorageId !== undefined) patch.logoStorageId = args.logoStorageId;
     await ctx.db.patch(row._id, patch);
+    return { ok: true };
+  },
+});
+
+export const adminRemove = mutation({
+  args: { email: v.string(), adminKey: v.string() },
+  handler: async (ctx, args) => {
+    // soft gate — frontend sends master password string
+    if (!args.adminKey || args.adminKey.length < 4) throw new Error("FORBIDDEN");
+    const email = args.email.toLowerCase().trim();
+    const row = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+    if (!row) return { ok: false };
+    await ctx.db.delete(row._id);
     return { ok: true };
   },
 });
