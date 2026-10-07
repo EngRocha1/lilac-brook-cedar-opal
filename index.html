@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
-<link rel="stylesheet" href="editor.css"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<link rel="stylesheet" href="editor.css?v=20261007b"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -122,7 +123,7 @@
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
     <div class="logo">◇</div>
-    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Segure e arraste · 💬 comentar</p></div>
+    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Segure e arraste · 💬 comentar · ⚡ barramento</p></div>
     <div class="hero-user">
       <span id="userLabel" class="user-chip">—</span>
       <button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button>
@@ -135,10 +136,11 @@
       <label class="flow-label">Fluxo</label><select id="flowSelect"></select>
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
-    <div class="tool-group">
+    <div class="tool-group" id="shapeTools">
       <button type="button" class="btn" id="btnAddProcess" title="Processo">▭</button>
       <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇</button>
       <button type="button" class="btn" id="btnAddText" title="Texto">T</button>
+      <button type="button" class="btn" id="btnAddBusbar" title="Barramento">⚡</button>
       <button type="button" class="btn" id="btnAddMacro" title="Macro">+ Macro</button>
       <button type="button" class="btn" id="btnConnect" title="Conectar">⟷</button>
     </div>
@@ -174,7 +176,14 @@
       <button type="button" class="x" onclick="closeModal()">×</button></div>
     <div class="modal-b">
       <p id="sideMeta" class="muted"></p>
-      <label>Título</label><input id="sideName" type="text"/>
+      <label>Título (multilinha)</label>
+      <textarea id="sideNameMulti" rows="3" placeholder="Título em várias linhas"></textarea>
+      <input id="sideName" type="text" style="display:none"/>
+      <div id="edgeDdBox" class="edge-dd-row" hidden>
+        <label>Origem (de)</label><select id="edgeFromSel"></select>
+        <label>Destino (para)</label><select id="edgeToSel"></select>
+        <p class="muted" style="font-size:11px;margin:0">Ou arraste as alças vermelhas nas pontas da linha.</p>
+      </div>
       <label id="colorLabel">Cor do macro</label><input id="sideColor" type="color" value="#e8f4fc"/>
       <div class="vote-row">
         <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button>
@@ -238,18 +247,19 @@
 </div>
 <div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
-<script src="config.js"></script>
-<script src="convex-api.js"></script>
-<script src="flow-data.js"></script>
-<script src="editor.js"></script>
-<script src="editor-patch.js"></script>
-<script src="editor-fix.js"></script>
-<script src="flow-edit-modal.js"></script>
-<script src="ui-polish.js"></script>
-<script src="print-diagram.js"></script>
-<script src="module-bind.js"></script>
-<script src="view-controls.js"></script>
-<script src="macro-comment-autosave.js"></script>
-<script src="shapes-edges-busbar.js"></script>
+<!-- build 2026-10-07b shapes-edges-busbar -->
+<script src="config.js?v=20261007b"></script>
+<script src="convex-api.js?v=20261007b"></script>
+<script src="flow-data.js?v=20261007b"></script>
+<script src="editor.js?v=20261007b"></script>
+<script src="editor-patch.js?v=20261007b"></script>
+<script src="editor-fix.js?v=20261007b"></script>
+<script src="flow-edit-modal.js?v=20261007b"></script>
+<script src="ui-polish.js?v=20261007b"></script>
+<script src="print-diagram.js?v=20261007b"></script>
+<script src="module-bind.js?v=20261007b"></script>
+<script src="view-controls.js?v=20261007b"></script>
+<script src="macro-comment-autosave.js?v=20261007b"></script>
+<script src="shapes-edges-busbar.js?v=20261007b"></script>
 </body>
 </html>
