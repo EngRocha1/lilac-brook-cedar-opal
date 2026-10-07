@@ -1,4 +1,4 @@
-/* Fluxora editor styles — rootfix1 */
+/* Fluxora editor styles — part1 layout */
 :root{--neon:#ff2d95;--bg:#0a0e1a;--card:#12182a;--text:#e8eef8;--muted:#8b9bb4;--line:#243049}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -38,7 +38,7 @@ button,input,select,textarea{font:inherit}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .field input{background:#0a0e1a;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;color:#fff}
 .auth-error{color:#ff6b8a;font-size:.85rem}
-.admin-gate,.admin-page,.flow-manager{color:#1a2332}
+.admin-gate,.admin-page{color:#1a2332}
 .admin-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .admin-card{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:14px}
@@ -72,13 +72,54 @@ button,input,select,textarea{font:inherit}
 .x{margin-left:auto;border:0;background:none;font-size:20px;cursor:pointer}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:999px;z-index:120}
 .presence-bar,.project-header,.share-panel{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:10px;margin-bottom:8px}
-.flow-manager{width:100%;max-width:1200px;margin:0 auto;padding:16px;color:#1a2332;background:transparent}
-.flow-mgr-list{display:grid;gap:12px;width:100%;max-width:1100px;margin:16px auto}
-.flow-mgr-card{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+
+/* ========== PARTE 1: Listagem livre do efeito funil ========== */
+#flowManager,
+.flow-manager{
+  width:100%;
+  max-width:1200px;
+  margin:0 auto;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  background:transparent;
+  position:relative;
+  min-height:auto;
+  z-index:auto;
+  color:#1a2332;
+}
+/* Quando a listagem está visível, o body herda superfície clara (sem takeover fixed/100vh) */
+body:has(#flowManager:not([hidden])){
+  background:#eef1f5;
+  color:#1a2332;
+}
+.flow-mgr-list{
+  display:grid;
+  gap:12px;
+  width:100%;
+  max-width:1100px;
+  margin:16px auto;
+}
+.flow-mgr-card{
+  background:#fff;
+  border:1px solid #d0d8e2;
+  border-radius:12px;
+  padding:14px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+}
 .flow-mgr-meta{font-size:.72rem;color:#5c6b7a}
 .flow-card-left{display:flex;gap:10px;align-items:center;min-width:0}
 .flow-card-logo{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#f3f6fa}
 .flow-card-logo--ph{display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a5f8a}
+.flow-mgr-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+.flow-mgr-actions .btn.pri{background:#c41e3a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+.flow-mgr-actions .btn.danger{background:#fff;color:#c41e3a;border:1px solid #c41e3a;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+
 .user-chip,.user-chip--stack{display:inline-flex;flex-direction:row;align-items:center;gap:10px;max-width:min(280px,70vw)}
 .user-chip-text{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .user-chip-name{font-size:13px;font-weight:700;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -86,9 +127,6 @@ button,input,select,textarea{font:inherit}
 .user-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.5)}
 .user-avatar--ph{display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.25);font-weight:800;font-size:14px}
 .hero-user{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.flow-mgr-actions .btn.pri{background:#c41e3a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.flow-mgr-actions .btn.danger{background:#fff;color:#c41e3a;border:1px solid #c41e3a;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
 .wa-float{position:fixed;right:18px;bottom:18px;z-index:50;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 20px rgba(37,211,102,.45);overflow:hidden}
 .wa-float svg{width:32px;height:32px;display:block}
 .wa-float span{display:none}
