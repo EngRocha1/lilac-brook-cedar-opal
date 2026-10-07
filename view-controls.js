@@ -6,7 +6,6 @@
     const st=document.createElement('style');
     st.id='view-controls-css';
     st.textContent=`
-      /* Always allow page + side scroll */
       html,body{overflow-x:hidden;overflow-y:auto!important;height:auto!important}
       .app{min-height:100vh;display:flex;flex-direction:column}
       .workspace{
@@ -27,7 +26,6 @@
         position:relative;
       }
 
-      /* Collapse handles */
       .sec-head{
         display:flex;align-items:center;justify-content:space-between;
         gap:8px;cursor:pointer;user-select:none;
@@ -47,7 +45,6 @@
         padding-top:2px!important;padding-bottom:2px!important;
       }
 
-      /* Sidebar collapse */
       .palette{
         transition:width .2s,max-height .2s,padding .2s;
         position:relative;
@@ -73,7 +70,6 @@
         margin-bottom:6px;
       }
 
-      /* Board toolbar floating */
       .board-tools{
         display:flex;gap:6px;align-items:center;flex-wrap:wrap;
         padding:4px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;
@@ -87,7 +83,6 @@
       }
       .btn-max:hover{background:#1e293b}
 
-      /* FULLSCREEN BOARD */
       body.board-max .hero,
       body.board-max .presence-bar,
       body.board-max .project-header,
@@ -119,6 +114,27 @@
       body.board-max .palette:not(.collapsed) .palette-full{display:none!important}
       body.board-max .palette:not(.collapsed) .palette-mini{display:flex!important}
       body.board-max .wa-float{display:none!important}
+
+      /* CRITICAL: modals/comments above maximized board */
+      body.board-max .modal-bg,
+      body.board-max .modal-bg.open,
+      body.board-max .modal-overlay,
+      body.board-max #modalBg,
+      body.board-max #profileModal,
+      body.board-max #flowEditModal,
+      body.board-max #dupModal,
+      body.board-max #macroPickModal,
+      body.board-max #loginModal,
+      body.board-max #guestModal,
+      body.board-max #toast{
+        z-index:10050!important;
+      }
+
+      /* Also raise global modal stack so open always wins */
+      .modal-bg{z-index:10050!important}
+      .modal-overlay{z-index:10060!important}
+      #macroPickModal{z-index:10070!important}
+      #toast{z-index:10100!important}
 
       @media (max-width:720px){
         .workspace{flex-direction:column!important}
@@ -191,7 +207,6 @@
       mini.className='palette-mini';
       pal.insertBefore(mini, pal.firstChild);
     }
-    // wrap existing content once
     if(!pal.querySelector('.palette-full')){
       const full=document.createElement('div');
       full.className='palette-full';
@@ -199,7 +214,6 @@
       kids.forEach(n=>full.appendChild(n));
       pal.appendChild(full);
     }
-    // toggle btn
     let tog=pal.querySelector('.palette-toggle');
     if(!tog){
       tog=document.createElement('button');
@@ -216,7 +230,6 @@
         try{ localStorage.setItem('vc_pal', c?'1':'0'); }catch(e){}
       };
     }
-    // chips from flow macros
     mini.querySelectorAll('.pm-chip').forEach(n=>n.remove());
     const macros=(typeof flow!=='undefined' && flow && flow.macros) ? flow.macros : [];
     macros.forEach(m=>{
@@ -229,7 +242,6 @@
       if(flow && flow.votes){
         const v=flow.votes['macro:'+m.id];
         if(v){ ok=v.ok||0; no=v.no||0; }
-        // also count nodes in macro
         (flow.nodes||[]).forEach(n=>{
           if(n.macro!==m.id) return;
           const nv=flow.votes['node:'+n.id];
@@ -285,7 +297,6 @@
       if(tog) tog.textContent=c?'»':'«';
     };
 
-    // proxy shape buttons to main ones (module-bind intercepts those)
     function proxy(from, toId){
       const a=$(from), b=$(toId);
       if(!a) return;
@@ -303,16 +314,20 @@
     return bar;
   }
 
-  // ESC exits fullscreen
   document.addEventListener('keydown', function(e){
     if(e.key==='Escape' && document.body.classList.contains('board-max')){
+      // if a modal is open, close modal first — don't exit fullscreen
+      const openModal = document.querySelector('.modal-bg.open');
+      if(openModal){
+        openModal.classList.remove('open');
+        return;
+      }
       document.body.classList.remove('board-max');
       const b=$('btnBoardMax');
       if(b) b.textContent='⛶ Maximizar';
     }
   });
 
-  // Refresh mini chips when macro bar re-renders
   const _rmb = window.renderMacroBar;
   window.renderMacroBar = function(){
     if(typeof _rmb==='function') _rmb.apply(this, arguments);
@@ -329,5 +344,5 @@
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
 
-  console.log('[Fluxora] view-controls ready');
+  console.log('[Fluxora] view-controls ready (modal z-index fix)');
 })();
