@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="stylesheet" href="editor.css?v=20261007-restore"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.css"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -78,7 +78,7 @@
 <div id="guestModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <h2>Acesso compartilhado</h2>
-    <p class="muted" style="font-size:13px;margin:0 0 12px">Use o e-mail com o qual o fluxo foi compartilhado. Convidado só vota; Colaborador edita o fluxo.</p>
+    <p class="muted" style="font-size:13px;margin:0 0 12px">Use o e-mail com o qual o fluxo foi compartilhado.</p>
     <form id="guestForm">
       <label class="field"><span>E-mail</span><input id="guestEmail" type="email" required/></label>
       <button type="submit" class="btn-neon block">Entrar no fluxo</button>
@@ -124,7 +124,7 @@
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
     <div class="logo">◇</div>
-    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Convidado vota · Colaborador edita</p></div>
+    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Versão estável restaurada</p></div>
     <div class="hero-user">
       <span id="userLabel" class="user-chip">—</span>
       <button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button>
@@ -183,7 +183,6 @@
       <div id="edgeDdBox" class="edge-dd-row" hidden>
         <label>Origem (de)</label><select id="edgeFromSel"></select>
         <label>Destino (para)</label><select id="edgeToSel"></select>
-        <p class="muted" style="font-size:11px;margin:0">Ou clique perto da ponta da linha e arraste até um ponto verde.</p>
       </div>
       <label id="colorLabel">Cor do macro</label><input id="sideColor" type="color" value="#e8f4fc"/>
       <div class="vote-row">
@@ -248,20 +247,20 @@
 </div>
 <div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
-<!-- DOWNGRADE restore stable collaborator build -->
-<script src="config.js?v=20261007-restore"></script>
-<script src="convex-api.js?v=20261007-restore"></script>
-<script src="flow-data.js?v=20261007-restore"></script>
-<script src="editor.js?v=20261007-restore"></script>
-<script src="editor-patch.js?v=20261007-restore"></script>
-<script src="editor-fix.js?v=20261007-restore"></script>
-<script src="flow-edit-modal.js?v=20261007-restore"></script>
-<script src="share-access.js?v=20261007-restore"></script>
-<script src="ui-polish.js?v=20261007-restore"></script>
-<script src="print-diagram.js?v=20261007-restore"></script>
-<script src="module-bind.js?v=20261007-restore"></script>
-<script src="view-controls.js?v=20261007-restore"></script>
-<script src="macro-comment-autosave.js?v=20261007-restore"></script>
-<script src="shapes-edges-busbar.js?v=20261007-restore"></script>
+<!-- DOWNGRADE: pin all runtime JS to stable commit 9c55ef5 -->
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-edit-modal.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/share-access.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/ui-polish.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/print-diagram.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/module-bind.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/view-controls.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/macro-comment-autosave.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
 </body>
 </html>
