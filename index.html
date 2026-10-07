@@ -24,30 +24,26 @@
     <div class="hero-glow"></div>
     <p class="eyebrow">Validação colaborativa · Membro gratuito</p>
     <h1>Transforme ideias de processo em <span class="neon">fluxos validados</span></h1>
-    <p class="lead">Desenhe jornadas, compartilhe com sponsors e stakeholders e registre decisões com clareza.</p>
+    <p class="lead">Desenhe jornadas, compartilhe e valide com stakeholders.</p>
     <div class="hero-cta">
       <button type="button" class="btn-neon lg" id="btnHeroStart">Começar grátis</button>
       <a class="btn-ghost lg" href="#modelos">Explorar modelos</a>
     </div>
   </section>
-  <section class="section" id="recursos">
-    <h2>Recursos</h2>
+  <section class="section" id="recursos"><h2>Recursos</h2>
     <div class="cards">
       <article class="card"><h3>📐 Canvas modular</h3><p>Macros arrastáveis.</p></article>
       <article class="card"><h3>🔗 Compartilhamento</h3><p>Convidados só com e-mail.</p></article>
-      <article class="card"><h3>✅ Selo de validação</h3><p>Feche a votação.</p></article>
-      <article class="card"><h3>📋 Modelos</h3><p>Templates por área.</p></article>
+      <article class="card"><h3>✅ Selo</h3><p>Feche a votação.</p></article>
     </div>
   </section>
-  <section class="section" id="modelos">
-    <h2>Modelos</h2>
+  <section class="section" id="modelos"><h2>Modelos</h2>
     <div class="cards">
       <article class="card template" data-tpl="jornada"><h3>Saúde · Jornada</h3><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
       <article class="card template" data-tpl="vazio"><h3>Canvas em branco</h3><button type="button" class="btn-neon sm use-tpl">Usar</button></article>
     </div>
   </section>
-  <section class="section" id="sobre">
-    <h2>Sobre o Fluxora</h2>
+  <section class="section" id="sobre"><h2>Sobre o Fluxora</h2>
     <p class="about">Ferramenta para análise visual de fluxos de projeto.</p>
   </section>
   <footer class="footer">
@@ -58,12 +54,11 @@
     </div>
   </footer>
 </div>
-<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">WA</a>
+<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener">WA</a>
 <div id="loginModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <button type="button" class="modal-x" id="loginClose">×</button>
     <h2>Acesso gratuito</h2>
-    <p class="login-free">Cadastro com e-mail e senha.</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab active" id="tabLogin">Entrar</button>
       <button type="button" class="auth-tab" id="tabRegister">Criar conta</button>
@@ -82,7 +77,6 @@
 <div id="guestModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <h2>Acesso de convidado</h2>
-    <p class="login-free">Só o e-mail do convite.</p>
     <form id="guestForm">
       <label class="field"><span>E-mail</span><input id="guestEmail" type="email" required/></label>
       <button type="submit" class="btn-neon block">Entrar no fluxo</button>
@@ -93,22 +87,21 @@
 <div id="adminGate" class="admin-gate" hidden>
   <div class="login-modal"><h2>Admin</h2>
     <label class="field"><span>E-mail</span><input id="adminEmail" type="email"/></label>
-    <label class="field"><span>Senha master</span><input id="adminPass" type="password"/></label>
+    <label class="field"><span>Senha</span><input id="adminPass" type="password"/></label>
     <button type="button" class="btn-neon block" id="btnAdminLogin">Entrar</button>
     <p class="auth-error" id="adminGateMsg" hidden></p>
   </div>
 </div>
 <div id="adminPage" class="admin-page" hidden>
-  <header class="admin-top"><strong>Admin · Convex</strong><button type="button" class="btn-ghost" id="adminClose">Sair</button></header>
+  <header class="admin-top"><strong>Admin</strong><button type="button" class="btn-ghost" id="adminClose">Sair</button></header>
   <div class="admin-grid">
-    <section class="admin-card"><h3>Usuários (profiles)</h3><div id="userList"></div>
-      <div class="row" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
-        <input id="newUserEmail" type="email" placeholder="email"/>
-        <input id="newUserName" type="text" placeholder="nome"/>
+    <section class="admin-card"><h3>Usuários</h3><div id="userList"></div>
+      <div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <input id="newUserEmail" type="email" placeholder="email"/><input id="newUserName" type="text" placeholder="nome"/>
         <button type="button" class="btn-neon sm" id="btnAddUser">Add</button>
       </div>
     </section>
-    <section class="admin-card"><h3>Estilo local</h3>
+    <section class="admin-card"><h3>Estilo</h3>
       <label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label>
       <label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label>
       <label>WhatsApp <input type="text" id="styleWa"/></label>
@@ -155,8 +148,8 @@
       <div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div>
     </div>
     <div class="tool-group">
-      <button type="button" class="btn" onclick="printMode('overview')" title="Capa">🖨</button>
-      <button type="button" class="btn" onclick="printMode('macros')" title="Uma folha por macro com diagrama">🖨 Macros</button>
+      <button type="button" class="btn" onclick="printMode('overview')">🖨</button>
+      <button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button>
       <button type="button" class="btn pri" onclick="exportJSON()">↓</button>
       <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')">💾</button>
     </div>
@@ -214,7 +207,6 @@
     <div class="modal-h"><strong id="flowEditTitle">Editar fluxo</strong>
       <button type="button" class="x" id="flowEditClose">×</button></div>
     <div class="modal-b">
-      <h4 class="modal-section-title">Dados do projeto</h4>
       <label>Nome do fluxo</label><input id="feTitle" type="text"/>
       <label>Projeto</label><input id="feProject" type="text"/>
       <label>Gerente</label><input id="feManager" type="text"/>
@@ -225,12 +217,9 @@
       <button type="button" class="btn btn-save" id="btnFeSaveHeader">💾 Salvar cabeçalho</button>
       <h4 class="modal-section-title" style="margin-top:18px">Compartilhamentos</h4>
       <div id="feSharesList" class="fe-shares-list"></div>
-      <div class="fe-add-share">
-        <label>Novo e-mail</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
-          <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
-        </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
+        <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
       </div>
     </div>
   </div>
@@ -258,5 +247,6 @@
 <script src="flow-edit-modal.js"></script>
 <script src="ui-polish.js"></script>
 <script src="print-diagram.js"></script>
+<script src="module-bind.js"></script>
 </body>
 </html>
