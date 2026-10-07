@@ -1,4 +1,4 @@
-/* Ports locked · closest-edge pick · snap sticks on release · v20261007e */
+/* Ports locked · closest-edge pick · sticky snap · resize release · v20261007f */
 (function(){
   function $(id){ return document.getElementById(id); }
   function isGuest(){ return window.HEMOPI_SHARE_MODE==='guest'; }
@@ -8,6 +8,12 @@
     try{ drag = d; }catch(e){}
     window.__sebDrag = d;
     try{ window.drag = d; }catch(e){}
+  }
+  function clearDrag(){
+    setDrag(null);
+    try{ if(typeof drag!=='undefined') drag=null; }catch(e){}
+    try{ window.drag=null; }catch(e){}
+    window.__sebDrag = null;
   }
 
   if(!document.getElementById('seb-css')){
@@ -192,10 +198,9 @@
     return best;
   }
 
-  /** Pick edge closest to mouse path; which end is the closer endpoint */
   function pickEdgeNear(px, py){
     let best=null;
-    let bestPath=14; // max path distance to consider
+    let bestPath=14;
     (flow.edges||[]).forEach(e=>{
       const dPath = distToEdgePath(px, py, e);
       const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
@@ -206,15 +211,12 @@
       const d0=Math.hypot(p0.x-px, p0.y-py);
       const d1=Math.hypot(p1.x-px, p1.y-py);
       const dEnd=Math.min(d0,d1);
-      // Prefer edges whose path is near the click; among them, the one with closer path
-      // Require being somewhat near an endpoint to start reconnect (not middle-only)
       if(dEnd > 42 && dPath > 12) return;
       if(dPath < bestPath || (Math.abs(dPath-bestPath)<0.5 && best && dEnd < best.dEnd)){
         bestPath = dPath;
         best = { e:e, which: d0<=d1?'from':'to', dPath:dPath, dEnd:dEnd, p0:p0, p1:p1 };
       }
     });
-    // If nothing by path, fall back to closest endpoint only
     if(!best){
       let bestEnd=36;
       (flow.edges||[]).forEach(e=>{
@@ -271,7 +273,6 @@
       if(isGuest() || !flow || getDrag()) return;
       const t = ev.target;
       if(!t || !t.classList) return;
-      // Allow starting from edge stroke OR near edge in empty space with modifier? only edge elements
       const onEdge = t.classList.contains('edge') || t.classList.contains('edge-hit');
       if(!onEdge) return;
 
@@ -296,9 +297,7 @@
         _snap: null
       });
 
-      // immediate red ghost
       paintDragVisual(p.x, p.y, null);
-      if(typeof toast==='function') toast('Arraste até um ponto verde');
     }, true);
   }
 
@@ -333,11 +332,10 @@
 
     const e = (flow.edges||[]).find(x=>x.id===d.edgeId);
     if(!e){
-      setDrag(null);
+      clearDrag();
       return true;
     }
 
-    // Recompute snap at release point (don't trust only last move)
     let px = d._mx, py = d._my;
     if(ev && (ev.clientX!=null)){
       const p = clientToSvg(ev.clientX, ev.clientY);
@@ -352,26 +350,22 @@
     if(snap){
       if(d.which==='from'){
         e.from = snap.node.id;
-        e.fromPort = snap.port.id;
+        e.fromPort = String(snap.port.id);
         if(snap.node.type==='busbar') e.fromT = snap.port.t;
-        else { delete e.fromT; }
+        else delete e.fromT;
       } else {
         e.to = snap.node.id;
-        e.toPort = snap.port.id;
+        e.toPort = String(snap.port.id);
         if(snap.node.type==='busbar') e.toT = snap.port.t;
-        else { delete e.toT; }
+        else delete e.toT;
       }
-      // force lock so ensureLockedPorts won't replace
-      if(d.which==='from'){ e.fromPort = String(snap.port.id); }
-      else { e.toPort = String(snap.port.id); }
-
       if(typeof toast==='function') toast('Fixado em '+snap.port.id);
       if(typeof saveLocal==='function') saveLocal();
     } else {
       if(typeof toast==='function') toast('Solte perto de um ponto verde', true);
     }
 
-    setDrag(null);
+    clearDrag();
     const svg=$('canvas');
     if(svg) svg.querySelectorAll('[data-ghost]').forEach(n=>n.remove());
     if(typeof render==='function') render();
@@ -386,6 +380,13 @@
       return;
     }
     if(d.type === 'node-resize'){
+      // Only while button held — buttons bit 1 = left
+      if(ev.buttons !== undefined && (ev.buttons & 1) === 0){
+        clearDrag();
+        if(typeof saveLocal==='function') saveLocal();
+        if(typeof render==='function') render();
+        return;
+      }
       const n = nodeByIdLocal(d.id);
       if(!n) return;
       n.w = Math.max(n.type==='busbar'?80:60, d.ox + (ev.clientX-d.sx));
@@ -413,7 +414,7 @@
       return;
     }
     if(d && d.type === 'node-resize'){
-      setDrag(null);
+      clearDrag();
       if(typeof saveLocal==='function') saveLocal();
       if(typeof render==='function') render();
       if(typeof prevUp==='function') prevUp(ev);
@@ -422,12 +423,25 @@
     if(typeof prevUp==='function') prevUp(ev);
   };
 
-  // Capture mouseup early so we always commit even if other handlers clear drag
+  // Capture mouseup: commit edge snap OR release resize (hold-to-resize only)
   window.addEventListener('mouseup', function(ev){
     const d = getDrag();
     if(d && d.type==='edge-reconnect'){
       commitReconnect(ev);
       ev.stopPropagation();
+      return;
+    }
+    if(d && d.type==='node-resize'){
+      clearDrag();
+      if(typeof saveLocal==='function') saveLocal();
+    }
+  }, true);
+
+  window.addEventListener('pointerup', function(ev){
+    const d = getDrag();
+    if(d && d.type==='node-resize'){
+      clearDrag();
+      if(typeof saveLocal==='function') saveLocal();
     }
   }, true);
 
@@ -620,5 +634,5 @@
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
 
-  console.log('[Fluxora] shapes-edges-busbar v20261007e closest-edge + sticky snap');
+  console.log('[Fluxora] shapes-edges-busbar v20261007f resize release on mouseup');
 })();
