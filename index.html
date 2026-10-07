@@ -82,7 +82,7 @@
 <div id="guestModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <h2>Acesso de convidado</h2>
-    <p class="login-free">Só o e-mail do convite. Sem criar conta.</p>
+    <p class="login-free">Só o e-mail do convite.</p>
     <form id="guestForm">
       <label class="field"><span>E-mail</span><input id="guestEmail" type="email" required/></label>
       <button type="submit" class="btn-neon block">Entrar no fluxo</button>
@@ -92,7 +92,7 @@
 </div>
 <div id="adminGate" class="admin-gate" hidden>
   <div class="login-modal"><h2>Admin</h2>
-    <label class="field"><span>E-mail</span><input id="adminEmail" type="email" placeholder="admin@..."/></label>
+    <label class="field"><span>E-mail</span><input id="adminEmail" type="email"/></label>
     <label class="field"><span>Senha master</span><input id="adminPass" type="password"/></label>
     <button type="button" class="btn-neon block" id="btnAdminLogin">Entrar</button>
     <p class="auth-error" id="adminGateMsg" hidden></p>
@@ -107,7 +107,6 @@
         <input id="newUserName" type="text" placeholder="nome"/>
         <button type="button" class="btn-neon sm" id="btnAddUser">Add</button>
       </div>
-      <p class="hint" style="font-size:11px;margin-top:8px">Lista e remoção via API Convex. Novo usuário nasce com senha temporária <code>changeme</code>.</p>
     </section>
     <section class="admin-card"><h3>Estilo local</h3>
       <label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label>
@@ -116,8 +115,7 @@
       <button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button>
     </section>
     <section class="admin-card"><h3>Senha admin</h3>
-      <input id="newMaster" type="password" placeholder="nova senha local"/>
-      <button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button>
+      <input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button>
     </section>
   </div>
 </div>
@@ -157,8 +155,8 @@
       <div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div>
     </div>
     <div class="tool-group">
-      <button type="button" class="btn" onclick="printMode('overview')">🖨</button>
-      <button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button>
+      <button type="button" class="btn" onclick="printMode('overview')" title="Capa">🖨</button>
+      <button type="button" class="btn" onclick="printMode('macros')" title="Uma folha por macro com diagrama">🖨 Macros</button>
       <button type="button" class="btn pri" onclick="exportJSON()">↓</button>
       <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')">💾</button>
     </div>
@@ -202,7 +200,7 @@
     <div class="modal-b">
       <label>Nome</label><input id="profName" type="text"/>
       <label>Empresa</label><input id="profCompany" type="text"/>
-      <label>Celular / WhatsApp</label><input id="profPhone" type="tel"/>
+      <label>Celular</label><input id="profPhone" type="tel"/>
       <label>Foto</label><input id="profPhotoFile" type="file" accept="image/*"/>
       <img id="profPhotoPrev" alt="" style="max-width:80px;display:none"/>
       <label>Logo</label><input id="profLogoFile" type="file" accept="image/*"/>
@@ -228,12 +226,11 @@
       <h4 class="modal-section-title" style="margin-top:18px">Compartilhamentos</h4>
       <div id="feSharesList" class="fe-shares-list"></div>
       <div class="fe-add-share">
-        <label>Novo e-mail convidado</label>
+        <label>Novo e-mail</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
           <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado.</p>
       </div>
     </div>
   </div>
@@ -260,5 +257,6 @@
 <script src="editor-fix.js"></script>
 <script src="flow-edit-modal.js"></script>
 <script src="ui-polish.js"></script>
+<script src="print-diagram.js"></script>
 </body>
 </html>
