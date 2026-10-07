@@ -1,33 +1,46 @@
-/* Flow edit modal — header + shares + list Editar button */
+/* Flow edit modal — header + shares (guest/collaborator) + list Editar */
 (function(){
   function $(id){ return document.getElementById(id); }
   function cx(){ return window.convexClient; }
   function isGuest(){ return window.HEMOPI_SHARE_MODE==='guest'; }
+  function ensureShareRoleUI(){
+    if(document.getElementById('feShareRoleBox')) return;
+    const inp = document.getElementById('feNewShareEmail');
+    if(!inp || !inp.parentNode) return;
+    const box = document.createElement('div');
+    box.id = 'feShareRoleBox';
+    box.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;align-items:center';
+    box.innerHTML =
+      '<span style="font-size:12px;font-weight:700;width:100%">Modo de acesso</span>'+
+      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc">'+
+        '<input type="radio" name="feShareRole" value="guest" checked /> 👁 Convidado <span style="color:#64748b;font-size:11px">(só votar)</span></label>'+
+      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid #bbf7d0;background:#f0fdf4">'+
+        '<input type="radio" name="feShareRole" value="collaborator" /> ✎ Colaborador <span style="color:#166534;font-size:11px">(edição total)</span></label>';
+    inp.parentNode.insertBefore(box, inp);
+    if(!document.getElementById('fe-role-css')){
+      const st=document.createElement('style'); st.id='fe-role-css';
+      st.textContent='.fe-role-guest{color:#64748b;font-weight:600}.fe-role-colab{color:#166534;font-weight:700}';
+      document.head.appendChild(st);
+    }
+  }
 
-  let editCtx = { key: null, title: '', data: null };
-
-  if(!document.getElementById('fluxora-fe-css')){
+  if(!document.getElementById('fe-modal-css')){
     const st=document.createElement('style');
-    st.id='fluxora-fe-css';
+    st.id='fe-modal-css';
     st.textContent=`
-      .modal-section-title{margin:12px 0 8px;font-size:14px;color:#334155}
       .fe-shares-list{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
-      .fe-share-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc}
+      .fe-share-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;flex-wrap:wrap}
       .fe-share-row.is-active{border-color:#86efac;background:#f0fdf4}
       .fe-share-row.is-off{border-color:#e2e8f0;background:#f1f5f9;opacity:.75}
       .fe-share-meta{flex:1;min-width:0}
       .fe-share-email{font-weight:600;font-size:13px;word-break:break-all}
       .fe-share-date{font-size:11px;color:#64748b}
-      .fe-toggle{position:relative;width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;flex-shrink:0}
-      .fe-toggle.on{background:#22c55e}
-      .fe-toggle.off{background:#94a3b8}
-      .fe-toggle::after{content:'';position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
-      .fe-toggle.on::after{left:22px}
-      .fe-toggle.off::after{left:4px}
-      .fe-link-btn{font-size:11px;padding:4px 8px}
+      .fe-link-btn{font-size:11px}
     `;
     document.head.appendChild(st);
   }
+
+  let editCtx = { key:null, title:'', data:null };
 
   function fmtDate(ts){
     if(!ts) return '—';
@@ -56,19 +69,21 @@
       const emails = (s.emails||[]).join(', ');
       const row = document.createElement('div');
       row.className = 'fe-share-row '+(active?'is-active':'is-off');
+      const role = s.canEdit ? 'Colaborador (edição)' : 'Convidado (só votar)';
+      const roleCls = s.canEdit ? 'fe-role-colab' : 'fe-role-guest';
       row.innerHTML =
         '<div class="fe-share-meta">'+
           '<div class="fe-share-email">'+emails+'</div>'+
-          '<div class="fe-share-date">Atualizado: '+fmtDate(s.updatedAt)+'</div>'+
+          '<div class="fe-share-date"><span class="'+roleCls+'">'+role+'</span> · '+fmtDate(s.updatedAt)+'</div>'+
         '</div>';
       const tog = document.createElement('button');
-      tog.type = 'button';
-      tog.className = 'fe-toggle '+(active?'on':'off');
-      tog.title = active ? 'Ativo — clique para revogar' : 'Revogado — clique para reativar';
+      tog.type='button';
+      tog.className = 'btn '+(active?'pri':'');
+      tog.textContent = active ? 'Ativo' : 'Revogado';
+      tog.style.minWidth = '88px';
       tog.onclick = async ()=>{
         try{
           await cx().mutation('shares:setActive', { token: s.token, active: !active });
-          if(typeof toast==='function') toast(!active?'Ativado':'Revogado');
           await loadSharesIntoList(flowKey);
         }catch(e){ if(typeof toast==='function') toast('Erro ao alterar', true); }
       };
@@ -79,40 +94,36 @@
         try{ await navigator.clipboard.writeText(url); }catch(e){}
         prompt('Link do convite:', url);
       };
+      const roleBtn = document.createElement('button');
+      roleBtn.type='button';
+      roleBtn.className='btn';
+      roleBtn.style.fontSize='11px';
+      roleBtn.textContent = s.canEdit ? '→ Convidado' : '→ Colaborador';
+      roleBtn.title = s.canEdit ? 'Rebaixar para só votação' : 'Promover para edição total';
+      roleBtn.onclick = async ()=>{
+        try{
+          await cx().mutation('shares:setCanEdit', { token: s.token, canEdit: !s.canEdit });
+          if(typeof toast==='function') toast(s.canEdit ? 'Agora é Convidado' : 'Agora é Colaborador');
+          await loadSharesIntoList(flowKey);
+        }catch(e){ if(typeof toast==='function') toast('Erro ao alterar papel', true); }
+      };
       row.appendChild(copy);
+      row.appendChild(roleBtn);
       row.appendChild(tog);
       box.appendChild(row);
     });
   }
 
   window.openFlowEditModal = async function(opts){
-    if(isGuest()){
-      if(typeof toast==='function') toast('Convidado não edita', true);
-      return;
-    }
-    opts = opts || {};
-    const key = opts.key || (typeof flowKey!=='undefined'?flowKey:null);
-    let title = opts.title || (typeof flowTitle!=='undefined'?flowTitle:'');
-    let data = opts.data || null;
-
-    if(cx() && key){
-      try{
-        const remote = await cx().query('flows:get', { key });
-        if(remote){
-          title = remote.title || title;
-          data = remote.data || data;
-        }
-      }catch(e){}
-    }
-    if(!data && typeof flow!=='undefined' && flowKey===key) data = flow;
-    if(!data) data = { header: {} };
-    if(!data.header) data.header = {};
-
-    editCtx = { key, title, data };
-
-    if($('flowEditTitle')) $('flowEditTitle').textContent = 'Editar: '+(title||key||'fluxo');
-    if($('feTitle')) $('feTitle').value = title || '';
-    const h = data.header || {};
+    if(isGuest()){ if(typeof toast==='function') toast('Convidado não edita cabeçalho', true); return; }
+    editCtx = {
+      key: opts?.key || (typeof flowKey!=='undefined'?flowKey:null),
+      title: opts?.title || (typeof flowTitle!=='undefined'?flowTitle:'') || '',
+      data: opts?.data || (typeof flow!=='undefined'?flow:null)
+    };
+    const key = editCtx.key;
+    const h = (editCtx.data && editCtx.data.header) || {};
+    if($('feTitle')) $('feTitle').value = editCtx.title || '';
     if($('feProject')) $('feProject').value = h.projectName || '';
     if($('feManager')) $('feManager').value = h.manager || '';
     if($('feDirector')) $('feDirector').value = h.director || '';
@@ -120,6 +131,7 @@
     if($('fePm')) $('fePm').value = h.pm || '';
     if($('feStakeholders')) $('feStakeholders').value = h.stakeholders || '';
     if($('feNewShareEmail')) $('feNewShareEmail').value = '';
+    ensureShareRoleUI();
 
     await loadSharesIntoList(key);
     $('flowEditModal')?.classList.add('open');
@@ -172,37 +184,41 @@
     }
     if(!cx()) return;
     try{
+      const roleEl = document.querySelector('input[name="feShareRole"]:checked');
+      const canEdit = roleEl ? roleEl.value === 'collaborator' : false;
       const r = await cx().mutation('shares:create', {
         flowKey: editCtx.key,
         emails: [email],
-        canEdit: false,
+        canEdit: !!canEdit,
         createdBy: (user?.email||'').toLowerCase()
       });
       if($('feNewShareEmail')) $('feNewShareEmail').value = '';
       const url = location.origin+location.pathname.replace(/\/index\.html$/,'/')+'?share='+encodeURIComponent(r.token);
       try{ await navigator.clipboard.writeText(url); }catch(e){}
-      if(typeof toast==='function') toast('Convite: '+email);
-      prompt('Link do convidado:', url);
+      if(typeof toast==='function'){
+        toast(canEdit
+          ? 'Colaborador criado — link copiado'
+          : 'Convidado criado — link copiado');
+      }
+      prompt('Link do convite ('+(canEdit?'Colaborador':'Convidado')+'):', url);
       await loadSharesIntoList(editCtx.key);
     }catch(e){
       if(typeof toast==='function') toast('Erro: '+(e.message||e), true);
     }
   }
 
-  function wireFlowEdit(){
+  function wire(){
     if($('flowEditClose')) $('flowEditClose').onclick = ()=> $('flowEditModal')?.classList.remove('open');
     if($('btnFeSaveHeader')) $('btnFeSaveHeader').onclick = ()=> saveHeaderFromModal();
     if($('btnFeAddShare')) $('btnFeAddShare').onclick = ()=> addShareFromModal();
     if($('btnEditHeader')){
-      $('btnEditHeader').onclick = ()=>{
+      $('btnEditHeader').onclick = function(){
         if(isGuest()){ if(typeof toast==='function') toast('Convidado não edita cabeçalho', true); return; }
-        openFlowEditModal({ key: flowKey, title: flowTitle, data: flow });
+        openFlowEditModal({ key: typeof flowKey!=='undefined'?flowKey:null, title: typeof flowTitle!=='undefined'?flowTitle:'', data: typeof flow!=='undefined'?flow:null });
       };
-      if(isGuest()) $('btnEditHeader').style.display = 'none';
     }
   }
 
-  /** Patch Meus fluxos cards to include Editar */
   function patchRenderFlowManager(){
     if(typeof window.renderFlowManager !== 'function') return false;
     if(window.renderFlowManager.__fePatched) return true;
@@ -210,42 +226,33 @@
     window.renderFlowManager = async function(){
       await orig.apply(this, arguments);
       const list = $('flowManagerList');
-      if(!list || !cx() || !user?.email) return;
-      const email = user.email.toLowerCase();
-      let rows = [];
-      try{ rows = await cx().query('flows:list', { ownerEmail: email }) || []; }catch(e){ return; }
-      const byKey = {};
-      rows.forEach(r=> byKey[r.key]=r);
-      // Rebuild cards with Editar — only if list has flow-mgr-card
-      list.querySelectorAll('.flow-mgr-card').forEach((card, idx)=>{
-        if(card.querySelector('[data-fe-edit]')) return;
-        const h4 = card.querySelector('h4');
-        const title = h4 ? h4.textContent : '';
-        // match by title or order
-        let r = rows.find(x => (x.title||x.key)===title) || rows[idx];
-        if(!r) return;
-        const actions = card.querySelector('div[style], .flow-mgr-actions') || card.lastElementChild;
-        const edit = document.createElement('button');
-        edit.type='button'; edit.className='btn'; edit.textContent='✎ Editar';
-        edit.setAttribute('data-fe-edit','1');
-        edit.onclick = (ev)=>{
+      if(!list) return;
+      list.querySelectorAll('[data-flow-key]').forEach(card=>{
+        if(card.querySelector('.btn-fe-edit')) return;
+        const key = card.getAttribute('data-flow-key');
+        const btn = document.createElement('button');
+        btn.type='button'; btn.className='btn btn-fe-edit'; btn.textContent='✎ Editar';
+        btn.onclick = async (ev)=>{
           ev.stopPropagation();
-          openFlowEditModal({ key: r.key, title: r.title||r.key, data: r.data });
+          let data=null, title='';
+          try{
+            if(cx() && key && !String(key).startsWith('local')){
+              const row = await cx().query('flows:get', { key });
+              data = row?.data; title = row?.title || '';
+            }
+          }catch(e){}
+          openFlowEditModal({ key, title, data });
         };
-        if(actions) actions.insertBefore(edit, actions.firstChild);
-        else card.appendChild(edit);
+        card.appendChild(btn);
       });
     };
     window.renderFlowManager.__fePatched = true;
     return true;
   }
 
-  function bootPatch(){
-    wireFlowEdit();
-    patchRenderFlowManager();
-  }
-  bootPatch();
-  setTimeout(bootPatch, 400);
-  setTimeout(bootPatch, 1200);
-  setTimeout(bootPatch, 3000);
+  wire();
+  setTimeout(wire, 500);
+  setTimeout(patchRenderFlowManager, 600);
+  setTimeout(patchRenderFlowManager, 1500);
+  console.log('[Fluxora] flow-edit-modal share roles ready');
 })();
