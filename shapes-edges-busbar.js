@@ -1,8 +1,14 @@
-/* Ports locked after choice · drag-snap only while reconnecting · modal save · v20261007d */
+/* Ports locked · closest-edge pick · snap sticks on release · v20261007e */
 (function(){
   function $(id){ return document.getElementById(id); }
   function isGuest(){ return window.HEMOPI_SHARE_MODE==='guest'; }
   function uid(p){ return p+Math.random().toString(36).slice(2,9); }
+  function getDrag(){ return (typeof drag!=='undefined' && drag) ? drag : window.__sebDrag; }
+  function setDrag(d){
+    try{ drag = d; }catch(e){}
+    window.__sebDrag = d;
+    try{ window.drag = d; }catch(e){}
+  }
 
   if(!document.getElementById('seb-css')){
     const st=document.createElement('style');
@@ -16,7 +22,7 @@
       .edge-dd-row label{font-size:.7rem;font-weight:700}
       .edge-dd-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #d0d8e2;font:inherit}
       .busbar-shape{fill:#1e293b;stroke:#0f172a}
-      .ghost-line{stroke:#ef4444;stroke-width:2;stroke-dasharray:6 4;fill:none;pointer-events:none}
+      .ghost-line{stroke:#ef4444;stroke-width:2.5;stroke-dasharray:6 4;fill:none;pointer-events:none}
       .ghost-line.ok{stroke:#22c55e;stroke-dasharray:none}
     `;
     document.head.appendChild(st);
@@ -66,7 +72,6 @@
     ];
   }
 
-  /** Fixed attach only — never "nearest to other" on normal draw */
   function attachPoint(n, portId, t){
     if(!n) return {x:0,y:0};
     const ports = portsOf(n);
@@ -80,11 +85,9 @@
       if(horizontal) return { x: n.x + n.w*tt, y: n.y + n.h/2 };
       return { x: n.x + n.w/2, y: n.y + n.h*tt };
     }
-    // default fixed center (no proximity)
     return { x: n.x + n.w/2, y: n.y + n.h/2 };
   }
 
-  /** One-time lock: if edge has no port, pick nearest toward peer and STORE it */
   function ensureLockedPorts(e){
     if(!e || !flow) return;
     const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
@@ -95,27 +98,18 @@
       const target={x:b.x+b.w/2, y:b.y+b.h/2};
       let best=ports[0], bestD=Infinity;
       ports.forEach(p=>{ const d=Math.hypot(p.x-target.x,p.y-target.y); if(d<bestD){bestD=d;best=p;} });
-      if(best){
-        e.fromPort=best.id;
-        if(a.type==='busbar') e.fromT=best.t;
-        changed=true;
-      }
+      if(best){ e.fromPort=best.id; if(a.type==='busbar') e.fromT=best.t; changed=true; }
     }
     if(e.toPort==null || e.toPort===''){
       const ports=portsOf(b);
       const target={x:a.x+a.w/2, y:a.y+a.h/2};
       let best=ports[0], bestD=Infinity;
       ports.forEach(p=>{ const d=Math.hypot(p.x-target.x,p.y-target.y); if(d<bestD){bestD=d;best=p;} });
-      if(best){
-        e.toPort=best.id;
-        if(b.type==='busbar') e.toT=best.t;
-        changed=true;
-      }
+      if(best){ e.toPort=best.id; if(b.type==='busbar') e.toT=best.t; changed=true; }
     }
-    if(changed && typeof saveLocal==='function'){
-      // debounce bulk lock
+    if(changed){
       clearTimeout(window.__sebLockSave);
-      window.__sebLockSave=setTimeout(function(){ try{ saveLocal(); }catch(err){} }, 800);
+      window.__sebLockSave=setTimeout(function(){ try{ if(typeof saveLocal==='function') saveLocal(); }catch(err){} }, 800);
     }
   }
 
@@ -153,8 +147,37 @@
     return {x:p.x, y:p.y};
   }
 
+  function distPointSeg(px,py,x1,y1,x2,y2){
+    const dx=x2-x1, dy=y2-y1;
+    const len2=dx*dx+dy*dy;
+    if(len2 < 1e-6) return Math.hypot(px-x1, py-y1);
+    let t=((px-x1)*dx+(py-y1)*dy)/len2;
+    t=Math.max(0, Math.min(1, t));
+    return Math.hypot(px-(x1+t*dx), py-(y1+t*dy));
+  }
+
+  function edgePolyline(e){
+    const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
+    if(!a||!b) return [];
+    ensureLockedPorts(e);
+    const p0=attachPoint(a,e.fromPort,e.fromT);
+    const p1=attachPoint(b,e.toPort,e.toT);
+    const pts=e.points||[];
+    return [p0].concat(pts).concat([p1]);
+  }
+
+  function distToEdgePath(px, py, e){
+    const poly=edgePolyline(e);
+    let best=Infinity;
+    for(let i=0;i<poly.length-1;i++){
+      const d=distPointSeg(px,py, poly[i].x,poly[i].y, poly[i+1].x,poly[i+1].y);
+      if(d<best) best=d;
+    }
+    return best;
+  }
+
   function nearestPort(svgX, svgY, radius, excludeNodeId){
-    radius = radius || 28;
+    radius = radius || 36;
     let best=null, bestD=radius;
     (flow.nodes||[]).forEach(n=>{
       if(excludeNodeId && n.id===excludeNodeId) return;
@@ -169,6 +192,46 @@
     return best;
   }
 
+  /** Pick edge closest to mouse path; which end is the closer endpoint */
+  function pickEdgeNear(px, py){
+    let best=null;
+    let bestPath=14; // max path distance to consider
+    (flow.edges||[]).forEach(e=>{
+      const dPath = distToEdgePath(px, py, e);
+      const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
+      if(!a||!b) return;
+      ensureLockedPorts(e);
+      const p0=attachPoint(a,e.fromPort,e.fromT);
+      const p1=attachPoint(b,e.toPort,e.toT);
+      const d0=Math.hypot(p0.x-px, p0.y-py);
+      const d1=Math.hypot(p1.x-px, p1.y-py);
+      const dEnd=Math.min(d0,d1);
+      // Prefer edges whose path is near the click; among them, the one with closer path
+      // Require being somewhat near an endpoint to start reconnect (not middle-only)
+      if(dEnd > 42 && dPath > 12) return;
+      if(dPath < bestPath || (Math.abs(dPath-bestPath)<0.5 && best && dEnd < best.dEnd)){
+        bestPath = dPath;
+        best = { e:e, which: d0<=d1?'from':'to', dPath:dPath, dEnd:dEnd, p0:p0, p1:p1 };
+      }
+    });
+    // If nothing by path, fall back to closest endpoint only
+    if(!best){
+      let bestEnd=36;
+      (flow.edges||[]).forEach(e=>{
+        const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
+        if(!a||!b) return;
+        ensureLockedPorts(e);
+        const p0=attachPoint(a,e.fromPort,e.fromT);
+        const p1=attachPoint(b,e.toPort,e.toT);
+        const d0=Math.hypot(p0.x-px, p0.y-py);
+        const d1=Math.hypot(p1.x-px, p1.y-py);
+        if(d0<bestEnd){ bestEnd=d0; best={e:e,which:'from',dPath:d0,dEnd:d0,p0:p0,p1:p1}; }
+        if(d1<bestEnd){ bestEnd=d1; best={e:e,which:'to',dPath:d1,dEnd:d1,p0:p0,p1:p1}; }
+      });
+    }
+    return best;
+  }
+
   function injectChrome(){
     const svg=$('canvas');
     if(!svg||!flow) return;
@@ -177,25 +240,22 @@
     (flow.nodes||[]).forEach(n=>{
       portsOf(n).forEach(p=>{
         svg.appendChild(svgEl('circle', {
-          'data-port-dot': n.id,
-          'data-port-id': p.id,
-          class: 'port-dot',
-          cx: String(p.x), cy: String(p.y), r: '4'
+          'data-port-dot': n.id, 'data-port-id': p.id,
+          class: 'port-dot', cx: String(p.x), cy: String(p.y), r: '4'
         }));
       });
     });
 
     (flow.nodes||[]).forEach(n=>{
       const h = svgEl('rect', {
-        'data-node-resize': n.id,
-        class: 'resize-node',
+        'data-node-resize': n.id, class: 'resize-node',
         x: String(n.x+n.w-6), y: String(n.y+n.h-6),
         width: '11', height: '11', rx: '2'
       });
       h.addEventListener('mousedown', function(ev){
         if(isGuest()) return;
         ev.stopPropagation(); ev.preventDefault();
-        drag = { type: 'node-resize', id: n.id, ox: n.w, oy: n.h, sx: ev.clientX, sy: ev.clientY };
+        setDrag({ type:'node-resize', id:n.id, ox:n.w, oy:n.h, sx:ev.clientX, sy:ev.clientY });
         selected = { kind:'node', id:n.id };
       });
       svg.appendChild(h);
@@ -208,50 +268,48 @@
     if(svg.dataset.sebEdge==='1') return;
     svg.dataset.sebEdge='1';
     svg.addEventListener('mousedown', function(ev){
-      if(isGuest() || !flow || drag) return;
+      if(isGuest() || !flow || getDrag()) return;
       const t = ev.target;
       if(!t || !t.classList) return;
-      if(!(t.classList.contains('edge') || t.classList.contains('edge-hit'))) return;
+      // Allow starting from edge stroke OR near edge in empty space with modifier? only edge elements
+      const onEdge = t.classList.contains('edge') || t.classList.contains('edge-hit');
+      if(!onEdge) return;
 
       const p = clientToSvg(ev.clientX, ev.clientY);
-      let bestE=null, bestEnd=Infinity, which='to';
-      (flow.edges||[]).forEach(e=>{
-        const a=nodeByIdLocal(e.from), b=nodeByIdLocal(e.to);
-        if(!a||!b) return;
-        ensureLockedPorts(e);
-        const p0=attachPoint(a,e.fromPort,e.fromT);
-        const p1=attachPoint(b,e.toPort,e.toT);
-        const d0=Math.hypot(p0.x-p.x, p0.y-p.y);
-        const d1=Math.hypot(p1.x-p.x, p1.y-p.y);
-        if(d0<bestEnd){ bestEnd=d0; bestE=e; which='from'; }
-        if(d1<bestEnd){ bestEnd=d1; bestE=e; which='to'; }
-      });
-      if(!bestE || bestEnd > 36) return;
+      const pick = pickEdgeNear(p.x, p.y);
+      if(!pick) return;
 
-      ev.stopPropagation(); ev.preventDefault();
-      selected = { kind:'edge', id:bestE.id };
-      const a=nodeByIdLocal(bestE.from), b=nodeByIdLocal(bestE.to);
-      drag = {
+      ev.stopPropagation();
+      ev.preventDefault();
+
+      const e = pick.e;
+      const which = pick.which;
+      selected = { kind:'edge', id:e.id };
+
+      setDrag({
         type: 'edge-reconnect',
-        edgeId: bestE.id,
+        edgeId: e.id,
         which: which,
         sx: ev.clientX, sy: ev.clientY,
-        fixed: which==='from'
-          ? attachPoint(b, bestE.toPort, bestE.toT)
-          : attachPoint(a, bestE.fromPort, bestE.fromT),
-        excludeId: which==='from' ? bestE.to : bestE.from
-      };
+        fixed: which==='from' ? pick.p1 : pick.p0,
+        excludeId: which==='from' ? e.to : e.from,
+        _snap: null
+      });
+
+      // immediate red ghost
       paintDragVisual(p.x, p.y, null);
+      if(typeof toast==='function') toast('Arraste até um ponto verde');
     }, true);
   }
 
   function paintDragVisual(mx, my, snap){
     const svg=$('canvas');
-    if(!svg || !drag || drag.type!=='edge-reconnect') return;
+    const d = getDrag();
+    if(!svg || !d || d.type!=='edge-reconnect') return;
     svg.querySelectorAll('[data-ghost]').forEach(n=>n.remove());
     svg.querySelectorAll('.port-dot.port-hot').forEach(el=>el.classList.remove('port-hot'));
 
-    const fx = drag.fixed.x, fy = drag.fixed.y;
+    const fx = d.fixed.x, fy = d.fixed.y;
     const tx = snap ? snap.port.x : mx;
     const ty = snap ? snap.port.y : my;
     svg.appendChild(svgEl('path', {
@@ -260,35 +318,87 @@
       d: 'M '+fx+' '+fy+' L '+tx+' '+ty
     }));
     if(snap){
-      svg.querySelectorAll('[data-port-dot="'+snap.node.id+'"][data-port-id="'+snap.port.id+'"]').forEach(d=>d.classList.add('port-hot'));
+      svg.querySelectorAll('[data-port-dot="'+snap.node.id+'"][data-port-id="'+snap.port.id+'"]').forEach(el=>el.classList.add('port-hot'));
       svg.appendChild(svgEl('circle', {
         'data-ghost':'1',
         cx: String(snap.port.x), cy: String(snap.port.y),
-        r: '10', fill: 'none', stroke: '#22c55e', 'stroke-width': '2.5'
+        r: '11', fill: 'none', stroke: '#22c55e', 'stroke-width': '2.5'
       }));
     }
   }
 
+  function commitReconnect(ev){
+    const d = getDrag();
+    if(!d || d.type !== 'edge-reconnect' || !flow) return false;
+
+    const e = (flow.edges||[]).find(x=>x.id===d.edgeId);
+    if(!e){
+      setDrag(null);
+      return true;
+    }
+
+    // Recompute snap at release point (don't trust only last move)
+    let px = d._mx, py = d._my;
+    if(ev && (ev.clientX!=null)){
+      const p = clientToSvg(ev.clientX, ev.clientY);
+      px = p.x; py = p.y;
+    }
+    let snap = d._snap;
+    if(px!=null){
+      const now = nearestPort(px, py, 40, d.excludeId);
+      if(now) snap = now;
+    }
+
+    if(snap){
+      if(d.which==='from'){
+        e.from = snap.node.id;
+        e.fromPort = snap.port.id;
+        if(snap.node.type==='busbar') e.fromT = snap.port.t;
+        else { delete e.fromT; }
+      } else {
+        e.to = snap.node.id;
+        e.toPort = snap.port.id;
+        if(snap.node.type==='busbar') e.toT = snap.port.t;
+        else { delete e.toT; }
+      }
+      // force lock so ensureLockedPorts won't replace
+      if(d.which==='from'){ e.fromPort = String(snap.port.id); }
+      else { e.toPort = String(snap.port.id); }
+
+      if(typeof toast==='function') toast('Fixado em '+snap.port.id);
+      if(typeof saveLocal==='function') saveLocal();
+    } else {
+      if(typeof toast==='function') toast('Solte perto de um ponto verde', true);
+    }
+
+    setDrag(null);
+    const svg=$('canvas');
+    if(svg) svg.querySelectorAll('[data-ghost]').forEach(n=>n.remove());
+    if(typeof render==='function') render();
+    return true;
+  }
+
   const prevMove = window.onMove;
   window.onMove = function(ev){
-    if(!drag || !flow){
+    const d = getDrag();
+    if(!d || !flow){
       if(typeof prevMove==='function') return prevMove(ev);
       return;
     }
-    if(drag.type === 'node-resize'){
-      const n = nodeByIdLocal(drag.id);
+    if(d.type === 'node-resize'){
+      const n = nodeByIdLocal(d.id);
       if(!n) return;
-      n.w = Math.max(n.type==='busbar'?80:60, drag.ox + (ev.clientX-drag.sx));
-      n.h = Math.max(n.type==='busbar'?16:32, drag.oy + (ev.clientY-drag.sy));
+      n.w = Math.max(n.type==='busbar'?80:60, d.ox + (ev.clientX-d.sx));
+      n.h = Math.max(n.type==='busbar'?16:32, d.oy + (ev.clientY-d.sy));
       if(typeof render==='function') render();
       return;
     }
-    if(drag.type === 'edge-reconnect'){
+    if(d.type === 'edge-reconnect'){
       const p = clientToSvg(ev.clientX, ev.clientY);
-      drag._mx = p.x; drag._my = p.y;
-      // proximity only while dragging — nearest to MOUSE
-      const snap = nearestPort(p.x, p.y, 32, drag.excludeId);
-      drag._snap = snap;
+      d._mx = p.x; d._my = p.y;
+      const snap = nearestPort(p.x, p.y, 40, d.excludeId);
+      d._snap = snap;
+      setDrag(d);
       paintDragVisual(p.x, p.y, snap);
       return;
     }
@@ -297,37 +407,13 @@
 
   const prevUp = window.onUp;
   window.onUp = function(ev){
-    if(drag && drag.type === 'edge-reconnect' && flow){
-      const e = (flow.edges||[]).find(x=>x.id===drag.edgeId);
-      const snap = drag._snap;
-      if(e && snap){
-        if(drag.which==='from'){
-          e.from = snap.node.id;
-          e.fromPort = snap.port.id;
-          if(snap.node.type==='busbar') e.fromT = snap.port.t;
-          else delete e.fromT;
-        } else {
-          e.to = snap.node.id;
-          e.toPort = snap.port.id;
-          if(snap.node.type==='busbar') e.toT = snap.port.t;
-          else delete e.toT;
-        }
-        if(typeof toast==='function') toast('Porta fixada: '+snap.port.id);
-        if(typeof saveLocal==='function') saveLocal();
-      } else if(e){
-        if(typeof toast==='function') toast('Solte perto de um ponto verde', true);
-      }
-      drag = null;
-      try{ window.drag = null; }catch(err){}
-      const svg=$('canvas');
-      if(svg) svg.querySelectorAll('[data-ghost]').forEach(n=>n.remove());
-      if(typeof render==='function') render();
-      if(typeof prevUp==='function') prevUp(ev);
+    const d = getDrag();
+    if(d && d.type === 'edge-reconnect'){
+      commitReconnect(ev);
       return;
     }
-    if(drag && drag.type === 'node-resize'){
-      drag = null;
-      try{ window.drag = null; }catch(err){}
+    if(d && d.type === 'node-resize'){
+      setDrag(null);
       if(typeof saveLocal==='function') saveLocal();
       if(typeof render==='function') render();
       if(typeof prevUp==='function') prevUp(ev);
@@ -336,9 +422,14 @@
     if(typeof prevUp==='function') prevUp(ev);
   };
 
+  // Capture mouseup early so we always commit even if other handlers clear drag
   window.addEventListener('mouseup', function(ev){
-    if(drag && (drag.type==='edge-reconnect' || drag.type==='node-resize')) window.onUp(ev);
-  });
+    const d = getDrag();
+    if(d && d.type==='edge-reconnect'){
+      commitReconnect(ev);
+      ev.stopPropagation();
+    }
+  }, true);
 
   const prevRender = window.render;
   window.render = function(){
@@ -407,13 +498,11 @@
     }
   }
 
-  /** Apply modal form fields to selected element + save */
   function applyModalForm(){
     if(!selected || !flow) return false;
     const ta = $('sideNameMulti');
     const comment = $('sideComment');
     const titleVal = ta ? ta.value : (($('sideName')&&$('sideName').value)||'');
-
     if(selected.kind==='node'){
       const n = nodeByIdLocal(selected.id);
       if(n) n.title = titleVal;
@@ -424,24 +513,19 @@
       const e = (flow.edges||[]).find(x=>x.id===selected.id);
       if(e) e.label = titleVal;
     }
-
     if(comment){
       if(!flow.comments) flow.comments = {};
       const key = (typeof voteKey==='function') ? voteKey(selected.kind, selected.id) : (selected.kind+':'+selected.id);
       flow.comments[key] = comment.value;
     }
-
-    // module bind select if present
     const modSel = $('sideMacroSelect');
     if(modSel && selected.kind==='node'){
       const n = nodeByIdLocal(selected.id);
       if(n) n.macro = modSel.value || null;
     }
-
     if(typeof saveLocal==='function') saveLocal();
     if(typeof render==='function') render();
     if(typeof renderMacroBar==='function') renderMacroBar();
-    if(typeof updateProgress==='function') updateProgress();
     return true;
   }
 
@@ -501,14 +585,13 @@
     if(ta && ta.dataset.wired!=='1'){
       ta.dataset.wired='1';
       ta.addEventListener('input', function(){
-        // live update title while typing
         if(!selected || !flow) return;
         if(selected.kind==='node'){
           const n=nodeByIdLocal(selected.id);
           if(n){ n.title=ta.value; if(typeof render==='function') render(); }
         } else if(selected.kind==='macro'){
           const m=typeof macroById==='function'?macroById(selected.id):null;
-          if(m){ m.title=ta.value; if(typeof render==='function') render(); if(typeof renderMacroBar==='function') renderMacroBar(); }
+          if(m){ m.title=ta.value; if(typeof render==='function') render(); }
         } else if(selected.kind==='edge'){
           const e=(flow.edges||[]).find(x=>x.id===selected.id);
           if(e){ e.label=ta.value; if(typeof render==='function') render(); }
@@ -523,7 +606,6 @@
       const fromSel=$('edgeFromSel'), toSel=$('edgeToSel');
       if(fromSel&&fromSel.value){ e.from=fromSel.value; delete e.fromPort; delete e.fromT; }
       if(toSel&&toSel.value){ e.to=toSel.value; delete e.toPort; delete e.toT; }
-      // re-lock ports for new ends
       ensureLockedPorts(e);
       if(typeof saveLocal==='function') saveLocal();
       if(typeof render==='function') render();
@@ -538,5 +620,5 @@
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
 
-  console.log('[Fluxora] shapes-edges-busbar v20261007d locked ports + save');
+  console.log('[Fluxora] shapes-edges-busbar v20261007e closest-edge + sticky snap');
 })();
