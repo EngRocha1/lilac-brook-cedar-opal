@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-/** Guests live in `shares` — never in `profiles` (no password). */
+/** Guests/collaborators live in `shares` — never in `profiles` (no password). */
 export const create = mutation({
   args: {
     flowKey: v.string(),
@@ -64,6 +64,19 @@ export const setActive = mutation({
   },
 });
 
+export const setCanEdit = mutation({
+  args: { token: v.string(), canEdit: v.boolean() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("shares")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!row) return { ok: false };
+    await ctx.db.patch(row._id, { canEdit: args.canEdit, updatedAt: Date.now() });
+    return { ok: true };
+  },
+});
+
 export const revoke = mutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
@@ -97,42 +110,39 @@ export const heartbeat = mutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const email = args.email.toLowerCase();
-    const rows = await ctx.db
+    const email = args.email.toLowerCase().trim();
+    const existing = await ctx.db
       .query("presence")
       .withIndex("by_flow", (q) => q.eq("flowKey", args.flowKey))
       .collect();
-    const existing = rows.find((r) => r.email === email);
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        name: args.name,
-        lastSeen: Date.now(),
-      });
+    const mine = existing.find((p) => p.email === email);
+    const now = Date.now();
+    if (mine) {
+      await ctx.db.patch(mine._id, { name: args.name, lastSeen: now });
     } else {
       await ctx.db.insert("presence", {
         flowKey: args.flowKey,
         email,
         name: args.name,
-        lastSeen: Date.now(),
+        lastSeen: now,
       });
     }
-    const cutoff = Date.now() - 120000;
-    for (const r of rows) {
-      if (r.lastSeen < cutoff && r.email !== email) {
-        await ctx.db.delete(r._id);
-      }
+    // prune stale
+    for (const p of existing) {
+      if (now - p.lastSeen > 120000) await ctx.db.delete(p._id);
     }
+    return { ok: true };
   },
 });
 
 export const listPresence = query({
   args: { flowKey: v.string() },
   handler: async (ctx, args) => {
-    const rows = await ctx.db
+    const list = await ctx.db
       .query("presence")
       .withIndex("by_flow", (q) => q.eq("flowKey", args.flowKey))
       .collect();
-    const cutoff = Date.now() - 120000;
-    return rows.filter((r) => r.lastSeen >= cutoff);
+    const now = Date.now();
+    return list.filter((p) => now - p.lastSeen < 90000);
   },
 });
