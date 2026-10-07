@@ -14,11 +14,6 @@
   async function cardLogoUrl(r) {
     var h = (r && r.data && r.data.header) || {};
     if (h.logoUrl) return h.logoUrl;
-    if (h.logoStorageId && typeof resolveStorageUrl === 'function') {
-      try {
-        return await resolveStorageUrl(h.logoStorageId);
-      } catch (e) {}
-    }
     var u = window.user || (typeof user !== 'undefined' ? user : null);
     if (u && u.logo) return u.logo;
     return null;
@@ -63,13 +58,10 @@
         card.setAttribute('data-flow-key', r.key);
         var nodes = (r.data && r.data.nodes && r.data.nodes.length) || 0;
         var macros = (r.data && r.data.macros && r.data.macros.length) || 0;
-        var logoHtml =
-          '<div class="flow-card-logo flow-card-logo--ph">◇</div>';
         var left = document.createElement('div');
         left.className = 'flow-card-left';
         left.innerHTML =
-          logoHtml +
-          '<div><h4>' +
+          '<div class="flow-card-logo flow-card-logo--ph">◇</div><div><h4>' +
           (r.title || r.key) +
           '</h4><div class="flow-mgr-meta">' +
           r.key +
@@ -81,14 +73,13 @@
         card.appendChild(left);
         cardLogoUrl(r).then(function (logo) {
           if (!logo) return;
-          var img = left.querySelector('.flow-card-logo');
-          if (img && img.tagName === 'DIV') {
-            var im = document.createElement('img');
-            im.className = 'flow-card-logo';
-            im.src = logo;
-            im.alt = '';
-            img.replaceWith(im);
-          }
+          var ph = left.querySelector('.flow-card-logo');
+          if (!ph) return;
+          var im = document.createElement('img');
+          im.className = 'flow-card-logo';
+          im.src = logo;
+          im.alt = '';
+          ph.replaceWith(im);
         });
 
         var actions = document.createElement('div');
@@ -103,11 +94,7 @@
           ev.preventDefault();
           ev.stopPropagation();
           if (typeof openFlowEditModal === 'function') {
-            openFlowEditModal({
-              key: r.key,
-              title: r.title || r.key,
-              data: r.data,
-            });
+            openFlowEditModal({ key: r.key, title: r.title || r.key, data: r.data });
           } else if (typeof openEditForFlow === 'function') {
             openEditForFlow(r);
           }
@@ -118,14 +105,11 @@
         open.className = 'btn pri';
         open.textContent = 'Abrir';
         open.onclick = async function () {
+          window.flowKey = r.key;
           try {
             flowKey = r.key;
           } catch (e) {}
-          window.flowKey = r.key;
-          localStorage.setItem(
-            typeof FLOW_KEY_STORE !== 'undefined' ? FLOW_KEY_STORE : 'hemopi_flow_key',
-            r.key
-          );
+          localStorage.setItem('hemopi_flow_key', r.key);
           try {
             flowTitle = r.title || r.key;
           } catch (e) {}
@@ -157,7 +141,6 @@
             if (typeof toast === 'function') toast('Fluxo excluído');
             window.__renderingFlows = false;
             await renderFlowManagerClean();
-            if (typeof loadFlowList === 'function') await loadFlowList();
           } catch (e) {
             console.error(e);
             del.disabled = false;
@@ -205,8 +188,9 @@
     var openMgr = $('btnOpenMgr');
     if (openMgr) {
       openMgr.onclick = async function (ev) {
-        ev.preventDefault();
+        if (ev) ev.preventDefault();
         if ($('appMain')) $('appMain').hidden = true;
+        if ($('publicPage')) $('publicPage').hidden = true;
         if ($('flowManager')) $('flowManager').hidden = false;
         await renderFlowManagerClean();
       };
@@ -225,7 +209,8 @@
     refreshUserChromeStack();
   }
   boot();
-  setTimeout(boot, 500);
-  setTimeout(boot, 1500);
+  setTimeout(boot, 600);
+  setTimeout(boot, 1200);
+  setTimeout(boot, 2500);
   console.log('[Fluxora] list-source canonical ready');
 })();
