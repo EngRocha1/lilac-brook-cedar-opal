@@ -1,16 +1,14 @@
-/* share-access.js — collaborator mode on share links · v20261007g */
+/* share-access.js — collaborator mode on share links · restored */
 (function(){
   function $(id){ return document.getElementById(id); }
 
   function applyCollaboratorUI(){
-    // Full edit on flow; hide owner-only navigation
     ['btnNewFlow','btnOpenMgr','btnShare'].forEach(id=>{
       const el=$(id); if(el) el.style.display='none';
     });
     ['btnAddProcess','btnAddDecision','btnAddText','btnAddBusbar','btnAddMacro','btnConnect','btnSeal'].forEach(id=>{
       const el=$(id); if(el) el.style.display='';
     });
-    // Unlock header if previously locked
     const box = $('projectHeader');
     if(box){
       box.classList.remove('locked');
@@ -110,5 +108,5 @@
   setTimeout(boot, 400);
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
-  console.log('[Fluxora] share-access collaborator ready');
+  console.log('[Fluxora] share-access collaborator ready (restored)');
 })();
