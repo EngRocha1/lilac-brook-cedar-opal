@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="stylesheet" href="editor.css?v=20261007g"/>
+<link rel="stylesheet" href="editor.css?v=20261007h"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -55,7 +55,7 @@
     </div>
   </footer>
 </div>
-<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener">WA</a>
+<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener" aria-label="WhatsApp"></a>
 <div id="loginModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <button type="button" class="modal-x" id="loginClose">×</button>
@@ -78,7 +78,7 @@
 <div id="guestModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <h2>Acesso compartilhado</h2>
-    <p class="muted" style="font-size:13px;margin:0 0 12px">Use o e-mail com o qual o fluxo foi compartilhado. Convidado só vota; Colaborador edita o fluxo.</p>
+    <p class="muted" style="font-size:13px;margin:0 0 12px">Use o e-mail com o qual o fluxo foi compartilhado.</p>
     <form id="guestForm">
       <label class="field"><span>E-mail</span><input id="guestEmail" type="email" required/></label>
       <button type="submit" class="btn-neon block">Entrar no fluxo</button>
@@ -116,8 +116,10 @@
 </div>
 <div id="flowManager" class="flow-manager" hidden>
   <header class="admin-top"><strong>📁 Meus fluxos</strong>
-    <div><button type="button" class="btn-neon sm" id="btnMgrNew">+ Novo</button>
-    <button type="button" class="btn-ghost" id="btnMgrClose">Voltar</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn-neon sm" id="btnMgrNew">+ Novo</button>
+      <button type="button" class="btn-ghost" id="btnMgrClose">Voltar</button>
+    </div>
   </header>
   <div id="flowManagerList" class="flow-mgr-list"></div>
 </div>
@@ -248,20 +250,21 @@
 </div>
 <div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
-<!-- build 2026-10-07g collaborator share -->
-<script src="config.js?v=20261007g"></script>
-<script src="convex-api.js?v=20261007g"></script>
-<script src="flow-data.js?v=20261007g"></script>
-<script src="editor.js?v=20261007g"></script>
-<script src="editor-patch.js?v=20261007g"></script>
-<script src="editor-fix.js?v=20261007g"></script>
-<script src="flow-edit-modal.js?v=20261007g"></script>
-<script src="share-access.js?v=20261007g"></script>
-<script src="ui-polish.js?v=20261007g"></script>
-<script src="print-diagram.js?v=20261007g"></script>
-<script src="module-bind.js?v=20261007g"></script>
-<script src="view-controls.js?v=20261007g"></script>
-<script src="macro-comment-autosave.js?v=20261007g"></script>
-<script src="shapes-edges-busbar.js?v=20261007g"></script>
+<!-- build 2026-10-07h flow list UI -->
+<script src="config.js?v=20261007h"></script>
+<script src="convex-api.js?v=20261007h"></script>
+<script src="flow-data.js?v=20261007h"></script>
+<script src="editor.js?v=20261007h"></script>
+<script src="editor-patch.js?v=20261007h"></script>
+<script src="editor-fix.js?v=20261007h"></script>
+<script src="flow-edit-modal.js?v=20261007h"></script>
+<script src="share-access.js?v=20261007h"></script>
+<script src="ui-polish.js?v=20261007h"></script>
+<script src="flow-list-ui.js?v=20261007h"></script>
+<script src="print-diagram.js?v=20261007h"></script>
+<script src="module-bind.js?v=20261007h"></script>
+<script src="view-controls.js?v=20261007h"></script>
+<script src="macro-comment-autosave.js?v=20261007h"></script>
+<script src="shapes-edges-busbar.js?v=20261007h"></script>
 </body>
 </html>
