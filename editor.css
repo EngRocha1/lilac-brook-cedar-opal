@@ -1,4 +1,4 @@
-/* Fluxora editor styles — part1 layout */
+/* Fluxora — part2 board flex + part3 node colors + part1 list */
 :root{--neon:#ff2d95;--bg:#0a0e1a;--card:#12182a;--text:#e8eef8;--muted:#8b9bb4;--line:#243049}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -42,7 +42,28 @@ button,input,select,textarea{font:inherit}
 .admin-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .admin-card{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:14px}
-.app{display:flex;flex-direction:column;max-width:100%;margin:0 auto;padding:12px;background:#eef1f5;color:#1a2332;min-height:100vh}
+
+/* ========== PARTE 2: Board viewport flex (sem esmagar o canvas) ========== */
+.app{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  max-height:100vh;
+  overflow:hidden;
+  max-width:100%;
+  margin:0 auto;
+  padding:12px;
+  background:#eef1f5;
+  color:#1a2332;
+}
+.app .hero,
+.app .toolbar,
+.app .presence-bar,
+.app .project-header,
+.app .share-panel,
+.app #sealBox{
+  flex-shrink:0;
+}
 .hero{background:linear-gradient(120deg,#8b1538,#c41e3a);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:10px}
 .hero-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .hero h1{margin:0;font-size:1.15rem}
@@ -56,10 +77,67 @@ button,input,select,textarea{font:inherit}
 .btn-save{background:#1b7a4e;color:#fff;border:0;width:100%;margin-top:8px;padding:10px;border-radius:8px;font-weight:700}
 .prog{height:8px;background:#e6ebf1;border-radius:99px;overflow:hidden;min-width:120px}
 .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1b7a4e,#c9a227)}
-.workspace{display:grid;grid-template-columns:200px 1fr;gap:8px;min-height:60vh}
-.palette{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:8px;overflow:auto;max-height:70vh}
-.canvas-wrap{background:#fff;border:1px solid #d0d8e2;border-radius:12px;min-height:60vh;overflow:auto;position:relative}
-#canvas{width:100%;min-height:900px}
+
+/* Linha lateral (macros) + board: cresce no espaço restante */
+.workspace{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:row;
+  gap:8px;
+  overflow:hidden;
+}
+.palette{
+  flex:0 0 200px;
+  width:200px;
+  max-width:30%;
+  background:#fff;
+  border:1px solid #d0d8e2;
+  border-radius:12px;
+  padding:8px;
+  overflow:auto;
+  min-height:0;
+}
+/* Board preenche o resto; pan/zoom interno sem empurrar a página */
+.canvas-wrap{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  position:relative;
+  overflow:hidden;
+  background:#fff;
+  border:1px solid #d0d8e2;
+  border-radius:12px;
+}
+#canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  min-height:100%;
+  /* remove min-height:900px que empurrava o layout */
+}
+
+/* ========== PARTE 3: Nós legíveis (SVG default fill=black sem atributo) ========== */
+#canvas .shape,
+#canvas rect.shape,
+#canvas polygon.shape{
+  fill:#ffffff !important;
+  stroke:#1a5f8a !important;
+  stroke-width:2;
+}
+#canvas text{
+  fill:#0f172a !important;
+}
+#canvas .macro-box{
+  /* fill vem do atributo SVG do macro; garante traço legível */
+  stroke-width:2;
+}
+#canvas .edge,
+#canvas path.edge{
+  fill:none !important;
+  stroke:#64748b;
+}
+
 .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.35);display:none;align-items:center;justify-content:center;z-index:80;padding:12px}
 .modal-bg.open{display:flex}
 .modal{background:#fff;color:#0f172a;border-radius:14px;width:min(480px,100%);max-height:90vh;overflow:auto}
@@ -73,7 +151,7 @@ button,input,select,textarea{font:inherit}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:999px;z-index:120}
 .presence-bar,.project-header,.share-panel{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:10px;margin-bottom:8px}
 
-/* ========== PARTE 1: Listagem livre do efeito funil ========== */
+/* PARTE 1: listagem */
 #flowManager,
 .flow-manager{
   width:100%;
@@ -88,29 +166,12 @@ button,input,select,textarea{font:inherit}
   z-index:auto;
   color:#1a2332;
 }
-/* Quando a listagem está visível, o body herda superfície clara (sem takeover fixed/100vh) */
 body:has(#flowManager:not([hidden])){
   background:#eef1f5;
   color:#1a2332;
 }
-.flow-mgr-list{
-  display:grid;
-  gap:12px;
-  width:100%;
-  max-width:1100px;
-  margin:16px auto;
-}
-.flow-mgr-card{
-  background:#fff;
-  border:1px solid #d0d8e2;
-  border-radius:12px;
-  padding:14px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-  justify-content:space-between;
-}
+.flow-mgr-list{display:grid;gap:12px;width:100%;max-width:1100px;margin:16px auto}
+.flow-mgr-card{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .flow-mgr-meta{font-size:.72rem;color:#5c6b7a}
 .flow-card-left{display:flex;gap:10px;align-items:center;min-width:0}
 .flow-card-logo{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#f3f6fa}
@@ -130,10 +191,12 @@ body:has(#flowManager:not([hidden])){
 .wa-float{position:fixed;right:18px;bottom:18px;z-index:50;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 20px rgba(37,211,102,.45);overflow:hidden}
 .wa-float svg{width:32px;height:32px;display:block}
 .wa-float span{display:none}
+
 @media (max-width:768px){
   .nav-burger{display:block}
   .nav-links{display:none;position:absolute;top:56px;left:0;right:0;flex-direction:column;background:#0a0e1a;padding:12px}
   .nav-links.open{display:flex}
-  .workspace{grid-template-columns:1fr}
-  .palette{max-height:160px}
+  .workspace{flex-direction:column}
+  .palette{flex:0 0 auto;width:100%;max-width:none;max-height:140px}
+  .canvas-wrap{flex:1 1 auto;min-height:50vh}
 }
