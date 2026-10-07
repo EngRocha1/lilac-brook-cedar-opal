@@ -1,4 +1,4 @@
-/* Flow list layout · single Editar · logo · official WA · responsive · v20261007h */
+/* Flow list — single Editar · logo · official WA · responsive · v20261007i */
 (function(){
   function $(id){ return document.getElementById(id); }
   function cx(){ return window.convexClient; }
@@ -8,102 +8,55 @@
     st.id='flow-list-ui-css';
     st.textContent=`
       #flowManager.flow-manager{
-        padding:12px 14px 28px;
-        max-width:960px;
-        margin:0 auto;
-        min-height:100vh;
-        box-sizing:border-box;
+        padding:12px 14px 28px;max-width:960px;margin:0 auto;
+        min-height:100vh;box-sizing:border-box;
       }
       #flowManager .admin-top{
         display:flex;align-items:center;justify-content:space-between;
         gap:10px;flex-wrap:wrap;margin-bottom:14px;
       }
-      #flowManagerList.flow-mgr-list,
-      #flowManagerList{
-        display:flex;flex-direction:column;gap:12px;
-        max-width:100%;margin:0 auto;
+      #flowManagerList.flow-mgr-list,#flowManagerList{
+        display:flex;flex-direction:column;gap:12px;max-width:100%;margin:0 auto;
       }
       .flow-mgr-card{
-        display:grid;
-        grid-template-columns:1fr auto;
-        gap:12px 16px;
-        align-items:center;
-        background:#fff;
-        border:1px solid #d0d8e2;
-        border-radius:14px;
-        padding:14px 16px;
-        box-sizing:border-box;
-        width:100%;
+        display:grid;grid-template-columns:1fr auto;gap:12px 16px;align-items:center;
+        background:#fff;border:1px solid #d0d8e2;border-radius:14px;
+        padding:14px 16px;box-sizing:border-box;width:100%;
       }
-      .flow-card-left{
-        display:flex;align-items:center;gap:12px;min-width:0;
-      }
+      .flow-card-left{display:flex;align-items:center;gap:12px;min-width:0}
       .flow-card-logo{
-        width:48px;height:48px;min-width:48px;
-        border-radius:10px;object-fit:contain;
+        width:48px;height:48px;min-width:48px;border-radius:10px;object-fit:contain;
         background:#f8fafc;border:1px solid #e2e8f0;
       }
       .flow-card-logo--ph{
         display:flex;align-items:center;justify-content:center;
         color:#94a3b8;font-size:18px;font-weight:700;
       }
-      .flow-card-left h4{
-        margin:0 0 4px;font-size:1rem;line-height:1.25;
-        word-break:break-word;
-      }
-      .flow-mgr-meta{
-        font-size:.72rem;color:#5c6b7a;word-break:break-all;
-      }
-      .flow-mgr-actions{
-        display:flex;flex-wrap:wrap;gap:8px;
-        align-items:center;justify-content:flex-end;
-      }
-      .flow-mgr-actions .btn,
-      .flow-mgr-actions .btn-edit-flow{
+      .flow-card-left h4{margin:0 0 4px;font-size:1rem;line-height:1.25;word-break:break-word}
+      .flow-mgr-meta{font-size:.72rem;color:#5c6b7a;word-break:break-all}
+      .flow-mgr-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+      .flow-mgr-actions .btn,.flow-mgr-actions .btn-edit-flow{
         border-radius:10px;padding:8px 14px;font-size:.8rem;font-weight:700;
-        cursor:pointer;border:1px solid #d0d8e2;background:#fff;
-        white-space:nowrap;
+        cursor:pointer;border:1px solid #d0d8e2;background:#fff;white-space:nowrap;
       }
-      .flow-mgr-actions .btn-edit-flow{
-        background:#0f172a;color:#fff;border-color:#0f172a;
-      }
-      .flow-mgr-actions .btn.pri{
-        background:#c41e3a;color:#fff;border-color:#c41e3a;
-      }
-      .flow-mgr-actions .btn.danger-outline{
-        background:#fff;color:#b91c1c;border-color:#fecaca;
-      }
-      /* Mobile: stack actions full width */
+      .flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border-color:#0f172a}
+      .flow-mgr-actions .btn.pri{background:#c41e3a;color:#fff;border-color:#c41e3a}
+      .flow-mgr-actions .btn.danger-outline{background:#fff;color:#b91c1c;border-color:#fecaca}
       @media (max-width:640px){
-        .flow-mgr-card{
-          grid-template-columns:1fr;
-          padding:12px;
+        .flow-mgr-card{grid-template-columns:1fr;padding:12px}
+        .flow-mgr-actions{width:100%;justify-content:stretch}
+        .flow-mgr-actions .btn,.flow-mgr-actions .btn-edit-flow{
+          flex:1 1 calc(50% - 8px);text-align:center;min-width:0;
         }
-        .flow-mgr-actions{
-          width:100%;
-          justify-content:stretch;
-        }
-        .flow-mgr-actions .btn,
-        .flow-mgr-actions .btn-edit-flow{
-          flex:1 1 calc(50% - 8px);
-          text-align:center;
-          min-width:0;
-        }
-        .flow-mgr-actions .btn.pri{
-          flex:1 1 100%;
-          order:1;
-        }
-        .flow-mgr-actions .btn-edit-flow{ order:0; }
-        .flow-mgr-actions .btn.danger-outline{ order:2; }
+        .flow-mgr-actions .btn.pri{flex:1 1 100%;order:1}
+        .flow-mgr-actions .btn-edit-flow{order:0}
+        .flow-mgr-actions .btn.danger-outline{order:2}
       }
-      /* Official WhatsApp float */
       a.wa-float{
         position:fixed;right:16px;bottom:16px;z-index:50;
-        width:58px;height:58px;border-radius:50%;
-        background:#25D366;
+        width:58px;height:58px;border-radius:50%;background:#25D366;
         display:flex;align-items:center;justify-content:center;
-        box-shadow:0 6px 20px rgba(37,211,102,.45);
-        text-decoration:none;overflow:hidden;
+        box-shadow:0 6px 20px rgba(37,211,102,.45);text-decoration:none;overflow:hidden;
       }
       a.wa-float svg{width:32px;height:32px;display:block}
       a.wa-float span{display:none}
@@ -111,7 +64,6 @@
     document.head.appendChild(st);
   }
 
-  /** Official WhatsApp logo (white on green) */
   function applyOfficialWhatsAppIcon(){
     const a = $('waFloat');
     if(!a) return;
@@ -124,12 +76,8 @@
   }
 
   async function resolveLogo(r){
-    // Prefer async cardLogoUrl from editor-fix if present
     if(typeof cardLogoUrl === 'function'){
-      try{
-        const u = await cardLogoUrl(r);
-        if(u) return u;
-      }catch(e){}
+      try{ const u = await cardLogoUrl(r); if(u) return u; }catch(e){}
     }
     const h = (r && r.data && r.data.header) || {};
     if(h.logoUrl) return h.logoUrl;
@@ -156,10 +104,11 @@
       openFlowEditModal({ key: r.key, title: r.title||r.key, data: r.data||null });
       return;
     }
-    if(typeof openEditForFlow === 'function'){
-      openEditForFlow(r);
-      return;
-    }
+    if(typeof openEditForFlow === 'function') openEditForFlow(r);
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   async function renderFlowManagerClean(){
@@ -205,10 +154,11 @@
       const actions = document.createElement('div');
       actions.className = 'flow-mgr-actions';
 
-      // Single Editar
+      // ÚNICO botão Editar — marca data-fe-edit para não ser reinjetado
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.className = 'btn-edit-flow';
+      edit.setAttribute('data-fe-edit', '1');
       edit.textContent = '✎ Editar';
       edit.onclick = function(ev){
         ev.preventDefault();
@@ -234,6 +184,7 @@
           if(typeof renderMacroBar==='function') renderMacroBar();
           if(typeof updateProgress==='function') updateProgress();
           if(typeof renderProjectHeader==='function') await renderProjectHeader();
+          if(typeof window.fitBoardToScreen==='function') window.fitBoardToScreen(true);
         }catch(e){}
       };
 
@@ -244,11 +195,8 @@
       del.onclick = async function(){
         if(!confirm('Excluir este fluxo?')) return;
         try{
-          if(typeof deleteFlow==='function'){
-            await deleteFlow(r.key);
-          } else if(cx()){
-            await cx().mutation('flows:remove', { key: r.key });
-          }
+          if(typeof deleteFlow==='function') await deleteFlow(r.key);
+          else if(cx()) await cx().mutation('flows:remove', { key: r.key });
           await renderFlowManagerClean();
           if(typeof toast==='function') toast('Fluxo excluído');
         }catch(e){
@@ -259,47 +207,21 @@
       actions.appendChild(edit);
       actions.appendChild(open);
       actions.appendChild(del);
-
       card.appendChild(left);
       card.appendChild(actions);
       list.appendChild(card);
     }
   }
 
-  function escapeHtml(s){
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // Override all previous renderFlowManager implementations
   window.renderFlowManager = renderFlowManagerClean;
-
-  // Disable flow-edit-modal duplicate button injection
-  if(typeof window.openFlowEditModal === 'function'){
-    // leave modal; only kill patch that adds second Editar
-  }
-  // Neutralize patchRenderFlowManager if it runs later
-  const _origDefine = Object.defineProperty;
-  setInterval(function(){
-    // Remove any extra .btn-fe-edit injected by older patch
-    document.querySelectorAll('.flow-mgr-card .btn-fe-edit').forEach(el=>el.remove());
-    // Also remove plain "Editar" buttons that are NOT .btn-edit-flow inside actions
-    document.querySelectorAll('.flow-mgr-card > button, .flow-mgr-card .btn-fe-edit').forEach(el=>{
-      if(el.classList.contains('btn-edit-flow')) return;
-      if((el.textContent||'').indexOf('Editar')>=0 && !el.closest('.flow-mgr-actions')) el.remove();
-    });
-  }, 800);
 
   function boot(){
     applyOfficialWhatsAppIcon();
-    // If list is visible, refresh layout
-    const list = $('flowManagerList');
-    if(list && $('flowManager') && !$('flowManager').hidden){
-      renderFlowManagerClean();
-    }
+    window.renderFlowManager = renderFlowManagerClean;
   }
   boot();
-  setTimeout(boot, 500);
-  setTimeout(boot, 1500);
+  setTimeout(boot, 400);
+  setTimeout(boot, 1200);
 
-  console.log('[Fluxora] flow-list-ui ready');
+  console.log('[Fluxora] flow-list-ui v20261007i clean');
 })();
