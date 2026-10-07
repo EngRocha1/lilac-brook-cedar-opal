@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="stylesheet" href="editor.css?v=rootfix1"/>
+<link rel="stylesheet" href="editor.css?v=rootfix2"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -66,8 +66,6 @@
     </div>
     <form id="authForm">
       <label id="fieldName" class="field" style="display:none"><span>Nome</span><input id="authName" type="text"/></label>
-      <label id="fieldCompany" class="field" style="display:none"><span>Empresa</span><input id="authCompany" type="text"/></label>
-      <label id="fieldPhone" class="field" style="display:none"><span>Celular</span><input id="authPhone" type="tel"/></label>
       <label class="field"><span>E-mail</span><input id="authEmail" type="email" required/></label>
       <label class="field"><span>Senha</span><input id="authPassword" type="password" required minlength="6"/></label>
       <button type="submit" class="btn-neon block" id="authSubmit">Entrar</button>
@@ -78,7 +76,6 @@
 <div id="guestModal" class="modal-overlay" hidden>
   <div class="login-modal">
     <h2>Acesso compartilhado</h2>
-    <p class="muted" style="font-size:13px;margin:0 0 12px">Use o e-mail com o qual o fluxo foi compartilhado.</p>
     <form id="guestForm">
       <label class="field"><span>E-mail</span><input id="guestEmail" type="email" required/></label>
       <button type="submit" class="btn-neon block">Entrar no fluxo</button>
@@ -96,23 +93,7 @@
 </div>
 <div id="adminPage" class="admin-page" hidden>
   <header class="admin-top"><strong>Admin</strong><button type="button" class="btn-ghost" id="adminClose">Sair</button></header>
-  <div class="admin-grid">
-    <section class="admin-card"><h3>Usuários</h3><div id="userList"></div>
-      <div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-        <input id="newUserEmail" type="email" placeholder="email"/><input id="newUserName" type="text" placeholder="nome"/>
-        <button type="button" class="btn-neon sm" id="btnAddUser">Add</button>
-      </div>
-    </section>
-    <section class="admin-card"><h3>Estilo</h3>
-      <label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label>
-      <label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label>
-      <label>WhatsApp <input type="text" id="styleWa"/></label>
-      <button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button>
-    </section>
-    <section class="admin-card"><h3>Senha admin</h3>
-      <input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button>
-    </section>
-  </div>
+  <div class="admin-grid"><section class="admin-card"><h3>Usuários</h3><div id="userList"></div></section></div>
 </div>
 <div id="flowManager" class="flow-manager" hidden>
   <header class="admin-top"><strong>📁 Meus fluxos</strong>
@@ -124,7 +105,7 @@
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
     <div class="logo">◇</div>
-    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Listagem na origem · zoom · WA oficial</p></div>
+    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Raiz limpa · listagem · zoom · WA</p></div>
     <div class="hero-user">
       <span id="userLabel" class="user-chip">—</span>
       <button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button>
@@ -138,21 +119,20 @@
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
     <div class="tool-group" id="shapeTools">
-      <button type="button" class="btn" id="btnAddProcess" title="Processo">▭</button>
-      <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇</button>
-      <button type="button" class="btn" id="btnAddText" title="Texto">T</button>
-      <button type="button" class="btn" id="btnAddBusbar" title="Barramento">⚡</button>
-      <button type="button" class="btn" id="btnAddMacro" title="Macro">+ Macro</button>
-      <button type="button" class="btn" id="btnConnect" title="Conectar">⟷</button>
+      <button type="button" class="btn" id="btnAddProcess">▭</button>
+      <button type="button" class="btn" id="btnAddDecision">◇</button>
+      <button type="button" class="btn" id="btnAddText">T</button>
+      <button type="button" class="btn" id="btnAddBusbar">⚡</button>
+      <button type="button" class="btn" id="btnAddMacro">+ Macro</button>
+      <button type="button" class="btn" id="btnConnect">⟷</button>
     </div>
     <div class="tool-group prog-wrap">
       <div class="prog-label">Validação · <span id="progText">0%</span></div>
       <div class="prog"><i id="progBar"></i></div>
-      <div class="prog-stats"><span id="statEls">0</span> · <span id="statDone">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div>
+      <div class="prog-stats"><span id="statEls">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div>
     </div>
     <div class="tool-group">
       <button type="button" class="btn" onclick="printMode('overview')">🖨</button>
-      <button type="button" class="btn" onclick="printMode('macros')">🖨 Macros</button>
       <button type="button" class="btn pri" onclick="exportJSON()">↓</button>
       <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')">💾</button>
     </div>
@@ -161,10 +141,9 @@
   <div id="projectHeader" class="project-header"></div>
   <div id="sealBox"></div>
   <div class="share-panel">
-    <button type="button" class="btn" id="btnEditHeader">✎ Alterar cabeçalho</button>
+    <button type="button" class="btn" id="btnEditHeader">✎ Cabeçalho</button>
     <button type="button" class="btn" id="btnShare">🔗 Compartilhar</button>
-    <button type="button" class="btn pri" id="btnSeal">✅ Carimbar selo</button>
-    <a id="waFlowOwner" class="wa-inline" href="#" target="_blank" hidden>WhatsApp do criador</a>
+    <button type="button" class="btn pri" id="btnSeal">✅ Selo</button>
   </div>
   <div class="workspace">
     <aside class="palette" id="macroBar"></aside>
@@ -173,21 +152,17 @@
 </div>
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal modal-grow">
-    <div class="modal-h"><span>💬</span><strong id="sideTitle">Avaliação</strong>
+    <div class="modal-h"><strong id="sideTitle">Avaliação</strong>
       <button type="button" class="x" onclick="closeModal()">×</button></div>
     <div class="modal-b">
       <p id="sideMeta" class="muted"></p>
-      <label>Título (multilinha)</label>
-      <textarea id="sideNameMulti" rows="3" placeholder="Título em várias linhas"></textarea>
+      <label>Título</label><textarea id="sideNameMulti" rows="3"></textarea>
       <input id="sideName" type="text" style="display:none"/>
-      <div id="edgeDdBox" class="edge-dd-row" hidden>
-        <label>Origem (de)</label><select id="edgeFromSel"></select>
-        <label>Destino (para)</label><select id="edgeToSel"></select>
-      </div>
-      <label id="colorLabel">Cor do macro</label><input id="sideColor" type="color" value="#e8f4fc"/>
+      <div id="edgeDdBox" hidden><label>Origem</label><select id="edgeFromSel"></select><label>Destino</label><select id="edgeToSel"></select></div>
+      <label id="colorLabel">Cor</label><input id="sideColor" type="color" value="#e8f4fc"/>
       <div class="vote-row">
-        <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍 Faz sentido</button>
-        <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎 Não faz</button>
+        <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍</button>
+        <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎</button>
       </div>
       <label>Comentário</label><textarea id="sideComment" rows="5"></textarea>
       <button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button>
@@ -196,72 +171,57 @@
   </div>
 </div>
 <div class="modal-bg" id="profileModal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal modal-grow">
-    <div class="modal-h"><strong>Meu perfil</strong>
-      <button type="button" class="x" onclick="document.getElementById('profileModal').classList.remove('open')">×</button></div>
-    <div class="modal-b">
-      <label>Nome</label><input id="profName" type="text"/>
-      <label>Empresa</label><input id="profCompany" type="text"/>
-      <label>Celular</label><input id="profPhone" type="tel"/>
-      <label>Foto</label><input id="profPhotoFile" type="file" accept="image/*"/>
-      <img id="profPhotoPrev" alt="" style="max-width:80px;display:none"/>
-      <label>Logo</label><input id="profLogoFile" type="file" accept="image/*"/>
-      <img id="profLogoPrev" alt="" style="max-width:120px;display:none"/>
-      <button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button>
-    </div>
-  </div>
+  <div class="modal"><div class="modal-h"><strong>Perfil</strong><button type="button" class="x" onclick="document.getElementById('profileModal').classList.remove('open')">×</button></div>
+  <div class="modal-b">
+    <label>Nome</label><input id="profName" type="text"/>
+    <label>Empresa</label><input id="profCompany" type="text"/>
+    <label>Celular</label><input id="profPhone" type="tel"/>
+    <label>Foto</label><input id="profPhotoFile" type="file" accept="image/*"/>
+    <img id="profPhotoPrev" alt="" style="max-width:80px;display:none"/>
+    <label>Logo</label><input id="profLogoFile" type="file" accept="image/*"/>
+    <img id="profLogoPrev" alt="" style="max-width:120px;display:none"/>
+    <button type="button" class="btn btn-save" id="btnSaveProfile">Salvar perfil</button>
+  </div></div>
 </div>
 <div class="modal-bg" id="flowEditModal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal modal-grow" style="max-width:560px">
-    <div class="modal-h"><strong id="flowEditTitle">Editar fluxo</strong>
-      <button type="button" class="x" id="flowEditClose">×</button></div>
-    <div class="modal-b">
-      <label>Nome do fluxo</label><input id="feTitle" type="text"/>
-      <label>Projeto</label><input id="feProject" type="text"/>
-      <label>Gerente</label><input id="feManager" type="text"/>
-      <label>Diretor</label><input id="feDirector" type="text"/>
-      <label>PO</label><input id="fePo" type="text"/>
-      <label>PM</label><input id="fePm" type="text"/>
-      <label>Stakeholders</label><input id="feStakeholders" type="text"/>
-      <button type="button" class="btn btn-save" id="btnFeSaveHeader">💾 Salvar cabeçalho</button>
-      <h4 class="modal-section-title" style="margin-top:18px">Compartilhamentos</h4>
-      <div id="feSharesList" class="fe-shares-list"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-end">
-        <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
-        <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
-      </div>
+  <div class="modal" style="max-width:560px"><div class="modal-h"><strong id="flowEditTitle">Editar fluxo</strong><button type="button" class="x" id="flowEditClose">×</button></div>
+  <div class="modal-b">
+    <label>Nome</label><input id="feTitle" type="text"/>
+    <label>Projeto</label><input id="feProject" type="text"/>
+    <label>Gerente</label><input id="feManager" type="text"/>
+    <label>Diretor</label><input id="feDirector" type="text"/>
+    <label>PO</label><input id="fePo" type="text"/>
+    <label>PM</label><input id="fePm" type="text"/>
+    <label>Stakeholders</label><input id="feStakeholders" type="text"/>
+    <button type="button" class="btn btn-save" id="btnFeSaveHeader">💾 Salvar cabeçalho</button>
+    <h4 style="margin-top:18px">Compartilhamentos</h4>
+    <div id="feSharesList"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <input id="feNewShareEmail" type="email" placeholder="email" style="flex:1"/>
+      <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
     </div>
-  </div>
+  </div></div>
 </div>
-<div class="modal-bg" id="dupModal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal modal-grow">
-    <div class="modal-h"><strong>Duplicar</strong>
-      <button type="button" class="x" onclick="document.getElementById('dupModal').classList.remove('open')">×</button></div>
-    <div class="modal-b">
-      <label>Nome</label><input id="dupTitle" type="text"/>
-      <label>Empresa</label><input id="dupCompany" type="text"/>
-      <label>E-mails</label><input id="dupEmails" type="text"/>
-      <button type="button" class="btn btn-save" id="btnDupConfirm">Duplicar</button>
-    </div>
-  </div>
-</div>
-<div id="printRoot" class="print-root"></div>
 <div id="toast" class="toast" hidden></div>
-<script src="config.js?v=rootfix1"></script>
-<script src="convex-api.js?v=rootfix1"></script>
-<script src="flow-data.js?v=rootfix1"></script>
-<script src="editor.js?v=rootfix1"></script>
-<script src="editor-patch.js?v=rootfix1"></script>
-<script src="editor-fix.js?v=rootfix1"></script>
-<script src="flow-edit-modal.js?v=rootfix1"></script>
-<script src="share-access.js?v=rootfix1"></script>
-<script src="ui-polish.js?v=rootfix1"></script>
-<script src="print-diagram.js?v=rootfix1"></script>
-<script src="module-bind.js?v=rootfix1"></script>
-<script src="view-controls.js?v=rootfix1"></script>
-<script src="macro-comment-autosave.js?v=rootfix1"></script>
-<script src="shapes-edges-busbar.js?v=rootfix1"></script>
-<script src="board-viewport.js?v=rootfix1"></script>
-<script src="block-duplicate.js?v=rootfix1"></script>
+<!-- Stable core @9c55ef5 -->
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
+<script src="editor-nullsafe.js?v=rootfix2"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-edit-modal.js"></script>
+<script src="share-access.js?v=rootfix2"></script>
+<script src="ui-polish.js?v=rootfix2"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/print-diagram.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/module-bind.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/view-controls.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/macro-comment-autosave.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
+<!-- Root fixes (no DOM polling) -->
+<script src="list-source.js?v=rootfix2"></script>
+<script src="board-viewport.js?v=rootfix2"></script>
+<script src="block-duplicate.js?v=rootfix2"></script>
 </body>
 </html>
