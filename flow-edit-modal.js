@@ -1,4 +1,4 @@
-/* Flow edit modal — header + shares (guest/collaborator) + list Editar */
+/* Flow edit modal — header + shares (guest/collaborator) — no duplicate list Editar */
 (function(){
   function $(id){ return document.getElementById(id); }
   function cx(){ return window.convexClient; }
@@ -132,9 +132,13 @@
     if($('feStakeholders')) $('feStakeholders').value = h.stakeholders || '';
     if($('feNewShareEmail')) $('feNewShareEmail').value = '';
     ensureShareRoleUI();
-
     await loadSharesIntoList(key);
     $('flowEditModal')?.classList.add('open');
+  };
+
+  // Bridge for ui-polish openEditForFlow
+  window.openEditForFlow = function(r){
+    openFlowEditModal({ key: r.key, title: r.title||r.key, data: r.data||null });
   };
 
   async function saveHeaderFromModal(){
@@ -163,13 +167,13 @@
         await cx().mutation('flows:save', {
           key: editCtx.key,
           title,
-          ownerEmail: (user?.email||'').toLowerCase() || undefined,
+          ownerEmail: (typeof user!=='undefined' && user?.email||'').toLowerCase() || undefined,
           data
         });
         if(typeof toast==='function') toast('Cabeçalho salvo');
         editCtx.title = title;
         editCtx.data = data;
-        try{ if(typeof loadFlowList==='function') await loadFlowList(); }catch(e){}
+        try{ if(typeof renderFlowManager==='function') await renderFlowManager(); }catch(e){}
       }catch(e){
         if(typeof toast==='function') toast('Erro: '+(e.message||e), true);
       }
@@ -190,15 +194,13 @@
         flowKey: editCtx.key,
         emails: [email],
         canEdit: !!canEdit,
-        createdBy: (user?.email||'').toLowerCase()
+        createdBy: (typeof user!=='undefined' && user?.email||'').toLowerCase()
       });
       if($('feNewShareEmail')) $('feNewShareEmail').value = '';
       const url = location.origin+location.pathname.replace(/\/index\.html$/,'/')+'?share='+encodeURIComponent(r.token);
       try{ await navigator.clipboard.writeText(url); }catch(e){}
       if(typeof toast==='function'){
-        toast(canEdit
-          ? 'Colaborador criado — link copiado'
-          : 'Convidado criado — link copiado');
+        toast(canEdit ? 'Colaborador criado — link copiado' : 'Convidado criado — link copiado');
       }
       prompt('Link do convite ('+(canEdit?'Colaborador':'Convidado')+'):', url);
       await loadSharesIntoList(editCtx.key);
@@ -214,45 +216,16 @@
     if($('btnEditHeader')){
       $('btnEditHeader').onclick = function(){
         if(isGuest()){ if(typeof toast==='function') toast('Convidado não edita cabeçalho', true); return; }
-        openFlowEditModal({ key: typeof flowKey!=='undefined'?flowKey:null, title: typeof flowTitle!=='undefined'?flowTitle:'', data: typeof flow!=='undefined'?flow:null });
+        openFlowEditModal({
+          key: typeof flowKey!=='undefined'?flowKey:null,
+          title: typeof flowTitle!=='undefined'?flowTitle:'',
+          data: typeof flow!=='undefined'?flow:null
+        });
       };
     }
   }
 
-  function patchRenderFlowManager(){
-    if(typeof window.renderFlowManager !== 'function') return false;
-    if(window.renderFlowManager.__fePatched) return true;
-    const orig = window.renderFlowManager;
-    window.renderFlowManager = async function(){
-      await orig.apply(this, arguments);
-      const list = $('flowManagerList');
-      if(!list) return;
-      list.querySelectorAll('[data-flow-key]').forEach(card=>{
-        if(card.querySelector('.btn-fe-edit')) return;
-        const key = card.getAttribute('data-flow-key');
-        const btn = document.createElement('button');
-        btn.type='button'; btn.className='btn btn-fe-edit'; btn.textContent='✎ Editar';
-        btn.onclick = async (ev)=>{
-          ev.stopPropagation();
-          let data=null, title='';
-          try{
-            if(cx() && key && !String(key).startsWith('local')){
-              const row = await cx().query('flows:get', { key });
-              data = row?.data; title = row?.title || '';
-            }
-          }catch(e){}
-          openFlowEditModal({ key, title, data });
-        };
-        card.appendChild(btn);
-      });
-    };
-    window.renderFlowManager.__fePatched = true;
-    return true;
-  }
-
   wire();
   setTimeout(wire, 500);
-  setTimeout(patchRenderFlowManager, 600);
-  setTimeout(patchRenderFlowManager, 1500);
-  console.log('[Fluxora] flow-edit-modal share roles ready');
+  console.log('[Fluxora] flow-edit-modal ready (no list patch)');
 })();
