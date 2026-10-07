@@ -92,25 +92,33 @@
 </div>
 <div id="adminGate" class="admin-gate" hidden>
   <div class="login-modal"><h2>Admin</h2>
-    <label class="field"><span>E-mail</span><input id="adminEmail" type="email"/></label>
-    <label class="field"><span>Senha</span><input id="adminPass" type="password"/></label>
+    <label class="field"><span>E-mail</span><input id="adminEmail" type="email" placeholder="admin@..."/></label>
+    <label class="field"><span>Senha master</span><input id="adminPass" type="password"/></label>
     <button type="button" class="btn-neon block" id="btnAdminLogin">Entrar</button>
     <p class="auth-error" id="adminGateMsg" hidden></p>
   </div>
 </div>
 <div id="adminPage" class="admin-page" hidden>
-  <header class="admin-top"><strong>Admin</strong><button type="button" class="btn-ghost" id="adminClose">Sair</button></header>
+  <header class="admin-top"><strong>Admin · Convex</strong><button type="button" class="btn-ghost" id="adminClose">Sair</button></header>
   <div class="admin-grid">
-    <section class="admin-card"><h3>Usuários</h3><div id="userList"></div>
-      <div class="row"><input id="newUserEmail" type="email"/><input id="newUserName" type="text"/><button type="button" class="btn-neon sm" id="btnAddUser">Add</button></div>
+    <section class="admin-card"><h3>Usuários (profiles)</h3><div id="userList"></div>
+      <div class="row" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <input id="newUserEmail" type="email" placeholder="email"/>
+        <input id="newUserName" type="text" placeholder="nome"/>
+        <button type="button" class="btn-neon sm" id="btnAddUser">Add</button>
+      </div>
+      <p class="hint" style="font-size:11px;margin-top:8px">Lista e remoção via API Convex. Novo usuário nasce com senha temporária <code>changeme</code>.</p>
     </section>
-    <section class="admin-card"><h3>Estilo</h3>
+    <section class="admin-card"><h3>Estilo local</h3>
       <label>Neon <input type="color" id="styleNeon" value="#ff2d95"/></label>
       <label>Fundo <input type="color" id="styleBg" value="#0a0e1a"/></label>
       <label>WhatsApp <input type="text" id="styleWa"/></label>
       <button type="button" class="btn-neon" id="btnSaveStyle">Salvar</button>
     </section>
-    <section class="admin-card"><h3>Senha admin</h3><input id="newMaster" type="password"/><button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button></section>
+    <section class="admin-card"><h3>Senha admin</h3>
+      <input id="newMaster" type="password" placeholder="nova senha local"/>
+      <button type="button" class="btn-neon" id="btnSetMaster">Atualizar</button>
+    </section>
   </div>
 </div>
 <div id="flowManager" class="flow-manager" hidden>
@@ -137,11 +145,11 @@
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
     <div class="tool-group">
-      <button type="button" class="btn" id="btnAddProcess">▭</button>
-      <button type="button" class="btn" id="btnAddDecision">◇</button>
-      <button type="button" class="btn" id="btnAddText">T</button>
-      <button type="button" class="btn" id="btnAddMacro">+ Macro</button>
-      <button type="button" class="btn" id="btnConnect">⟷</button>
+      <button type="button" class="btn" id="btnAddProcess" title="Processo">▭</button>
+      <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇</button>
+      <button type="button" class="btn" id="btnAddText" title="Texto">T</button>
+      <button type="button" class="btn" id="btnAddMacro" title="Macro">+ Macro</button>
+      <button type="button" class="btn" id="btnConnect" title="Conectar">⟷</button>
     </div>
     <div class="tool-group prog-wrap">
       <div class="prog-label">Validação · <span id="progText">0%</span></div>
@@ -225,7 +233,7 @@
           <input id="feNewShareEmail" type="email" placeholder="email@empresa.com" style="flex:1;min-width:180px"/>
           <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado. Convidado entra só com o e-mail.</p>
+        <p class="muted" style="font-size:12px;margin-top:6px">Verde = ativo · Cinza = revogado.</p>
       </div>
     </div>
   </div>
@@ -251,5 +259,6 @@
 <script src="editor-patch.js"></script>
 <script src="editor-fix.js"></script>
 <script src="flow-edit-modal.js"></script>
+<script src="ui-polish.js"></script>
 </body>
 </html>
