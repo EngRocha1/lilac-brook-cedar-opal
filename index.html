@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="stylesheet" href="editor.css?v=rootfix2"/>
+<link rel="stylesheet" href="editor.css?v=toolbar1"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -113,28 +113,21 @@
       <button type="button" class="btn hero-btn" id="btnLogout">Sair</button>
     </div>
   </div></header>
-  <div class="toolbar">
+  <div class="toolbar toolbar-global">
     <div class="tool-group">
       <label class="flow-label">Fluxo</label><select id="flowSelect"></select>
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
-    <div class="tool-group" id="shapeTools">
-      <button type="button" class="btn" id="btnAddProcess">▭</button>
-      <button type="button" class="btn" id="btnAddDecision">◇</button>
-      <button type="button" class="btn" id="btnAddText">T</button>
-      <button type="button" class="btn" id="btnAddBusbar">⚡</button>
-      <button type="button" class="btn" id="btnAddMacro">+ Macro</button>
-      <button type="button" class="btn" id="btnConnect">⟷</button>
-    </div>
-    <div class="tool-group prog-wrap">
-      <div class="prog-label">Validação · <span id="progText">0%</span></div>
-      <div class="prog"><i id="progBar"></i></div>
-      <div class="prog-stats"><span id="statEls">0</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b></div>
-    </div>
-    <div class="tool-group">
-      <button type="button" class="btn" onclick="printMode('overview')">🖨</button>
-      <button type="button" class="btn pri" onclick="exportJSON()">↓</button>
-      <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')">💾</button>
+    <div class="tool-group tool-group-actions">
+      <span class="prog-inline" title="Validação">
+        <span id="progText">0%</span>
+        · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b>
+        <span id="statEls" hidden>0</span>
+      </span>
+      <div class="prog" hidden><i id="progBar"></i></div>
+      <button type="button" class="btn" onclick="printMode('overview')" title="Imprimir">🖨</button>
+      <button type="button" class="btn pri" onclick="exportJSON()" title="Baixar">↓</button>
+      <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')" title="Salvar">💾</button>
     </div>
   </div>
   <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
@@ -144,6 +137,18 @@
     <button type="button" class="btn" id="btnEditHeader">✎ Cabeçalho</button>
     <button type="button" class="btn" id="btnShare">🔗 Compartilhar</button>
     <button type="button" class="btn pri" id="btnSeal">✅ Selo</button>
+  </div>
+  <div id="boardToolbar" class="board-toolbar">
+    <button type="button" class="btn" id="btnPalToggle" title="Recolher macros">Macros «»</button>
+    <span class="board-toolbar-sep" aria-hidden="true"></span>
+    <div id="shapeTools" class="board-toolbar-shapes">
+      <button type="button" class="btn" id="btnAddProcess" title="Processo">▭</button>
+      <button type="button" class="btn" id="btnAddDecision" title="Decisão">◇</button>
+      <button type="button" class="btn" id="btnAddText" title="Texto">T</button>
+      <button type="button" class="btn" id="btnAddBusbar" title="Barramento">⚡</button>
+      <button type="button" class="btn" id="btnAddMacro" title="Macro">+ Macro</button>
+      <button type="button" class="btn" id="btnConnect" title="Conectar">⟷</button>
+    </div>
   </div>
   <div class="workspace">
     <aside class="palette" id="macroBar"></aside>
@@ -203,25 +208,23 @@
   </div></div>
 </div>
 <div id="toast" class="toast" hidden></div>
-<!-- Stable core @9c55ef5 -->
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
-<script src="editor-nullsafe.js?v=rootfix2"></script>
+<script src="editor-nullsafe.js?v=toolbar1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-edit-modal.js"></script>
-<script src="share-access.js?v=rootfix2"></script>
-<script src="ui-polish.js?v=rootfix2"></script>
+<script src="flow-edit-modal.js?v=toolbar1"></script>
+<script src="share-access.js?v=toolbar1"></script>
+<script src="ui-polish.js?v=toolbar1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/print-diagram.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/module-bind.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/view-controls.js"></script>
+<script src="view-controls.js?v=toolbar1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/macro-comment-autosave.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
-<!-- Root fixes (no DOM polling) -->
-<script src="list-source.js?v=rootfix2"></script>
-<script src="board-viewport.js?v=rootfix2"></script>
-<script src="block-duplicate.js?v=rootfix2"></script>
+<script src="list-source.js?v=toolbar1"></script>
+<script src="board-viewport.js?v=toolbar1"></script>
+<script src="block-duplicate.js?v=toolbar1"></script>
 </body>
 </html>
