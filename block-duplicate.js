@@ -1,4 +1,4 @@
-/* Duplicate selected macro — source feature */
+/* Duplicate selected macro — attaches Dup to #shapeTools in board-toolbar */
 (function () {
   function uid(p) {
     return p + Math.random().toString(36).slice(2, 9);
@@ -43,9 +43,13 @@
     if (typeof toast === 'function') toast('Macro duplicado');
     return nm;
   }
+
   function ensureBtn() {
-    var tools = document.getElementById('shapeTools');
-    if (!tools || document.getElementById('btnDupMacro')) return;
+    var tools =
+      document.getElementById('shapeTools') ||
+      document.querySelector('.board-toolbar-shapes');
+    if (!tools) return;
+    if (document.getElementById('btnDupMacro')) return;
     var b = document.createElement('button');
     b.type = 'button';
     b.id = 'btnDupMacro';
@@ -71,13 +75,20 @@
     };
     tools.appendChild(b);
   }
+
   window.duplicateSelectedMacro = function () {
-    if (!selected || selected.kind !== 'macro') return;
-    var m = typeof macroById === 'function' ? macroById(selected.id) : null;
+    if (typeof selected === 'undefined' || !selected || selected.kind !== 'macro') return;
+    var m =
+      typeof macroById === 'function'
+        ? macroById(selected.id)
+        : (flow.macros || []).find(function (x) {
+            return x.id === selected.id;
+          });
     if (m) cloneMacro(m);
   };
+
   ensureBtn();
-  setTimeout(ensureBtn, 500);
-  setTimeout(ensureBtn, 1500);
-  console.log('[Fluxora] block-duplicate ready');
+  setTimeout(ensureBtn, 400);
+  setTimeout(ensureBtn, 1200);
+  console.log('[Fluxora] block-duplicate on board-toolbar');
 })();
