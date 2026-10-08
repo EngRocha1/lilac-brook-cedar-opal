@@ -14,6 +14,15 @@
 .flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .flow-mgr-actions .btn-clone{background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .flow-mgr-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vbtn.on-ok{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.25)}
+.vbtn.on-no{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.25)}
+#sideComment{width:100%;min-height:72px;border:1px solid #c9d3df;border-radius:8px;padding:10px;font:inherit;resize:vertical;margin-bottom:8px}
+.preview-box{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.preview-box label{display:block;font-size:12px;font-weight:600;color:#475569;margin:8px 0 4px}
+.preview-box textarea{width:100%;min-height:88px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid #c9d3df;border-radius:8px;padding:8px}
+.preview-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.preview-actions .btn{border-radius:8px;padding:8px 12px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;font-weight:600}
+.preview-actions .btn-view{background:#0f172a;color:#fff;border:none}
 </style>
 </head>
 <body>
@@ -197,6 +206,20 @@
         <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍</button>
         <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎</button>
       </div>
+      <label for="sideComment">Comentário / crítica / melhoria</label>
+      <textarea id="sideComment" placeholder="Descreva o que faz sentido ou o que precisa melhorar…"></textarea>
+      <div id="sidePreviewBox" class="preview-box">
+        <strong style="font-size:13px">Preview do ponto (para o cliente)</strong>
+        <label>Imagem da tela (opcional)</label>
+        <input type="file" id="sidePreviewImage" accept="image/*"/>
+        <div id="sidePreviewImageHint" class="muted" style="font-size:11px;margin-top:4px"></div>
+        <label>HTML / CSS / JS (simulador — opcional)</label>
+        <textarea id="sidePreviewHtml" placeholder="Cole HTML de uma tela resumo para validar com o cliente"></textarea>
+        <div class="preview-actions">
+          <button type="button" class="btn btn-view" id="btnOpenPreviewView">👁 Ver preview</button>
+          <button type="button" class="btn" id="btnClearPreview">Limpar preview</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button>
         <button type="button" class="btn danger btn-delete-full" id="btnModalDelete">Excluir</button>
@@ -265,5 +288,6 @@
 <script src="save-guard.js?v=sec1"></script>
 <script src="load-flow-fix.js?v=iso1"></script>
 <script src="list-source.js?v=iso1"></script>
+<script src="vote-preview-modal.js?v=ux1"></script>
 </body>
 </html>
