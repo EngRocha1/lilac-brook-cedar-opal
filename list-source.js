@@ -1,4 +1,4 @@
-/* Canonical flow list + user chip — single source, no DOM polling */
+/* Flow Manager — list CRUD, clone, toast, full-height surface */
 (function () {
   function $(id) {
     return document.getElementById(id);
@@ -10,6 +10,32 @@
     var u = window.user || (typeof user !== 'undefined' ? user : null);
     return ((u && u.email) || '').toLowerCase().trim();
   }
+
+  /** Toast: success | error — uses global toast if present */
+  function mostrarToast(msg, kind) {
+    var isErr = kind === 'error' || kind === true;
+    if (typeof window.toast === 'function') {
+      try {
+        window.toast(msg, isErr);
+        return;
+      } catch (e) {}
+    }
+    var el = $('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.className = 'toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.hidden = false;
+    el.style.background = isErr ? '#991b1b' : '#0f172a';
+    clearTimeout(window.__toastT);
+    window.__toastT = setTimeout(function () {
+      el.hidden = true;
+    }, 3000);
+  }
+  window.mostrarToast = mostrarToast;
 
   async function cardLogoUrl(r) {
     var h = (r && r.data && r.data.header) || {};
@@ -29,8 +55,13 @@
     }
     var email = emailOf();
     list.innerHTML = '<p class="muted">Consultando Convex…</p>';
-    if (!cx() || !email) {
-      list.innerHTML = '<p class="muted">Faça login / Convex offline.</p>';
+    if (!cx()) {
+      list.innerHTML = '<p class="muted">Convex offline. Recarregue a página.</p>';
+      window.__renderingFlows = false;
+      return;
+    }
+    if (!email) {
+      list.innerHTML = '<p class="muted">Faça login para ver seus fluxos.</p>';
       window.__renderingFlows = false;
       return;
     }
@@ -38,7 +69,7 @@
     try {
       rows = (await cx().query('flows:list', { ownerEmail: email })) || [];
     } catch (e) {
-      list.innerHTML = '<p class="muted">Erro: ' + String(e.message || e) + '</p>';
+      list.innerHTML = '<p class="muted">Erro ao listar: ' + String(e.message || e) + '</p>';
       window.__renderingFlows = false;
       return;
     }
@@ -97,6 +128,8 @@
             openFlowEditModal({ key: r.key, title: r.title || r.key, data: r.data });
           } else if (typeof openEditForFlow === 'function') {
             openEditForFlow(r);
+          } else {
+            mostrarToast('Modal de edição indisponível', 'error');
           }
         };
 
@@ -115,14 +148,56 @@
           } catch (e) {}
           if ($('flowManager')) $('flowManager').hidden = true;
           if ($('appMain')) $('appMain').hidden = false;
-          if (typeof loadFlow === 'function') await loadFlow();
           try {
+            if (typeof loadFlow === 'function') await loadFlow();
             if (typeof render === 'function') render();
             if (typeof renderMacroBar === 'function') renderMacroBar();
             if (typeof updateProgress === 'function') updateProgress();
             if (typeof renderProjectHeader === 'function') await renderProjectHeader();
             if (typeof fitBoardToScreen === 'function') fitBoardToScreen(true);
-          } catch (e) {}
+          } catch (e) {
+            console.error(e);
+            mostrarToast('Erro ao abrir: ' + (e.message || e), 'error');
+          }
+        };
+
+        var cloneBtn = document.createElement('button');
+        cloneBtn.type = 'button';
+        cloneBtn.className = 'btn btn-clone';
+        cloneBtn.textContent = 'Clonar';
+        cloneBtn.onclick = async function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (!cx()) {
+            mostrarToast('Convex offline', 'error');
+            return;
+          }
+          var prev = cloneBtn.textContent;
+          cloneBtn.disabled = true;
+          cloneBtn.textContent = 'Clonando...';
+          try {
+            var clonedData = JSON.parse(JSON.stringify(r.data || {
+              macros: [],
+              nodes: [],
+              edges: [],
+              votes: {},
+              comments: {},
+            }));
+            var newTitle = (r.title || r.key) + ' - Cópia';
+            var created = await cx().mutation('flows:create', {
+              title: newTitle,
+              ownerEmail: email,
+              data: clonedData,
+            });
+            mostrarToast('Fluxo clonado com sucesso!', 'success');
+            window.__renderingFlows = false;
+            await renderFlowManagerClean();
+          } catch (e) {
+            console.error(e);
+            mostrarToast('Erro ao clonar: ' + (e.message || e), 'error');
+            cloneBtn.disabled = false;
+            cloneBtn.textContent = prev;
+          }
         };
 
         var del = document.createElement('button');
@@ -133,24 +208,35 @@
           ev.preventDefault();
           ev.stopPropagation();
           if (!confirm('Excluir "' + (r.title || r.key) + '"?')) return;
+          if (!cx()) {
+            mostrarToast('Convex offline', 'error');
+            return;
+          }
           var prev = del.textContent;
           del.disabled = true;
           del.textContent = 'Excluindo...';
           try {
-            await cx().mutation('flows:remove', { key: r.key, ownerEmail: email });
-            if (typeof toast === 'function') toast('Fluxo excluído');
+            var res = await cx().mutation('flows:remove', {
+              key: r.key,
+              ownerEmail: email,
+            });
+            if (res && res.ok === false) {
+              throw new Error(res.error === 'not_owner' ? 'Sem permissão' : 'Falha ao excluir');
+            }
+            mostrarToast('Fluxo excluído', 'success');
             window.__renderingFlows = false;
             await renderFlowManagerClean();
           } catch (e) {
             console.error(e);
+            mostrarToast('Erro ao excluir: ' + (e.message || e), 'error');
             del.disabled = false;
             del.textContent = prev;
-            alert('Erro ao excluir: ' + (e.message || e));
           }
         };
 
         actions.appendChild(edit);
         actions.appendChild(open);
+        actions.appendChild(cloneBtn);
         actions.appendChild(del);
         card.appendChild(actions);
         list.appendChild(card);
@@ -160,6 +246,7 @@
   }
 
   window.renderFlowManager = renderFlowManagerClean;
+  window.renderFlowManagerClean = renderFlowManagerClean;
 
   async function refreshUserChromeStack() {
     var lab = $('userLabel');
@@ -202,6 +289,51 @@
         if ($('appMain')) $('appMain').hidden = false;
       };
     }
+    var btnNew = $('btnMgrNew');
+    if (btnNew) {
+      btnNew.onclick = async function (ev) {
+        if (ev) ev.preventDefault();
+        var title = prompt('Nome do novo fluxo', 'Novo fluxo');
+        if (!title) return;
+        title = title.trim();
+        if (!title) return;
+        if (!cx()) {
+          mostrarToast('Convex offline', 'error');
+          return;
+        }
+        var email = emailOf();
+        if (!email) {
+          mostrarToast('Faça login', 'error');
+          return;
+        }
+        btnNew.disabled = true;
+        var prev = btnNew.textContent;
+        btnNew.textContent = 'Criando...';
+        try {
+          await cx().mutation('flows:create', {
+            title: title,
+            ownerEmail: email,
+            data: {
+              macros: [],
+              nodes: [],
+              edges: [],
+              votes: {},
+              comments: {},
+              header: { projectName: title },
+            },
+          });
+          mostrarToast('Fluxo criado com sucesso!', 'success');
+          window.__renderingFlows = false;
+          await renderFlowManagerClean();
+        } catch (e) {
+          console.error(e);
+          mostrarToast('Erro ao criar: ' + (e.message || e), 'error');
+        } finally {
+          btnNew.disabled = false;
+          btnNew.textContent = prev || '+ Novo';
+        }
+      };
+    }
   }
 
   function boot() {
@@ -212,5 +344,5 @@
   setTimeout(boot, 600);
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
-  console.log('[Fluxora] list-source canonical ready');
+  console.log('[Fluxora] list-source CRUD+clone ready');
 })();
