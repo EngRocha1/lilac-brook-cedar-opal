@@ -1,4 +1,4 @@
-/* loadFlow: always accept Convex document (even empty) — never inject HEMOPI default */
+/* loadFlow with requesterEmail — no cross-tenant leak; empty canvas if denied */
 (function () {
   function emptyFlow(title) {
     return {
@@ -21,21 +21,44 @@
     return f;
   }
 
+  function emailOf() {
+    try {
+      return ((window.user || user || {}).email || '').toLowerCase().trim();
+    } catch (e) {
+      return '';
+    }
+  }
+
   window.loadFlow = async function loadFlowFixed() {
     var key =
       window.flowKey ||
       (typeof flowKey !== 'undefined' ? flowKey : null) ||
-      localStorage.getItem('hemopi_flow_key') ||
-      'hemopi-main';
+      localStorage.getItem('hemopi_flow_key');
+    if (!key) {
+      var blank = emptyFlow();
+      try {
+        flow = blank;
+      } catch (e) {
+        window.flow = blank;
+      }
+      return blank;
+    }
     try {
       flowKey = key;
     } catch (e) {}
     window.flowKey = key;
 
     var client = window.convexClient;
+    var email = emailOf();
+    var token = window.HEMOPI_SHARE_TOKEN || null;
+
     if (client) {
       try {
-        var remote = await client.query('flows:get', { key: key });
+        var remote = await client.query('flows:get', {
+          key: key,
+          requesterEmail: email || undefined,
+          shareToken: token || undefined,
+        });
         if (remote && remote.data != null) {
           var f = ensure(remote.data);
           try {
@@ -57,21 +80,23 @@
           if (typeof markFlowClean === 'function') markFlowClean();
           return f;
         }
+        /* Denied or missing — blank, do not fall back to another user's local cache of HEMOPI */
+        console.warn('[loadFlow] access denied or missing for', key);
       } catch (err) {
         console.error('[loadFlow]', err);
       }
     }
 
-    var blank = emptyFlow();
+    var blank2 = emptyFlow();
     try {
-      flow = blank;
+      flow = blank2;
     } catch (e5) {
-      window.flow = blank;
+      window.flow = blank2;
     }
-    window.flow = blank;
+    window.flow = blank2;
     if (typeof markFlowClean === 'function') markFlowClean();
-    return blank;
+    return blank2;
   };
 
-  console.log('[Fluxora] load-flow-fix v2');
+  console.log('[Fluxora] load-flow-fix secured');
 })();

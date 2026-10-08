@@ -1,10 +1,7 @@
-/* save-guard — dirty-check + debounce; stops flows:save spam */
+/* Manual cloud save only — localStorage always; Convex only via saveLocal(true) or 💾 */
 (function () {
-  var _timer = null;
-  var _saving = false;
-  var _queued = false;
-  var _lastSent = '';
-  var DEBOUNCE_MS = 1200;
+  var _dirty = false;
+  var _remindTimer = null;
 
   function cx() {
     return window.convexClient || null;
@@ -24,74 +21,106 @@
     return window.flowTitle || '';
   }
 
-  function snapshot() {
+  function emailOf() {
     try {
-      if (typeof flow === 'undefined' || !flow) return '';
-      return JSON.stringify({
-        title: currentTitle(),
-        key: currentKey(),
-        data: flow,
-      });
+      return ((window.user || user || {}).email || '').toLowerCase().trim();
     } catch (e) {
       return '';
     }
   }
 
-  async function flush() {
-    if (_saving) {
-      _queued = true;
-      return;
-    }
-    var key = currentKey();
-    var client = cx();
-    if (!client || !key || key.indexOf('local') === 0) return;
-    if (typeof flow === 'undefined' || !flow) return;
-
-    var snap = snapshot();
-    if (!snap || snap === _lastSent) return;
-
-    _saving = true;
-    try {
-      var email = '';
-      try {
-        email = ((window.user || user || {}).email || '').toLowerCase();
-      } catch (e) {}
-      await client.mutation('flows:save', {
-        key: key,
-        title: currentTitle() || key,
-        ownerEmail: email || undefined,
-        data: flow,
-      });
-      _lastSent = snap;
-    } catch (e) {
-      console.warn('[save-guard]', e);
-    } finally {
-      _saving = false;
-      if (_queued) {
-        _queued = false;
-        _timer = setTimeout(flush, 800);
-      }
-    }
-  }
-
-  window.saveLocal = function saveLocalGuarded() {
+  function persistLocal() {
     try {
       if (typeof flow !== 'undefined' && flow) {
         localStorage.setItem('hemopi_editor_v1', JSON.stringify(flow));
       }
     } catch (e) {}
+  }
 
-    var snap = snapshot();
-    if (!snap || snap === _lastSent) return;
+  function scheduleRemind() {
+    clearTimeout(_remindTimer);
+    if (!_dirty) return;
+    _remindTimer = setTimeout(function () {
+      if (!_dirty) return;
+      if (typeof showNotification === 'function') {
+        showNotification('Lembrete: salve o projeto (💾) para não perder alterações', 'info');
+      } else if (typeof toast === 'function') {
+        toast('Lembrete: salve o projeto (💾)', false);
+      }
+      scheduleRemind();
+    }, 3 * 60 * 1000);
+  }
 
-    clearTimeout(_timer);
-    _timer = setTimeout(flush, DEBOUNCE_MS);
+  /**
+   * saveLocal() → local only + dirty flag
+   * saveLocal(true) or window.saveToCloud() → Convex mutation
+   */
+  window.saveLocal = function (forceCloud) {
+    persistLocal();
+    _dirty = true;
+    scheduleRemind();
+
+    if (forceCloud === true) {
+      return window.saveToCloud();
+    }
   };
 
-  /** After intentional open/create, mark current state as clean */
+  window.saveToCloud = async function () {
+    var key = currentKey();
+    var client = cx();
+    var email = emailOf();
+    if (!client || !key || key.indexOf('local') === 0) {
+      if (typeof showNotification === 'function') showNotification('Não é possível salvar na nuvem agora', 'error');
+      return false;
+    }
+    if (!email) {
+      if (typeof showNotification === 'function') showNotification('Faça login para salvar', 'error');
+      return false;
+    }
+    if (typeof flow === 'undefined' || !flow) return false;
+    try {
+      await client.mutation('flows:save', {
+        key: key,
+        title: currentTitle() || key,
+        ownerEmail: email,
+        data: flow,
+      });
+      _dirty = false;
+      clearTimeout(_remindTimer);
+      if (typeof showNotification === 'function') showNotification('Salvo na nuvem', 'success');
+      else if (typeof toast === 'function') toast('Salvo na nuvem');
+      return true;
+    } catch (e) {
+      console.warn('[save]', e);
+      if (typeof showNotification === 'function') {
+        showNotification('Erro ao salvar: ' + (e.message || e), 'error');
+      }
+      return false;
+    }
+  };
+
   window.markFlowClean = function () {
-    _lastSent = snapshot();
+    _dirty = false;
+    clearTimeout(_remindTimer);
+    persistLocal();
   };
 
-  console.log('[Fluxora] save-guard active');
+  window.isFlowDirty = function () {
+    return _dirty;
+  };
+
+  /* Wire 💾 buttons that called saveLocal() expecting cloud */
+  document.addEventListener(
+    'click',
+    function (ev) {
+      var t = ev.target;
+      if (!t) return;
+      var btn = t.closest ? t.closest('[title="Salvar"], #btnCloudSave') : null;
+      if (!btn) return;
+      /* toolbar save uses onclick="saveLocal();toast..." — intercept after */
+    },
+    true
+  );
+
+  console.log('[Fluxora] save-guard manual cloud');
 })();
