@@ -6,7 +6,7 @@
 <title>Fluxora — Validação visual de fluxos</title>
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="stylesheet" href="editor.css?v=toolbar1"/>
+<link rel="stylesheet" href="editor.css?v=safe1"/>
 <style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -164,14 +164,19 @@
       <label>Título</label><textarea id="sideNameMulti" rows="3"></textarea>
       <input id="sideName" type="text" style="display:none"/>
       <div id="edgeDdBox" hidden><label>Origem</label><select id="edgeFromSel"></select><label>Destino</label><select id="edgeToSel"></select></div>
+      <div id="sideMacroIdWrap" hidden>
+        <label for="sideMacroId">Identificador / Letra</label>
+        <input id="sideMacroId" type="text" maxlength="4" autocomplete="off" placeholder="A, B, C…"/>
+      </div>
       <label id="colorLabel">Cor</label><input id="sideColor" type="color" value="#e8f4fc"/>
       <div class="vote-row">
         <button type="button" class="vbtn" data-v="ok" onclick="voteSelected('ok')">👍</button>
         <button type="button" class="vbtn" data-v="no" onclick="voteSelected('no')">👎</button>
       </div>
-      <label>Comentário</label><textarea id="sideComment" rows="5"></textarea>
-      <button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button>
-      <button type="button" class="btn danger" id="btnModalDelete">Excluir</button>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-save" id="btnModalSave">💾 Salvar</button>
+        <button type="button" class="btn danger btn-delete-full" id="btnModalDelete">Excluir</button>
+      </div>
     </div>
   </div>
 </div>
@@ -207,24 +212,27 @@
     </div>
   </div></div>
 </div>
-<div id="toast" class="toast" hidden></div>
+<div id="printRoot" class="print-root" hidden></div>
+<div id="toast" class="toast toast-top" hidden></div>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
-<script src="editor-nullsafe.js?v=toolbar1"></script>
+<script src="editor-nullsafe.js?v=safe1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
-<script src="flow-edit-modal.js?v=toolbar1"></script>
-<script src="share-access.js?v=toolbar1"></script>
-<script src="ui-polish.js?v=toolbar1"></script>
+<script src="flow-edit-modal.js?v=safe1"></script>
+<script src="share-access.js?v=safe1"></script>
+<script src="ui-polish.js?v=safe1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/print-diagram.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/module-bind.js"></script>
-<script src="view-controls.js?v=toolbar1"></script>
+<script src="view-controls.js?v=safe1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/macro-comment-autosave.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
-<script src="list-source.js?v=toolbar1"></script>
-<script src="board-viewport.js?v=toolbar1"></script>
-<script src="block-duplicate.js?v=toolbar1"></script>
+<script src="list-source.js?v=safe1"></script>
+<script src="board-viewport.js?v=safe1"></script>
+<script src="notify.js?v=safe1"></script>
+<script src="block-duplicate.js?v=safe1"></script>
+<script src="macro-id-field.js?v=safe1"></script>
 </body>
 </html>
