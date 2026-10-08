@@ -7,11 +7,13 @@
 <meta name="theme-color" content="#0a0e1a"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <link rel="stylesheet" href="editor.css?v=edges1"/>
-<style>#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}
+<style>
+#publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}
 .btn.active,#btnConnect.active{outline:2px solid #16a34a;background:#dcfce7!important;color:#14532d!important}
 .flow-mgr-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.flow-mgr-actions .btn-clone{background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+.flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.flow-mgr-actions .btn-clone{background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.flow-mgr-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(15,23,42,.06)}
 </style>
 </head>
 <body>
@@ -106,6 +108,23 @@
     <button type="button" class="btn-ghost" id="btnMgrClose">Voltar</button></div>
   </header>
   <div id="flowManagerList" class="flow-mgr-list"></div>
+  <template id="flowCardTpl">
+    <div class="flow-mgr-card">
+      <div class="flow-card-left">
+        <div class="flow-card-logo flow-card-logo--ph">◇</div>
+        <div>
+          <h4 class="flow-card-title"></h4>
+          <div class="flow-mgr-meta"></div>
+        </div>
+      </div>
+      <div class="flow-mgr-actions">
+        <button type="button" class="btn-edit-flow" data-action="edit">✎ Editar</button>
+        <button type="button" class="btn pri" data-action="open">Abrir</button>
+        <button type="button" class="btn-clone" data-action="clone">Clonar</button>
+        <button type="button" class="btn danger" data-action="delete">Excluir</button>
+      </div>
+    </div>
+  </template>
 </div>
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
@@ -132,7 +151,7 @@
       <div class="prog" hidden><i id="progBar"></i></div>
       <button type="button" class="btn" onclick="printMode('overview')" title="Imprimir">🖨</button>
       <button type="button" class="btn pri" onclick="exportJSON()" title="Baixar">↓</button>
-      <button type="button" class="btn" onclick="saveLocal();toast && toast('Salvo')" title="Salvar">💾</button>
+      <button type="button" class="btn" id="btnCloudSave" onclick="saveToCloud()" title="Salvar na nuvem">💾</button>
     </div>
   </div>
   <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
@@ -240,8 +259,10 @@
 <script src="notify.js?v=safe1"></script>
 <script src="block-duplicate.js?v=safe1"></script>
 <script src="macro-id-field.js?v=safe1"></script>
-<script src="save-guard.js?v=stable3"></script>
-<script src="load-flow-fix.js?v=stable3"></script>
-<script src="list-source.js?v=stable3"></script>
+<script src="macro-delete-cascade.js?v=sec1"></script>
+<script src="save-guard.js?v=sec1"></script>
+<script src="load-flow-fix.js?v=sec1"></script>
+<script src="session-boot.js?v=sec1"></script>
+<script src="list-source.js?v=sec1"></script>
 </body>
 </html>
