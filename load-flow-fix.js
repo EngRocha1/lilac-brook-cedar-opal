@@ -1,4 +1,4 @@
-/* loadFlow with requesterEmail — no cross-tenant leak; empty canvas if denied */
+/* loadFlow secured: requesterEmail + no foreign localStorage fallback */
 (function () {
   function emptyFlow(title) {
     return {
@@ -34,23 +34,33 @@
       window.flowKey ||
       (typeof flowKey !== 'undefined' ? flowKey : null) ||
       localStorage.getItem('hemopi_flow_key');
-    if (!key) {
+
+    /* Refuse default third-party key when user is not owner */
+    var email = emailOf();
+    if (key === 'hemopi-main' && email && email !== 'tarcisio.rocha.engenheiro@gmail.com') {
+      /* Will be replaced by enterApp isolation; still blank for safety */
+      console.warn('[loadFlow] blocking hemopi-main for non-owner', email);
+      key = null;
+    }
+
+    if (!key || String(key).indexOf('local-') === 0) {
       var blank = emptyFlow();
       try {
         flow = blank;
       } catch (e) {
         window.flow = blank;
       }
+      window.flow = blank;
       return blank;
     }
+
     try {
       flowKey = key;
     } catch (e) {}
     window.flowKey = key;
 
     var client = window.convexClient;
-    var email = emailOf();
-    var token = window.HEMOPI_SHARE_TOKEN || null;
+    var token = window.HEMOPI_SHARE_TOKEN || window._shareToken || null;
 
     if (client) {
       try {
@@ -80,13 +90,13 @@
           if (typeof markFlowClean === 'function') markFlowClean();
           return f;
         }
-        /* Denied or missing — blank, do not fall back to another user's local cache of HEMOPI */
         console.warn('[loadFlow] access denied or missing for', key);
       } catch (err) {
         console.error('[loadFlow]', err);
       }
     }
 
+    /* No access → blank canvas (never localStorage of another project) */
     var blank2 = emptyFlow();
     try {
       flow = blank2;

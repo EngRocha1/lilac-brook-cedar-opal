@@ -1,10 +1,9 @@
-/* Null-safe guards for elements that may be absent in DOM */
+/* Null-safe: never throw on missing admin controls */
 (function () {
   function safeOn(id, fn) {
     var el = document.getElementById(id);
     if (el) el.onclick = fn;
   }
-  // Re-bind fragile admin hooks if present
   try {
     safeOn('btnMaster', function () {
       var p = (document.getElementById('masterPass') || {}).value || '';
