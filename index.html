@@ -14,8 +14,8 @@
 .flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
 .flow-mgr-actions .btn-clone{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
 .flow-mgr-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-.vbtn.on-ok{background:#dcfce7!important;border-color:#86efac!important}
-.vbtn.on-no{background:#fee2e2!important;border-color:#fca5a5!important}
+.vbtn.on-ok,.vbtn.voted-up{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.35)!important}
+.vbtn.on-no,.vbtn.voted-down{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.35)!important}
 #sideComment{width:100%;min-height:72px;border:1px solid #c9d3df;border-radius:8px;padding:10px;box-sizing:border-box}
 .preview-box{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
 .preview-box textarea,#sidePreviewHtml{width:100%;min-height:100px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid #c9d3df;border-radius:8px;padding:8px;box-sizing:border-box}
@@ -138,7 +138,12 @@
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
     <div class="tool-group tool-group-actions">
-      <span class="prog-inline"><span id="progText">0%</span> · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b><span id="statEls" hidden>0</span></span>
+      <span class="prog-inline">
+        <span id="progText">0%</span>
+        · 👍 <b id="statOk">0</b> · 👎 <b id="statNo">0</b>
+        <span id="statEls" hidden>0</span>
+        <span id="statDone" hidden>0</span>
+      </span>
       <div class="prog" hidden><i id="progBar"></i></div>
       <button type="button" class="btn" onclick="printMode('overview')" title="Imprimir">🖨</button>
       <button type="button" class="btn pri" onclick="exportJSON()" title="Baixar">↓</button>
@@ -242,6 +247,7 @@
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
 <script src="pre-guard.js?v=iso1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
+<script src="update-progress-safe.js?v=vote1"></script>
 <script src="editor-nullsafe.js?v=iso1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
@@ -269,5 +275,6 @@
 <script src="list-source.js?v=list1"></script>
 <script src="admin-panel.js?v=adm1"></script>
 <script src="vote-preview-modal.js?v=vote5"></script>
+<script src="vote-optimistic.js?v=vote1"></script>
 </body>
 </html>
