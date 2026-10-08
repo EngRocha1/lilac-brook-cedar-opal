@@ -1,4 +1,4 @@
-/* loadFlow: accept empty Convex docs — never replace with HEMOPI default silently */
+/* loadFlow: always accept Convex document (even empty) — never inject HEMOPI default */
 (function () {
   function emptyFlow(title) {
     return {
@@ -11,7 +11,7 @@
     };
   }
 
-  function ensureShape(f) {
+  function ensure(f) {
     if (!f || typeof f !== 'object') f = emptyFlow();
     if (!f.macros) f.macros = [];
     if (!f.nodes) f.nodes = [];
@@ -32,25 +32,29 @@
     } catch (e) {}
     window.flowKey = key;
 
-    var cx = window.convexClient;
-    if (cx) {
+    var client = window.convexClient;
+    if (client) {
       try {
-        var remote = await cx.query('flows:get', { key: key });
+        var remote = await client.query('flows:get', { key: key });
         if (remote && remote.data != null) {
-          var f = ensureShape(remote.data);
+          var f = ensure(remote.data);
           try {
             flow = f;
           } catch (e2) {
             window.flow = f;
           }
+          window.flow = f;
+          var t = remote.title || key;
           try {
-            flowTitle = remote.title || key;
+            flowTitle = t;
           } catch (e3) {
-            window.flowTitle = remote.title || key;
+            window.flowTitle = t;
           }
+          window.flowTitle = t;
           try {
             localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
           } catch (e4) {}
+          if (typeof markFlowClean === 'function') markFlowClean();
           return f;
         }
       } catch (err) {
@@ -58,15 +62,16 @@
       }
     }
 
-    /* No remote row: empty canvas (do NOT inject DEFAULT_FLOW / HEMOPI) */
     var blank = emptyFlow();
     try {
       flow = blank;
     } catch (e5) {
       window.flow = blank;
     }
+    window.flow = blank;
+    if (typeof markFlowClean === 'function') markFlowClean();
     return blank;
   };
 
-  console.log('[Fluxora] load-flow-fix ready');
+  console.log('[Fluxora] load-flow-fix v2');
 })();
