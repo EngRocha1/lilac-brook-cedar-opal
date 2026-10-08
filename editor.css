@@ -1,4 +1,4 @@
-/* Fluxora + safe UX: toast top, modal actions */
+/* Fluxora + edge hit area */
 :root{--neon:#ff2d95;--bg:#0a0e1a;--card:#12182a;--text:#e8eef8;--muted:#8b9bb4;--line:#243049}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -55,7 +55,6 @@ button,input,select,textarea{font:inherit}
 .btn-save{background:#1b7a4e;color:#fff;border:0;width:100%;margin-top:8px;padding:10px;border-radius:8px;font-weight:700}
 .modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px;width:100%}
 .modal-actions .btn-save,.modal-actions .btn-delete-full,.modal-actions .btn.danger{width:100%;display:block;box-sizing:border-box;margin-top:0}
-.modal-actions .btn-delete-full,.btn.danger.btn-delete-full{width:100%;padding:10px;border-radius:8px;font-weight:700}
 .prog{height:8px;background:#e6ebf1;border-radius:99px;overflow:hidden;min-width:120px}
 .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1b7a4e,#c9a227)}
 .toolbar-global{display:flex!important;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:8px 16px!important;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:8px}
@@ -69,14 +68,13 @@ button,input,select,textarea{font:inherit}
 .workspace{flex:1 1 auto;min-height:0;display:flex;flex-direction:row;gap:0;overflow:hidden;margin:0;padding:0}
 .palette,#macroBar{flex:0 0 220px;width:220px;max-width:34%;min-height:0;display:flex;flex-direction:column;gap:8px;padding:12px;overflow:auto;background:#f8fafc;border:none;border-right:1px solid #e2e8f0;border-radius:0;transition:width .3s ease,flex-basis .3s ease,max-width .3s ease,padding .2s}
 .palette.collapsed,#macroBar.collapsed{flex:0 0 56px!important;width:56px!important;min-width:56px!important;max-width:56px!important;padding:6px 4px!important;overflow:hidden!important}
-.palette h3,#macroBar h3{margin:0 0 4px;padding:0 2px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
-.macro-chip{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px 12px;background:#fff!important;border:1px solid #e2e8f0!important;border-left:4px solid!important;border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,.05);cursor:pointer;text-align:left;font:inherit;color:#0f172a}
-.macro-chip:hover{background:#f8fafc!important}
+.macro-chip{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px 12px;background:#fff!important;border:1px solid #e2e8f0!important;border-left:4px solid!important;border-radius:8px;cursor:pointer;text-align:left;font:inherit;color:#0f172a}
 .canvas-wrap{flex:1 1 auto;min-height:0;min-width:0;position:relative;overflow:hidden;margin:0;padding:0;background:#f1f5f9;border:none;border-radius:0}
 #canvas{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;display:block;overflow:hidden}
 #canvas .shape,#canvas rect.shape,#canvas polygon.shape{fill:#fff!important;stroke:#1a5f8a!important;stroke-width:2}
 #canvas text{fill:#0f172a!important}
-#canvas .edge,#canvas path.edge{fill:none!important;stroke:#64748b}
+#canvas .edge,#canvas path.edge{fill:none!important;stroke:#64748b;pointer-events:none!important}
+#canvas path.edge-hit{fill:none!important;stroke:rgba(26,95,138,0.001)!important;stroke-width:22!important;pointer-events:stroke!important;cursor:pointer}
 .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.35);display:none;align-items:center;justify-content:center;z-index:80;padding:12px}
 .modal-bg.open{display:flex}
 .modal{background:#fff;color:#0f172a;border-radius:14px;width:min(480px,100%);max-height:90vh;overflow:auto}
@@ -87,7 +85,6 @@ button,input,select,textarea{font:inherit}
 .vote-row{display:flex;gap:8px;margin:10px 0}
 .vbtn{flex:1;padding:10px;border-radius:8px;border:1px solid #c9d3df;background:#f8fafc;cursor:pointer}
 .x{margin-left:auto;border:0;background:none;font-size:20px;cursor:pointer}
-/* Toast — topo centro */
 .toast,.toast-top{position:fixed;left:50%;top:20px;bottom:auto;transform:translateX(-50%);z-index:200;padding:12px 18px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;box-shadow:0 8px 24px rgba(15,23,42,.2);max-width:min(420px,92vw);text-align:center}
 .toast-success{background:#15803d!important}
 .toast-error{background:#b91c1c!important}
@@ -99,7 +96,6 @@ body:has(#flowManager:not([hidden])){background:#f8fafc!important;color:#1a2332}
 .flow-mgr-card{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .flow-mgr-meta{font-size:.72rem;color:#5c6b7a}
 .flow-card-left{display:flex;gap:10px;align-items:center;min-width:0}
-.flow-card-logo{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#f3f6fa}
 .flow-mgr-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
 .flow-mgr-actions .btn.pri{background:#c41e3a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
