@@ -1,4 +1,4 @@
-/* Fluxora + toolbar hierarchy */
+/* Fluxora + safe UX: toast top, modal actions */
 :root{--neon:#ff2d95;--bg:#0a0e1a;--card:#12182a;--text:#e8eef8;--muted:#8b9bb4;--line:#243049}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -53,6 +53,9 @@ button,input,select,textarea{font:inherit}
 .btn.pri{background:#1a5f8a;color:#fff;border-color:#1a5f8a}
 .btn.danger{background:#fff;color:#c41e3a;border-color:#c41e3a}
 .btn-save{background:#1b7a4e;color:#fff;border:0;width:100%;margin-top:8px;padding:10px;border-radius:8px;font-weight:700}
+.modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px;width:100%}
+.modal-actions .btn-save,.modal-actions .btn-delete-full,.modal-actions .btn.danger{width:100%;display:block;box-sizing:border-box;margin-top:0}
+.modal-actions .btn-delete-full,.btn.danger.btn-delete-full{width:100%;padding:10px;border-radius:8px;font-weight:700}
 .prog{height:8px;background:#e6ebf1;border-radius:99px;overflow:hidden;min-width:120px}
 .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1b7a4e,#c9a227)}
 .toolbar-global{display:flex!important;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:8px 16px!important;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:8px}
@@ -84,7 +87,11 @@ button,input,select,textarea{font:inherit}
 .vote-row{display:flex;gap:8px;margin:10px 0}
 .vbtn{flex:1;padding:10px;border-radius:8px;border:1px solid #c9d3df;background:#f8fafc;cursor:pointer}
 .x{margin-left:auto;border:0;background:none;font-size:20px;cursor:pointer}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:999px;z-index:120}
+/* Toast — topo centro */
+.toast,.toast-top{position:fixed;left:50%;top:20px;bottom:auto;transform:translateX(-50%);z-index:200;padding:12px 18px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;box-shadow:0 8px 24px rgba(15,23,42,.2);max-width:min(420px,92vw);text-align:center}
+.toast-success{background:#15803d!important}
+.toast-error{background:#b91c1c!important}
+.toast-info{background:#0f172a!important}
 .presence-bar,.project-header,.share-panel{background:#fff;border:1px solid #d0d8e2;border-radius:12px;padding:10px;margin-bottom:8px}
 #flowManager,.flow-manager{width:100%;max-width:none;margin:0;padding:24px;display:flex;flex-direction:column;background-color:#f8fafc;min-height:100vh;color:#1a2332;box-sizing:border-box}
 body:has(#flowManager:not([hidden])){background:#f8fafc!important;color:#1a2332}
@@ -107,4 +114,6 @@ body:has(#flowManager:not([hidden])){background:#f8fafc!important;color:#1a2332}
 .hero-user{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .wa-float{position:fixed;right:18px;bottom:18px;z-index:50;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 20px rgba(37,211,102,.45);overflow:hidden}
 .wa-float svg{width:32px;height:32px;display:block}
+.print-root{display:none}
+@media print{.print-root{display:block!important}}
 @media (max-width:768px){.nav-burger{display:block}.nav-links{display:none;position:absolute;top:56px;left:0;right:0;flex-direction:column;background:#0a0e1a;padding:12px}.nav-links.open{display:flex}.workspace{flex-direction:column}.palette,#macroBar{flex:0 0 auto;width:100%;max-width:none;max-height:150px}.canvas-wrap{flex:1 1 auto;min-height:45vh}}
