@@ -1,6 +1,6 @@
 /**
- * CRITICAL: New accounts must NEVER inherit hemopi-main / DEFAULT_FLOW from another user.
- * Overrides window.enterApp after editor-fix.js.
+ * Isolation: new accounts never inherit another user's flow.
+ * Always sync window.user from hemopi_user before workspace load.
  */
 (function () {
   var STORAGE_KEY = 'hemopi_editor_v1';
@@ -19,16 +19,19 @@
       edges: [],
       votes: {},
       comments: {},
+      previews: {},
       header: { projectName: title || '' },
     };
   }
 
   function setFlow(f) {
+    if (!f) f = blank();
+    if (!f.previews) f.previews = {};
+    if (!f.comments) f.comments = {};
+    if (!f.votes) f.votes = {};
     try {
       flow = f;
-    } catch (e) {
-      window.flow = f;
-    }
+    } catch (e) {}
     window.flow = f;
   }
 
@@ -48,31 +51,37 @@
     window.flowTitle = t;
   }
 
-  function emailOf() {
+  function syncUser() {
     try {
-      var u = window.user || (typeof user !== 'undefined' ? user : null);
-      return ((u && u.email) || '').toLowerCase().trim();
-    } catch (e) {
-      return '';
-    }
+      var raw = localStorage.getItem(USER_KEY);
+      if (raw) {
+        var u = JSON.parse(raw);
+        if (u && u.email) {
+          window.user = u;
+          try {
+            user = u;
+          } catch (e) {}
+          return u;
+        }
+      }
+    } catch (e2) {}
+    if (window.user && window.user.email) return window.user;
+    return null;
+  }
+
+  function emailOf() {
+    var u = syncUser();
+    return ((u && u.email) || '').toLowerCase().trim();
   }
 
   function nameOf() {
-    try {
-      var u = window.user || (typeof user !== 'undefined' ? user : null);
-      return (u && u.name) || emailOf().split('@')[0] || 'Meu fluxo';
-    } catch (e) {
-      return 'Meu fluxo';
-    }
+    var u = syncUser();
+    return (u && u.name) || emailOf().split('@')[0] || 'Meu fluxo';
   }
 
   function isGuest() {
-    try {
-      var u = window.user || user;
-      return !!(u && u.isGuest);
-    } catch (e) {
-      return false;
-    }
+    var u = syncUser();
+    return !!(u && u.isGuest) || window.HEMOPI_SHARE_MODE === 'guest';
   }
 
   function clearForeignCache(email) {
@@ -95,7 +104,6 @@
       return;
     }
 
-    /* List only this user's flows */
     var rows = [];
     try {
       rows = (await cx().query('flows:list', { ownerEmail: email })) || [];
@@ -104,13 +112,15 @@
     }
 
     if (rows.length) {
-      rows.sort(function (a, b) {
-        return (b.updatedAt || 0) - (a.updatedAt || 0);
-      });
       var pick = rows[0];
+      for (var i = 0; i < rows.length; i++) {
+        if ((rows[i].title || '').toLowerCase().indexOf('principal') >= 0) {
+          pick = rows[i];
+          break;
+        }
+      }
       setKey(pick.key);
       setTitle(pick.title || pick.key);
-      /* Prefer remote get with requesterEmail */
       try {
         var remote = await cx().query('flows:get', {
           key: pick.key,
@@ -128,12 +138,11 @@
         setFlow(pick.data || blank(pick.title));
       }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.flow || flow));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.flow));
       } catch (e3) {}
       return;
     }
 
-    /* No flows — create blank starter owned by this user */
     var title = nameOf();
     var data = blank(title);
     var key = null;
@@ -143,9 +152,7 @@
         name: title,
       });
       if (starter && starter.key) key = starter.key;
-    } catch (e4) {
-      console.warn('[enter-app] ensureStarter', e4);
-    }
+    } catch (e4) {}
     if (!key) {
       try {
         var created = await cx().mutation('flows:create', {
@@ -155,12 +162,10 @@
         });
         if (created && created.key) key = created.key;
       } catch (e5) {
-        console.error('[enter-app] create', e5);
+        console.error(e5);
       }
     }
-    if (!key) {
-      key = 'local-' + Date.now().toString(36);
-    }
+    if (!key) key = 'local-' + Date.now().toString(36);
     setKey(key);
     setTitle(title);
     setFlow(data);
@@ -172,9 +177,9 @@
   var _prevEnter = window.enterApp;
 
   window.enterApp = async function enterAppIsolated() {
+    syncUser();
     var email = emailOf();
 
-    /* Show app shell first */
     try {
       if (typeof onlyShow === 'function') onlyShow('appMain');
       else {
@@ -192,23 +197,23 @@
     if (!isGuest()) {
       await ensureOwnedWorkspace(email);
     } else if (typeof _prevEnter === 'function') {
-      /* guest path still uses previous for share token flow */
       try {
         await _prevEnter();
         return;
       } catch (e) {}
     }
 
-    /* Chrome */
     try {
-      if (typeof refreshUserChrome === 'function') await refreshUserChrome();
+      if (typeof window.refreshUserChrome === 'function')
+        await window.refreshUserChrome();
+      else if (typeof refreshUserChrome === 'function') await refreshUserChrome();
     } catch (e) {}
+
     try {
       if (typeof loadFlowListSafe === 'function') await loadFlowListSafe();
       else if (typeof loadFlowList === 'function') await loadFlowList();
     } catch (e) {}
 
-    /* Render owned/blank flow — NEVER cloneDefaultFlow / hemopi-main */
     try {
       if (typeof render === 'function') render();
       if (typeof renderMacroBar === 'function') renderMacroBar();
@@ -220,11 +225,13 @@
     }
 
     try {
-      if (typeof presenceTick === 'function') presenceTick();
+      if (typeof window.presenceTick === 'function') await window.presenceTick();
+      else if (typeof presenceTick === 'function') presenceTick();
       if (!window._presenceTimer) {
         window._presenceTimer = setInterval(function () {
           try {
-            if (typeof presenceTick === 'function') presenceTick();
+            if (typeof window.presenceTick === 'function') window.presenceTick();
+            else if (typeof presenceTick === 'function') presenceTick();
           } catch (e) {}
         }, 15000);
       }
@@ -234,6 +241,5 @@
     console.log('[Fluxora] enterApp isolated →', window.flowKey, email);
   };
 
-  /** Patch register/login already calling enterApp — no extra hook needed */
-  console.log('[Fluxora] enter-app-fix isolation');
+  console.log('[Fluxora] enter-app-fix isolation v2');
 })();
