@@ -1,6 +1,8 @@
 /**
  * Vote UX + comment + image/HTML preview.
- * Instant vote colors on click.
+ * - Photo-stack icon on nodes (like design ref)
+ * - Save HTML/image to flow.previews → Convex with toast + verify
+ * - Instant vote colors
  */
 (function () {
   function $(id) {
@@ -11,43 +13,67 @@
     return window.convexClient || null;
   }
 
+  function notify(msg, kind) {
+    if (typeof showNotification === 'function') {
+      showNotification(msg, kind || 'info');
+    } else if (typeof window.toast === 'function') {
+      try {
+        window.toast(msg, kind === 'error');
+      } catch (e) {}
+    } else {
+      console.log('[Fluxora]', kind, msg);
+    }
+  }
+
+  function getFlow() {
+    try {
+      if (typeof flow !== 'undefined' && flow) return flow;
+    } catch (e) {}
+    return window.flow || null;
+  }
+
   function voteKeyOf(kind, id) {
     if (kind && id) {
       if (typeof voteKey === 'function') return voteKey(kind, id);
       return kind + ':' + id;
     }
-    if (typeof selected === 'undefined' || !selected) return null;
-    if (typeof voteKey === 'function') return voteKey(selected.kind, selected.id);
-    return selected.kind + ':' + selected.id;
+    var sel = null;
+    try {
+      if (typeof selected !== 'undefined' && selected) sel = selected;
+    } catch (e) {}
+    if (!sel) sel = window.selected;
+    if (!sel) return null;
+    if (typeof voteKey === 'function') return voteKey(sel.kind, sel.id);
+    return sel.kind + ':' + sel.id;
   }
 
   function ensureStore() {
-    try {
-      if (typeof flow === 'undefined' || !flow) return;
-      if (!flow.comments) flow.comments = {};
-      if (!flow.previews) flow.previews = {};
-      if (!flow.votes) flow.votes = {};
-    } catch (e) {}
+    var f = getFlow();
+    if (!f) return null;
+    if (!f.comments) f.comments = {};
+    if (!f.previews) f.previews = {};
+    if (!f.votes) f.votes = {};
+    return f;
   }
 
   function getPreview(kind, id) {
-    ensureStore();
+    var f = ensureStore();
     var k = voteKeyOf(kind, id);
-    if (!k || !flow || !flow.previews) return {};
-    return flow.previews[k] || {};
+    if (!f || !k) return {};
+    return f.previews[k] || {};
   }
 
   function setPreview(partial, kind, id) {
-    ensureStore();
+    var f = ensureStore();
     var k = voteKeyOf(kind, id);
-    if (!k || !flow) return;
-    if (!flow.previews) flow.previews = {};
-    flow.previews[k] = Object.assign({}, flow.previews[k] || {}, partial);
+    if (!f || !k) return null;
+    f.previews[k] = Object.assign({}, f.previews[k] || {}, partial);
+    return f.previews[k];
   }
 
   function hasPreview(kind, id) {
     var p = getPreview(kind, id);
-    return !!(p.html && p.html.trim()) || !!p.imageUrl || !!p.storageId;
+    return !!(p.html && String(p.html).trim()) || !!p.imageUrl || !!p.storageId;
   }
 
   function injectStyles() {
@@ -80,11 +106,12 @@
       '#previewViewModal .pv-body img{max-width:100%;height:auto;display:block;margin:0 auto;padding:12px}',
       '#previewViewModal .pv-body iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}',
       '#previewViewModal .pv-empty{color:#94a3b8;text-align:center;padding:48px 16px}',
+      'g.preview-btn{cursor:pointer}',
+      'g.preview-btn:hover circle.pv-bg{fill:#e0f2fe}',
     ].join('');
     document.head.appendChild(st);
   }
 
-  /** Apply vote colors immediately from flow.votes */
   function paintVoteButtons() {
     var okBtn = document.querySelector('#modalBg .vbtn[data-v="ok"]');
     var noBtn = document.querySelector('#modalBg .vbtn[data-v="no"]');
@@ -100,13 +127,19 @@
       noBtn.style.borderColor = '';
       noBtn.style.boxShadow = '';
     }
-    if (typeof selected === 'undefined' || !selected || typeof flow === 'undefined' || !flow) return;
-    var k = voteKeyOf();
-    var v = (flow.votes && flow.votes[k]) || { mine: null };
+    var f = getFlow();
+    var sel = null;
+    try {
+      if (typeof selected !== 'undefined') sel = selected;
+    } catch (e) {}
+    if (!sel) sel = window.selected;
+    if (!sel || !f) return;
+    var k = voteKeyOf(sel.kind, sel.id);
+    var v = (f.votes && f.votes[k]) || { mine: null };
     if (typeof getVotes === 'function') {
       try {
-        v = getVotes(selected.kind, selected.id) || v;
-      } catch (e) {}
+        v = getVotes(sel.kind, sel.id) || v;
+      } catch (e2) {}
     }
     if (v.mine === 'ok' && okBtn) {
       okBtn.classList.add('on-ok');
@@ -151,112 +184,228 @@
     });
   }
 
+  /** Write comment + HTML from modal into flow.previews */
   function persistCommentAndPreview() {
-    ensureStore();
+    var f = ensureStore();
     var k = voteKeyOf();
-    if (!k || typeof flow === 'undefined' || !flow) return false;
+    if (!f || !k) return false;
     var c = $('sideComment');
     if (c) {
-      if (!flow.comments) flow.comments = {};
-      flow.comments[k] = c.value;
+      f.comments[k] = c.value;
     }
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) {
       var html = htmlEl.value || '';
-      var cur = (flow.previews && flow.previews[k]) || {};
-      if (!flow.previews) flow.previews = {};
-      flow.previews[k] = Object.assign({}, cur, {
+      var cur = f.previews[k] || {};
+      f.previews[k] = Object.assign({}, cur, {
         html: html,
         mode: html.trim()
           ? 'html'
           : cur.mode || (cur.imageUrl || cur.storageId ? 'image' : ''),
+        updatedAt: Date.now(),
       });
     }
     return true;
   }
 
-  async function flushSave() {
-    persistCommentAndPreview();
+  function currentKey() {
     try {
-      if (typeof selected !== 'undefined' && selected && flow) {
+      if (typeof flowKey !== 'undefined' && flowKey) return String(flowKey);
+    } catch (e) {}
+    return window.flowKey ? String(window.flowKey) : '';
+  }
+
+  function currentTitle() {
+    try {
+      if (typeof flowTitle !== 'undefined' && flowTitle) return String(flowTitle);
+    } catch (e) {}
+    return window.flowTitle || currentKey();
+  }
+
+  function emailOf() {
+    try {
+      return ((window.user || user || {}).email || '').toLowerCase().trim();
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
+   * Save full flow (with previews) to Convex and verify the key landed.
+   * Returns { ok, error?, verified? }
+   */
+  async function savePreviewToConvex(previewKey) {
+    var f = getFlow();
+    var client = cx();
+    var key = currentKey();
+    var email = emailOf();
+
+    if (!f) return { ok: false, error: 'Sem fluxo em memória' };
+    if (!client) return { ok: false, error: 'Convex offline' };
+    if (!key || key.indexOf('local') === 0)
+      return { ok: false, error: 'Fluxo local — faça login e abra um fluxo da nuvem' };
+    if (!email) return { ok: false, error: 'Faça login para salvar' };
+
+    /* ensure previews object exists on the payload */
+    if (!f.previews) f.previews = {};
+
+    try {
+      localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
+    } catch (e) {}
+
+    try {
+      await client.mutation('flows:save', {
+        key: key,
+        title: currentTitle() || key,
+        ownerEmail: email,
+        data: f,
+      });
+    } catch (e) {
+      console.error('[preview-save] mutation', e);
+      return { ok: false, error: String(e.message || e) };
+    }
+
+    /* verify */
+    try {
+      var remote = await client.query('flows:get', {
+        key: key,
+        requesterEmail: email,
+      });
+      if (!remote || !remote.data) {
+        return { ok: true, verified: false, error: 'Salvou mas GET vazio' };
+      }
+      var rp = (remote.data.previews || {})[previewKey];
+      if (previewKey && !rp) {
+        console.warn('[preview-save] key missing after save', previewKey, remote.data.previews);
+        return {
+          ok: true,
+          verified: false,
+          error: 'Salvou o fluxo, mas previews.' + previewKey + ' não veio no GET',
+        };
+      }
+      return { ok: true, verified: true, remotePreview: rp };
+    } catch (e2) {
+      console.warn('[preview-save] verify', e2);
+      return { ok: true, verified: false, error: 'Salvou, verify falhou: ' + (e2.message || e2) };
+    }
+  }
+
+  async function flushSave(opts) {
+    opts = opts || {};
+    persistCommentAndPreview();
+
+    var f = getFlow();
+    var k = voteKeyOf();
+
+    try {
+      var sel = null;
+      try {
+        if (typeof selected !== 'undefined') sel = selected;
+      } catch (e) {}
+      if (!sel) sel = window.selected;
+      if (sel && f) {
         var name = $('sideNameMulti') || $('sideName');
         if (name) {
-          if (selected.kind === 'node' && typeof nodeById === 'function') {
-            var n = nodeById(selected.id);
+          if (sel.kind === 'node' && typeof nodeById === 'function') {
+            var n = nodeById(sel.id);
             if (n) n.title = name.value;
           }
-          if (selected.kind === 'macro' && typeof macroById === 'function') {
-            var m = macroById(selected.id);
+          if (sel.kind === 'macro' && typeof macroById === 'function') {
+            var m = macroById(sel.id);
             if (m) m.title = name.value;
           }
-          if (selected.kind === 'edge' && typeof edgeById === 'function') {
-            var e = edgeById(selected.id);
-            if (e) e.label = name.value;
+          if (sel.kind === 'edge' && typeof edgeById === 'function') {
+            var ed = edgeById(sel.id);
+            if (ed) ed.label = name.value;
           }
         }
       }
     } catch (err) {}
+
     try {
-      localStorage.setItem('hemopi_editor_v1', JSON.stringify(flow));
+      if (f) localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
     } catch (e) {}
-    if (typeof saveLocal === 'function') {
+
+    if (typeof markFlowClean !== 'function' && typeof saveLocal === 'function') {
       try {
         saveLocal();
       } catch (e2) {}
     }
-    if (typeof saveToCloud === 'function') {
-      try {
-        await saveToCloud();
-      } catch (e3) {}
+
+    var result = await savePreviewToConvex(k);
+
+    if (result.ok && result.verified) {
+      if (typeof markFlowClean === 'function') markFlowClean();
+      if (!opts.silent) notify('Preview salvo na nuvem ✓', 'success');
+    } else if (result.ok && !result.verified) {
+      if (!opts.silent)
+        notify('Salvo com aviso: ' + (result.error || 'verifique o Convex'), 'info');
+    } else {
+      if (!opts.silent)
+        notify('Erro ao salvar: ' + (result.error || 'desconhecido'), 'error');
     }
+
     if (typeof render === 'function') render();
     if (typeof renderMacroBar === 'function') renderMacroBar();
     injectPreviewIcons();
-    return true;
+    return result;
   }
 
   async function onImageSelected(file) {
     if (!file) return;
     var hint = $('sidePreviewImageHint');
-    if (hint) hint.textContent = 'Enviando…';
+    if (hint) hint.textContent = 'Enviando imagem…';
+    notify('Enviando imagem…', 'info');
     try {
       var client = cx();
-      if (client) {
-        var uploadUrl = await client.mutation('files:generateUploadUrl', {});
-        var res = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': file.type || 'application/octet-stream' },
-          body: file,
-        });
-        if (!res.ok) throw new Error('Upload HTTP ' + res.status);
-        var json = await res.json();
-        var storageId = json.storageId;
-        if (!storageId) throw new Error('Sem storageId');
-        var url = null;
-        try {
-          url = await client.mutation('files:getUrl', { storageId: storageId });
-        } catch (e) {}
-        setPreview({ storageId: storageId, imageUrl: url || '', mode: 'image' });
-        if (hint) hint.textContent = url ? 'Imagem no Convex ✓' : 'Imagem salva ✓';
-        await flushSave();
+      if (!client) throw new Error('Convex offline');
+
+      var uploadUrl = await client.mutation('files:generateUploadUrl', {});
+      var res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!res.ok) throw new Error('Upload HTTP ' + res.status);
+      var json = await res.json();
+      var storageId = json.storageId;
+      if (!storageId) throw new Error('Resposta sem storageId');
+
+      var url = null;
+      try {
+        url = await client.mutation('files:getUrl', { storageId: storageId });
+      } catch (e) {
+        console.warn('getUrl', e);
+      }
+
+      setPreview({
+        storageId: storageId,
+        imageUrl: url || '',
+        mode: 'image',
+        updatedAt: Date.now(),
+      });
+      if (hint)
+        hint.textContent = url
+          ? 'Imagem no Convex ✓ (' + storageId.slice(0, 8) + '…)'
+          : 'storageId ok (url pendente)';
+
+      var result = await flushSave({ silent: true });
+      if (result.ok) {
+        notify('Imagem + fluxo salvos na nuvem ✓', 'success');
       } else {
-        var reader = new FileReader();
-        reader.onload = async function () {
-          setPreview({ imageUrl: reader.result, mode: 'image' });
-          if (hint) hint.textContent = 'Imagem local ✓';
-          await flushSave();
-        };
-        reader.readAsDataURL(file);
+        notify('Imagem no storage, mas fluxo: ' + (result.error || '?'), 'error');
       }
     } catch (e) {
-      console.error(e);
+      console.error('[image]', e);
       if (hint) hint.textContent = 'Erro: ' + (e.message || e);
+      notify('Erro no upload: ' + (e.message || e), 'error');
+      /* fallback local base64 so UX still works offline */
       try {
         var r2 = new FileReader();
         r2.onload = async function () {
-          setPreview({ imageUrl: r2.result, mode: 'image' });
-          if (hint) hint.textContent = 'Salvo local (fallback) ✓';
-          await flushSave();
+          setPreview({ imageUrl: r2.result, mode: 'image', updatedAt: Date.now() });
+          if (hint) hint.textContent = 'Imagem local (fallback) — clique Salvar';
+          notify('Imagem só local — clique 💾 Salvar no modal', 'info');
         };
         r2.readAsDataURL(file);
       } catch (e2) {}
@@ -274,30 +423,30 @@
     }
     persistCommentAndPreview();
     var prev = getPreview(
-      kind || (selected && selected.kind),
-      id || (selected && selected.id)
+      kind || (window.selected && window.selected.kind),
+      id || (window.selected && window.selected.id)
     );
     var body = $('pvBody');
     var title = $('pvTitle');
     if (title) {
       title.textContent =
         'Preview · ' +
-        (kind || (selected && selected.kind) || '') +
+        (kind || (window.selected && window.selected.kind) || '') +
         ' ' +
-        (id || (selected && selected.id) || '');
+        (id || (window.selected && window.selected.id) || '');
     }
     body.innerHTML = '';
     var modal = $('previewViewModal');
     modal.classList.remove('fullscreen');
     if ($('pvFullscreen')) $('pvFullscreen').textContent = '⛶ Fullscreen';
 
-    if (prev.html && prev.html.trim()) {
+    if (prev.html && String(prev.html).trim()) {
       var iframe = document.createElement('iframe');
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
       iframe.srcdoc =
         '<!DOCTYPE html><html><head><meta charset="utf-8"/>' +
         '<meta name="viewport" content="width=device-width,initial-scale=1"/>' +
-        '<style>html,body{margin:0;padding:0;min-height:100%}body{font-family:system-ui,sans-serif}</style>' +
+        '<style>html,body{margin:0;padding:12px;min-height:100%;font-family:system-ui,sans-serif}</style>' +
         '</head><body>' +
         prev.html +
         '</body></html>';
@@ -307,22 +456,25 @@
       img.src = prev.imageUrl;
       body.appendChild(img);
     } else if (prev.storageId && cx()) {
-      body.innerHTML = '<p class="pv-empty">Carregando…</p>';
+      body.innerHTML = '<p class="pv-empty">Carregando imagem…</p>';
       cx()
         .mutation('files:getUrl', { storageId: prev.storageId })
         .then(function (url) {
           if (!url) {
-            body.innerHTML = '<p class="pv-empty">Indisponível</p>';
+            body.innerHTML = '<p class="pv-empty">URL indisponível</p>';
             return;
           }
           body.innerHTML = '';
           var im = document.createElement('img');
           im.src = url;
           body.appendChild(im);
+        })
+        .catch(function () {
+          body.innerHTML = '<p class="pv-empty">Falha ao carregar</p>';
         });
     } else {
       body.innerHTML =
-        '<p class="pv-empty">Nenhum preview. Salve HTML ou imagem primeiro.</p>';
+        '<p class="pv-empty">Nenhum preview. Salve HTML ou imagem no modal.</p>';
     }
     modal.classList.add('open');
   }
@@ -338,18 +490,24 @@
   function fillFields() {
     ensureStore();
     var k = voteKeyOf();
+    var f = getFlow();
     var c = $('sideComment');
     if (c) {
       c.value =
-        k && flow.comments && flow.comments[k] != null ? flow.comments[k] : '';
+        k && f && f.comments && f.comments[k] != null ? f.comments[k] : '';
     }
     var prev = getPreview();
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) htmlEl.value = prev.html || '';
     var hint = $('sidePreviewImageHint');
     if (hint) {
-      hint.textContent =
-        prev.imageUrl || prev.storageId ? 'Imagem anexada ✓' : 'Nenhuma imagem';
+      if (prev.storageId || prev.imageUrl) {
+        hint.textContent =
+          'Imagem anexada ✓' +
+          (prev.storageId ? ' · ' + String(prev.storageId).slice(0, 10) + '…' : '');
+      } else {
+        hint.textContent = 'Nenhuma imagem';
+      }
     }
     paintVoteButtons();
   }
@@ -376,99 +534,144 @@
       clr.dataset.vpWired = '1';
       clr.addEventListener('click', async function (ev) {
         ev.preventDefault();
+        var f = ensureStore();
         var k = voteKeyOf();
-        if (k && flow && flow.previews) delete flow.previews[k];
+        if (f && k && f.previews) delete f.previews[k];
         if ($('sidePreviewHtml')) $('sidePreviewHtml').value = '';
         if ($('sidePreviewImage')) $('sidePreviewImage').value = '';
         if ($('sidePreviewImageHint')) $('sidePreviewImageHint').textContent = 'Nenhuma imagem';
         await flushSave();
       });
     }
+
     var saveBtn = $('btnModalSave');
     if (saveBtn && saveBtn.dataset.vpSave !== '1') {
       saveBtn.dataset.vpSave = '1';
       saveBtn.addEventListener(
         'click',
-        function () {
+        function (ev) {
+          /* captura: grava preview ANTES de qualquer outro handler */
           persistCommentAndPreview();
+          var k = voteKeyOf();
+          var f = getFlow();
+          var has =
+            k &&
+            f &&
+            f.previews &&
+            f.previews[k] &&
+            ((f.previews[k].html && f.previews[k].html.trim()) ||
+              f.previews[k].imageUrl ||
+              f.previews[k].storageId);
+          /* defer cloud save so title handlers no editor rodem primeiro */
           setTimeout(function () {
-            flushSave().then(function () {
-              if (typeof showNotification === 'function')
-                showNotification('Comentário e preview salvos', 'success');
-              else if (typeof toast === 'function') toast('Salvo');
+            flushSave({ silent: false }).then(function (result) {
+              if (result && result.ok && has) {
+                /* already notified inside flushSave */
+              }
             });
-          }, 0);
+          }, 50);
         },
         true
       );
     }
   }
 
-  function svgEl(tag, attrs, kids) {
+  function svgEl(tag, attrs) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    if (attrs)
+    if (attrs) {
       Object.keys(attrs).forEach(function (k) {
         n.setAttribute(k, attrs[k]);
       });
-    if (kids)
-      kids.forEach(function (t) {
-        n.appendChild(document.createTextNode(t));
-      });
+    }
     return n;
   }
 
+  /** Stacked photo frames icon (design ref) */
+  function buildPhotoIcon() {
+    var g = svgEl('g', { class: 'preview-btn', transform: 'translate(0,0)' });
+    /* soft hit circle */
+    g.appendChild(
+      svgEl('circle', {
+        class: 'pv-bg',
+        cx: '0',
+        cy: '0',
+        r: '11',
+        fill: '#fff',
+        stroke: '#1e3a5f',
+        'stroke-width': '1.2',
+      })
+    );
+    /* back frame */
+    g.appendChild(
+      svgEl('rect', {
+        x: '-5',
+        y: '-6',
+        width: '11',
+        height: '9',
+        rx: '1.2',
+        fill: 'none',
+        stroke: '#1e3a5f',
+        'stroke-width': '1.3',
+      })
+    );
+    /* front frame */
+    g.appendChild(
+      svgEl('rect', {
+        x: '-7',
+        y: '-4',
+        width: '11',
+        height: '9',
+        rx: '1.2',
+        fill: '#fff',
+        stroke: '#1e3a5f',
+        'stroke-width': '1.3',
+      })
+    );
+    /* mountain */
+    var mtn = svgEl('path', {
+      d: 'M-5.5 3 L-2.5 -0.5 L-0.5 1.5 L2  -1.5 L5 3 Z',
+      fill: 'none',
+      stroke: '#1e3a5f',
+      'stroke-width': '1.1',
+      'stroke-linejoin': 'round',
+    });
+    g.appendChild(mtn);
+    /* sun */
+    g.appendChild(
+      svgEl('circle', {
+        cx: '2.5',
+        cy: '-1.2',
+        r: '1.2',
+        fill: 'none',
+        stroke: '#1e3a5f',
+        'stroke-width': '1.1',
+      })
+    );
+    return g;
+  }
+
   function injectPreviewIcons() {
-    if (typeof flow === 'undefined' || !flow || !flow.nodes) return;
+    var f = getFlow();
+    if (!f || !f.nodes) return;
     var canvas = $('canvas');
     if (!canvas) return;
-    canvas.querySelectorAll('.preview-btn').forEach(function (el) {
+
+    canvas.querySelectorAll('.preview-btn, .preview-btn-host').forEach(function (el) {
       el.remove();
     });
-    flow.nodes.forEach(function (n) {
+
+    f.nodes.forEach(function (n) {
       if (!hasPreview('node', n.id)) return;
-      var groups = canvas.querySelectorAll('g.node');
-      var g = null;
-      for (var i = 0; i < groups.length; i++) {
-        var t = groups[i].getAttribute('transform') || '';
-        if (
-          t.indexOf('translate(' + n.x + ',' + n.y + ')') === 0 ||
-          t.indexOf('translate(' + n.x + ', ' + n.y + ')') === 0
-        ) {
-          g = groups[i];
-          break;
-        }
-      }
-      if (!g) {
-        g = svgEl('g', {
-          class: 'preview-btn-host',
-          transform: 'translate(' + n.x + ',' + n.y + ')',
-        });
-        canvas.appendChild(g);
-      }
-      var w = n.w || 160;
-      var pg = svgEl('g', {
-        class: 'preview-btn',
-        transform: 'translate(' + (w - 2) + ',18)',
-        style: 'cursor:pointer',
+
+      /* place inside node on the left, like the design ref */
+      var host = svgEl('g', {
+        class: 'preview-btn-host',
+        transform: 'translate(' + n.x + ',' + n.y + ')',
       });
-      pg.appendChild(
-        svgEl('circle', {
-          cx: '0',
-          cy: '0',
-          r: '10',
-          fill: '#0f172a',
-          stroke: '#38bdf8',
-          'stroke-width': '1.5',
-        })
-      );
-      pg.appendChild(
-        svgEl(
-          'text',
-          { x: '0', y: '4', 'text-anchor': 'middle', 'font-size': '11', fill: '#fff' },
-          ['👁']
-        )
-      );
-      pg.addEventListener('mousedown', function (ev) {
+      var icon = buildPhotoIcon();
+      icon.setAttribute('transform', 'translate(14,' + ((n.h || 40) / 2) + ')');
+      icon.style.cursor = 'pointer';
+      icon.addEventListener('mousedown', function (ev) {
         ev.stopPropagation();
         ev.preventDefault();
         try {
@@ -478,7 +681,8 @@
         }
         openPreviewView('node', n.id);
       });
-      g.appendChild(pg);
+      host.appendChild(icon);
+      canvas.appendChild(host);
     });
   }
 
@@ -486,18 +690,12 @@
     var prev = window.voteSelected;
     window.voteSelected = function (val) {
       if (typeof prev === 'function') prev(val);
-      else if (typeof setMyVote === 'function' && selected)
-        setMyVote(selected.kind, selected.id, val);
-      /* imediato — não espera fechar o modal */
+      else if (typeof setMyVote === 'function' && window.selected)
+        setMyVote(window.selected.kind, window.selected.id, val);
       paintVoteButtons();
       requestAnimationFrame(paintVoteButtons);
       setTimeout(paintVoteButtons, 30);
       persistCommentAndPreview();
-      if (typeof saveLocal === 'function') {
-        try {
-          saveLocal();
-        } catch (e) {}
-      }
     };
   }
 
@@ -562,5 +760,6 @@
   }, 800);
 
   window.openPreviewView = openPreviewView;
-  console.log('[Fluxora] vote-preview-modal v3 instant vote');
+  window.flushPreviewSave = flushSave;
+  console.log('[Fluxora] vote-preview-modal v4 photo-icon + convex verify');
 })();
