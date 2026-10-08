@@ -7,27 +7,43 @@ const emptyData = {
   edges: [] as unknown[],
   votes: {} as Record<string, unknown>,
   comments: {} as Record<string, unknown>,
+  previews: {} as Record<string, unknown>,
 };
 
-/** List ONLY flows owned by requester — never dump all flows. */
+async function audit(
+  ctx: { db: { insert: (t: "auditLogs", d: Record<string, unknown>) => Promise<unknown> } },
+  actorEmail: string,
+  action: string,
+  entityId: string,
+  detail?: string
+) {
+  try {
+    await ctx.db.insert("auditLogs", {
+      at: Date.now(),
+      actorEmail: (actorEmail || "system").toLowerCase(),
+      action,
+      entity: "flows",
+      entityId,
+      detail: detail?.slice(0, 500),
+    });
+  } catch {
+    /* schema may lag deploy */
+  }
+}
+
 export const list = query({
   args: { ownerEmail: v.string() },
   handler: async (ctx, args) => {
     const email = args.ownerEmail.toLowerCase().trim();
     if (!email) return [];
-    return await ctx.db
+    const rows = await ctx.db
       .query("flows")
       .withIndex("by_owner", (q) => q.eq("ownerEmail", email))
       .collect();
+    return rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   },
 });
 
-/**
- * Get flow by key.
- * - Owner (requesterEmail === ownerEmail) → full access
- * - Shared guest (shareToken valid + email in share) → full access
- * - Otherwise → null (no leak)
- */
 export const get = query({
   args: {
     key: v.string(),
@@ -53,30 +69,34 @@ export const get = query({
         .query("shares")
         .withIndex("by_token", (q) => q.eq("token", args.shareToken!))
         .unique();
-      if (
-        sh &&
-        sh.active !== false &&
-        sh.flowKey === key &&
-        (sh.emails.includes(req) ||
-          (sh.createdBy && sh.createdBy.toLowerCase() === req))
-      ) {
-        allowed = true;
+      if (sh && sh.active !== false && sh.flowKey === key) {
+        if (!req || sh.emails.map((e) => e.toLowerCase()).includes(req)) {
+          allowed = true;
+        }
+      }
+    }
+
+    if (!allowed && req) {
+      const shares = await ctx.db
+        .query("shares")
+        .withIndex("by_flow", (q) => q.eq("flowKey", key))
+        .collect();
+      for (const sh of shares) {
+        if (
+          sh.active !== false &&
+          sh.emails.map((e) => e.toLowerCase()).includes(req)
+        ) {
+          allowed = true;
+          break;
+        }
       }
     }
 
     if (!allowed) return null;
-
-    return {
-      key: row.key,
-      title: row.title,
-      ownerEmail: row.ownerEmail,
-      data: row.data,
-      updatedAt: row.updatedAt,
-    };
+    return row;
   },
 });
 
-/** Save only if owner matches (or creating new key for that owner). */
 export const save = mutation({
   args: {
     key: v.string(),
@@ -105,16 +125,19 @@ export const save = mutation({
         data: args.data,
         updatedAt: Date.now(),
       });
+      await audit(ctx, owner, "flow.save", key, args.title);
       return existing._id;
     }
 
-    return await ctx.db.insert("flows", {
+    const id = await ctx.db.insert("flows", {
       key,
       title: args.title ?? key,
       ownerEmail: owner,
       data: args.data,
       updatedAt: Date.now(),
     });
+    await audit(ctx, owner, "flow.create", key, args.title);
+    return id;
   },
 });
 
@@ -142,6 +165,7 @@ export const create = mutation({
       },
       updatedAt: Date.now(),
     });
+    await audit(ctx, owner, "flow.create", key, args.title);
     return { key };
   },
 });
@@ -154,49 +178,13 @@ export const remove = mutation({
       .query("flows")
       .withIndex("by_key", (q) => q.eq("key", args.key))
       .unique();
-    if (!row) return { ok: false };
+    if (!row) return { ok: false, error: "NOT_FOUND" };
     const rowOwner = (row.ownerEmail || "").toLowerCase().trim();
     if (rowOwner && rowOwner !== owner) {
-      return { ok: false, error: "not_owner" };
+      return { ok: false, error: "NOT_OWNER" };
     }
     await ctx.db.delete(row._id);
+    await audit(ctx, owner, "flow.delete", args.key, row.title);
     return { ok: true };
-  },
-});
-
-/** Bootstrap blank flow for new account */
-export const ensureStarter = mutation({
-  args: { ownerEmail: v.string(), name: v.optional(v.string()) },
-  handler: async (ctx, args) => {
-    const owner = args.ownerEmail.toLowerCase().trim();
-    if (!owner) throw new Error("OWNER_REQUIRED");
-    const existing = await ctx.db
-      .query("flows")
-      .withIndex("by_owner", (q) => q.eq("ownerEmail", owner))
-      .collect();
-    if (existing.length > 0) {
-      return { key: existing[0].key, created: false };
-    }
-    const title = (args.name || owner.split("@")[0] || "Meu fluxo").trim();
-    const key =
-      "flow-" +
-      Date.now().toString(36) +
-      "-" +
-      Math.random().toString(36).slice(2, 7);
-    await ctx.db.insert("flows", {
-      key,
-      title,
-      ownerEmail: owner,
-      data: {
-        macros: [],
-        nodes: [],
-        edges: [],
-        votes: {},
-        comments: {},
-        header: { projectName: title },
-      },
-      updatedAt: Date.now(),
-    });
-    return { key, created: true };
   },
 });
