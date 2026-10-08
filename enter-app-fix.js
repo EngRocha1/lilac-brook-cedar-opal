@@ -1,6 +1,6 @@
 /**
  * Isolation: new accounts never inherit another user's flow.
- * Always sync window.user from hemopi_user before workspace load.
+ * Presence timer is NOT started here — presence-singleton owns it.
  */
 (function () {
   var STORAGE_KEY = 'hemopi_editor_v1';
@@ -174,8 +174,6 @@
     } catch (e6) {}
   }
 
-  var _prevEnter = window.enterApp;
-
   window.enterApp = async function enterAppIsolated() {
     syncUser();
     var email = emailOf();
@@ -196,17 +194,11 @@
 
     if (!isGuest()) {
       await ensureOwnedWorkspace(email);
-    } else if (typeof _prevEnter === 'function') {
-      try {
-        await _prevEnter();
-        return;
-      } catch (e) {}
     }
 
     try {
       if (typeof window.refreshUserChrome === 'function')
         await window.refreshUserChrome();
-      else if (typeof refreshUserChrome === 'function') await refreshUserChrome();
     } catch (e) {}
 
     try {
@@ -224,16 +216,12 @@
       console.warn(e);
     }
 
+    /* ONE presence tick — interval owned by presence-singleton */
     try {
-      if (typeof window.presenceTick === 'function') await window.presenceTick();
-      else if (typeof presenceTick === 'function') presenceTick();
-      if (!window._presenceTimer) {
-        window._presenceTimer = setInterval(function () {
-          try {
-            if (typeof window.presenceTick === 'function') window.presenceTick();
-            else if (typeof presenceTick === 'function') presenceTick();
-          } catch (e) {}
-        }, 15000);
+      if (typeof window.startPresenceSingleton === 'function') {
+        window.startPresenceSingleton();
+      } else if (typeof window.presenceTick === 'function') {
+        window.presenceTick();
       }
     } catch (e) {}
 
@@ -241,5 +229,5 @@
     console.log('[Fluxora] enterApp isolated →', window.flowKey, email);
   };
 
-  console.log('[Fluxora] enter-app-fix isolation v2');
+  console.log('[Fluxora] enter-app-fix isolation v3 (no interval)');
 })();

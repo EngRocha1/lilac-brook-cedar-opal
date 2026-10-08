@@ -20,7 +20,6 @@ export default defineSchema({
     phone: v.optional(v.string()),
     photoStorageId: v.optional(v.string()),
     logoStorageId: v.optional(v.string()),
-    /** master | user */
     role: v.optional(v.string()),
     lastLoginAt: v.optional(v.number()),
     loginCount: v.optional(v.number()),
@@ -44,9 +43,10 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     lastSeen: v.number(),
-  }).index("by_flow", ["flowKey"]),
+  })
+    .index("by_flow", ["flowKey"])
+    .index("by_flow_email", ["flowKey", "email"]),
 
-  /** Sessões ativas / histórico leve de acesso */
   sessions: defineTable({
     email: v.string(),
     name: v.optional(v.string()),
@@ -56,7 +56,6 @@ export default defineSchema({
     active: v.boolean(),
   }).index("by_email", ["email"]),
 
-  /** Auditoria ponta a ponta — qualquer mutação relevante */
   auditLogs: defineTable({
     at: v.number(),
     actorEmail: v.string(),
@@ -69,10 +68,9 @@ export default defineSchema({
     .index("by_actor", ["actorEmail"])
     .index("by_action", ["action"]),
 
-  /** Banners / avisos do sistema (admin) */
   systemBanners: defineTable({
     message: v.string(),
-    level: v.string(), // info | warn | critical
+    level: v.string(),
     active: v.boolean(),
     createdBy: v.string(),
     createdAt: v.number(),

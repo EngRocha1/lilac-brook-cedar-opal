@@ -1,5 +1,5 @@
 /**
- * User chip + presence — always window.user / hemopi_user.
+ * User chip only — presence is owned by presence-singleton.js
  */
 (function () {
   var USER_KEY = 'hemopi_user';
@@ -31,18 +31,6 @@
     return null;
   }
 
-  function currentFlowKey() {
-    if (window.flowKey) return String(window.flowKey);
-    try {
-      if (typeof flowKey !== 'undefined' && flowKey) return String(flowKey);
-    } catch (e) {}
-    return localStorage.getItem('hemopi_flow_key') || '';
-  }
-
-  function isGuestUser(u) {
-    return !!(u && (u.isGuest || window.HEMOPI_SHARE_MODE === 'guest'));
-  }
-
   async function resolveUrl(storageId) {
     if (!storageId || !cx()) return null;
     try {
@@ -70,7 +58,7 @@
     }
     var name = u.name || u.email.split('@')[0] || '—';
     var email = u.email;
-    var badge = isGuestUser(u) ? 'Convidado' : name;
+    var badge = u.isGuest || window.HEMOPI_SHARE_MODE === 'guest' ? 'Convidado' : name;
     var avatar = photoUrl
       ? '<img class="user-avatar" src="' + photoUrl + '" alt="" />'
       : '<span class="user-avatar user-avatar--ph">' +
@@ -78,7 +66,7 @@
         '</span>';
     lab.innerHTML =
       avatar +
-      '<span class="user-chip-text" style="display:inline-block;line-height:1.25;max-width:220px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle">' +
+      '<span class="user-chip-text" style="display:inline-block;line-height:1.25;max-width:220px;vertical-align:middle">' +
       '<strong style="display:block;font-size:13px">' +
       badge +
       '</strong>' +
@@ -88,55 +76,7 @@
     lab.title = name + ' · ' + email;
   };
 
-  window.presenceTick = async function presenceTickFixed() {
-    var bar = $('presenceBar');
-    if (!bar) return;
-    var u = currentUser();
-    var key = currentFlowKey();
-    if (!cx() || !u || !u.email || !key || String(key).indexOf('local') === 0) {
-      bar.innerHTML = '<strong>Online:</strong> —';
-      return;
-    }
-    try {
-      await cx().mutation('shares:heartbeat', {
-        flowKey: key,
-        email: String(u.email).toLowerCase(),
-        name: u.name || u.email,
-      });
-      var list =
-        (await cx().query('shares:listPresence', { flowKey: key })) || [];
-      if (!list.length) {
-        bar.innerHTML =
-          '<strong>Online:</strong> ' + (u.name || u.email);
-      } else {
-        bar.innerHTML =
-          '<strong>Online:</strong> ' +
-          list
-            .map(function (p) {
-              return p.name || p.email;
-            })
-            .join(', ');
-      }
-    } catch (e) {
-      console.warn('[presence]', e);
-      bar.innerHTML =
-        '<strong>Online:</strong> ' + (u.name || u.email || '—');
-    }
-  };
-
-  function startLoop() {
-    if (window._presenceTimerFixed) return;
-    window._presenceTimerFixed = setInterval(function () {
-      if (typeof window.presenceTick === 'function') window.presenceTick();
-    }, 20000);
-  }
-
-  async function bootChrome() {
-    if (typeof window.syncAuthUser === 'function') window.syncAuthUser();
-    await window.refreshUserChrome();
-    await window.presenceTick();
-    startLoop();
-  }
+  /* Do NOT start intervals here — presence-singleton owns that */
 
   function hookEnter() {
     var prev = window.enterApp;
@@ -144,14 +84,15 @@
     var wrapped = async function () {
       if (typeof window.syncAuthUser === 'function') window.syncAuthUser();
       var r = await prev.apply(this, arguments);
-      await bootChrome();
+      try {
+        await window.refreshUserChrome();
+      } catch (e) {}
       return r;
     };
     wrapped._chromeHooked = true;
     window.enterApp = wrapped;
   }
 
-  /* CSS for chip */
   if (!document.getElementById('user-chrome-css')) {
     var st = document.createElement('style');
     st.id = 'user-chrome-css';
@@ -165,8 +106,9 @@
 
   hookEnter();
   setTimeout(hookEnter, 500);
-  setTimeout(hookEnter, 1600);
-  setTimeout(bootChrome, 600);
+  setTimeout(function () {
+    window.refreshUserChrome();
+  }, 700);
 
-  console.log('[Fluxora] user-chrome v2');
+  console.log('[Fluxora] user-chrome v3 (no interval)');
 })();
