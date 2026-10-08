@@ -1,53 +1,49 @@
-/* Flow Manager — list CRUD, clone, toast, full-height surface */
+/* list-source — CRUD listagem estável (create/open/delete) */
 (function () {
   function $(id) {
     return document.getElementById(id);
   }
+
   function cx() {
     return window.convexClient || null;
   }
+
   function emailOf() {
     var u = window.user || (typeof user !== 'undefined' ? user : null);
     return ((u && u.email) || '').toLowerCase().trim();
   }
 
-  /** Toast: success | error — uses global toast if present */
   function mostrarToast(msg, kind) {
-    var isErr = kind === 'error' || kind === true;
-    if (typeof window.toast === 'function') {
-      try {
-        window.toast(msg, isErr);
-        return;
-      } catch (e) {}
+    if (typeof showNotification === 'function') {
+      showNotification(msg, kind === 'error' ? 'error' : kind === 'success' ? 'success' : 'info');
+      return;
     }
-    var el = $('toast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'toast';
-      el.className = 'toast';
-      document.body.appendChild(el);
+    if (typeof window.mostrarToast === 'function' && window.mostrarToast !== mostrarToast) {
+      window.mostrarToast(msg, kind);
+      return;
     }
-    el.textContent = msg;
-    el.hidden = false;
-    el.style.background = isErr ? '#991b1b' : '#0f172a';
-    clearTimeout(window.__toastT);
-    window.__toastT = setTimeout(function () {
-      el.hidden = true;
-    }, 3000);
+    if (typeof toast === 'function') toast(msg, kind === 'error');
   }
-  window.mostrarToast = mostrarToast;
 
   async function cardLogoUrl(r) {
-    var h = (r && r.data && r.data.header) || {};
-    if (h.logoUrl) return h.logoUrl;
-    var u = window.user || (typeof user !== 'undefined' ? user : null);
-    if (u && u.logo) return u.logo;
+    try {
+      var d = r && r.data;
+      var h = d && d.header;
+      if (h && h.logoUrl) return h.logoUrl;
+      var u = window.user;
+      if (u && u.logo) return u.logo;
+    } catch (e) {}
     return null;
   }
 
   async function renderFlowManagerClean() {
-    if (window.__renderingFlows) return;
+    if (window.__renderingFlows) {
+      if (window.__renderFlowsQueued) return;
+      window.__renderFlowsQueued = true;
+      return;
+    }
     window.__renderingFlows = true;
+    window.__renderFlowsQueued = false;
     var list = $('flowManagerList');
     if (!list) {
       window.__renderingFlows = false;
@@ -69,7 +65,8 @@
     try {
       rows = (await cx().query('flows:list', { ownerEmail: email })) || [];
     } catch (e) {
-      list.innerHTML = '<p class="muted">Erro ao listar: ' + String(e.message || e) + '</p>';
+      list.innerHTML =
+        '<p class="muted">Erro ao listar: ' + String(e.message || e) + '</p>';
       window.__renderingFlows = false;
       return;
     }
@@ -119,17 +116,18 @@
         var edit = document.createElement('button');
         edit.type = 'button';
         edit.className = 'btn-edit-flow';
-        edit.setAttribute('data-fe-edit', '1');
         edit.textContent = '✎ Editar';
         edit.onclick = function (ev) {
           ev.preventDefault();
           ev.stopPropagation();
           if (typeof openFlowEditModal === 'function') {
-            openFlowEditModal({ key: r.key, title: r.title || r.key, data: r.data });
+            openFlowEditModal({
+              key: r.key,
+              title: r.title || r.key,
+              data: r.data,
+            });
           } else if (typeof openEditForFlow === 'function') {
             openEditForFlow(r);
-          } else {
-            mostrarToast('Modal de edição indisponível', 'error');
           }
         };
 
@@ -138,14 +136,40 @@
         open.className = 'btn pri';
         open.textContent = 'Abrir';
         open.onclick = async function () {
-          window.flowKey = r.key;
+          var key = r.key;
+          var title = r.title || r.key;
+          var data = r.data;
+          if (!data || typeof data !== 'object') {
+            data = { macros: [], nodes: [], edges: [], votes: {}, comments: {} };
+          }
+          window.flowKey = key;
           try {
-            flowKey = r.key;
+            flowKey = key;
           } catch (e) {}
-          localStorage.setItem('hemopi_flow_key', r.key);
+          localStorage.setItem('hemopi_flow_key', key);
           try {
-            flowTitle = r.title || r.key;
-          } catch (e) {}
+            flowTitle = title;
+          } catch (e) {
+            window.flowTitle = title;
+          }
+          try {
+            var f = JSON.parse(JSON.stringify(data));
+            if (!f.macros) f.macros = [];
+            if (!f.nodes) f.nodes = [];
+            if (!f.edges) f.edges = [];
+            if (!f.votes) f.votes = {};
+            if (!f.comments) f.comments = {};
+            try {
+              flow = f;
+            } catch (e2) {
+              window.flow = f;
+            }
+            try {
+              localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
+            } catch (e3) {}
+          } catch (e4) {
+            console.error(e4);
+          }
           if ($('flowManager')) $('flowManager').hidden = true;
           if ($('appMain')) $('appMain').hidden = false;
           try {
@@ -159,11 +183,12 @@
             console.error(e);
             mostrarToast('Erro ao abrir: ' + (e.message || e), 'error');
           }
+          mostrarToast('Fluxo aberto: ' + title, 'success');
         };
 
         var cloneBtn = document.createElement('button');
         cloneBtn.type = 'button';
-        cloneBtn.className = 'btn btn-clone';
+        cloneBtn.className = 'btn-clone';
         cloneBtn.textContent = 'Clonar';
         cloneBtn.onclick = async function (ev) {
           ev.preventDefault();
@@ -176,15 +201,9 @@
           cloneBtn.disabled = true;
           cloneBtn.textContent = 'Clonando...';
           try {
-            var clonedData = JSON.parse(JSON.stringify(r.data || {
-              macros: [],
-              nodes: [],
-              edges: [],
-              votes: {},
-              comments: {},
-            }));
+            var clonedData = JSON.parse(JSON.stringify(r.data || {}));
             var newTitle = (r.title || r.key) + ' - Cópia';
-            var created = await cx().mutation('flows:create', {
+            await cx().mutation('flows:create', {
               title: newTitle,
               ownerEmail: email,
               data: clonedData,
@@ -221,7 +240,20 @@
               ownerEmail: email,
             });
             if (res && res.ok === false) {
-              throw new Error(res.error === 'not_owner' ? 'Sem permissão' : 'Falha ao excluir');
+              throw new Error(
+                res.error === 'not_owner' ? 'Sem permissão' : 'Falha ao excluir'
+              );
+            }
+            var cur =
+              window.flowKey ||
+              (typeof flowKey !== 'undefined' ? flowKey : null) ||
+              localStorage.getItem('hemopi_flow_key');
+            if (cur === r.key) {
+              window.flowKey = '';
+              try {
+                flowKey = '';
+              } catch (eC) {}
+              localStorage.removeItem('hemopi_flow_key');
             }
             mostrarToast('Fluxo excluído', 'success');
             window.__renderingFlows = false;
@@ -243,54 +275,27 @@
       })(rows[i]);
     }
     window.__renderingFlows = false;
+    if (window.__renderFlowsQueued) {
+      window.__renderFlowsQueued = false;
+      await renderFlowManagerClean();
+    }
   }
 
   window.renderFlowManager = renderFlowManagerClean;
   window.renderFlowManagerClean = renderFlowManagerClean;
 
-  async function refreshUserChromeStack() {
-    var lab = $('userLabel');
-    var u = window.user || (typeof user !== 'undefined' ? user : null);
-    if (!lab || !u) return;
-    var photoUrl = u.photo || null;
-    var name = u.name || u.email || '—';
-    var email = u.email || '';
-    var badge = window.HEMOPI_SHARE_MODE === 'guest' ? 'Convidado' : name;
-    lab.className = 'user-chip user-chip--stack';
-    lab.innerHTML =
-      (photoUrl
-        ? '<img class="user-avatar" src="' + photoUrl + '" alt="" />'
-        : '<span class="user-avatar user-avatar--ph">' +
-          (name.charAt(0) || '?').toUpperCase() +
-          '</span>') +
-      '<span class="user-chip-text"><strong class="user-chip-name">' +
-      badge +
-      '</strong>' +
-      (email ? '<span class="user-chip-email">' + email + '</span>' : '') +
-      '</span>';
-  }
-  window.refreshUserChrome = refreshUserChromeStack;
-
-  function wireMgrButtons() {
-    var openMgr = $('btnOpenMgr');
-    if (openMgr) {
-      openMgr.onclick = async function (ev) {
-        if (ev) ev.preventDefault();
-        if ($('appMain')) $('appMain').hidden = true;
-        if ($('publicPage')) $('publicPage').hidden = true;
-        if ($('flowManager')) $('flowManager').hidden = false;
-        await renderFlowManagerClean();
-      };
-    }
-    var closeMgr = $('btnMgrClose');
-    if (closeMgr) {
-      closeMgr.onclick = function () {
+  function wireMgr() {
+    var btnClose = $('btnMgrClose');
+    if (btnClose && !btnClose.dataset.lsWired) {
+      btnClose.dataset.lsWired = '1';
+      btnClose.onclick = function () {
         if ($('flowManager')) $('flowManager').hidden = true;
         if ($('appMain')) $('appMain').hidden = false;
       };
     }
     var btnNew = $('btnMgrNew');
-    if (btnNew) {
+    if (btnNew && !btnNew.dataset.lsWired) {
+      btnNew.dataset.lsWired = '1';
       btnNew.onclick = async function (ev) {
         if (ev) ev.preventDefault();
         var title = prompt('Nome do novo fluxo', 'Novo fluxo');
@@ -310,7 +315,7 @@
         var prev = btnNew.textContent;
         btnNew.textContent = 'Criando...';
         try {
-          await cx().mutation('flows:create', {
+          var created = await cx().mutation('flows:create', {
             title: title,
             ownerEmail: email,
             data: {
@@ -322,27 +327,60 @@
               header: { projectName: title },
             },
           });
-          mostrarToast('Fluxo criado com sucesso!', 'success');
+          var newKey = created && created.key;
+          if (newKey) {
+            window.flowKey = newKey;
+            try {
+              flowKey = newKey;
+            } catch (eK) {}
+            localStorage.setItem('hemopi_flow_key', newKey);
+            try {
+              flowTitle = title;
+            } catch (eT) {
+              window.flowTitle = title;
+            }
+            var blank = {
+              macros: [],
+              nodes: [],
+              edges: [],
+              votes: {},
+              comments: {},
+              header: { projectName: title },
+            };
+            try {
+              flow = blank;
+            } catch (eF) {
+              window.flow = blank;
+            }
+            try {
+              localStorage.setItem('hemopi_editor_v1', JSON.stringify(blank));
+            } catch (eL) {}
+          }
+          mostrarToast('Fluxo criado: ' + title, 'success');
           window.__renderingFlows = false;
           await renderFlowManagerClean();
         } catch (e) {
           console.error(e);
           mostrarToast('Erro ao criar: ' + (e.message || e), 'error');
-        } finally {
-          btnNew.disabled = false;
-          btnNew.textContent = prev || '+ Novo';
         }
+        btnNew.disabled = false;
+        btnNew.textContent = prev;
+      };
+    }
+    var btnOpenMgr = $('btnOpenMgr');
+    if (btnOpenMgr && !btnOpenMgr.dataset.lsWired) {
+      btnOpenMgr.dataset.lsWired = '1';
+      btnOpenMgr.onclick = async function () {
+        if ($('appMain')) $('appMain').hidden = true;
+        if ($('flowManager')) $('flowManager').hidden = false;
+        window.__renderingFlows = false;
+        await renderFlowManagerClean();
       };
     }
   }
 
-  function boot() {
-    wireMgrButtons();
-    refreshUserChromeStack();
-  }
-  boot();
-  setTimeout(boot, 600);
-  setTimeout(boot, 1200);
-  setTimeout(boot, 2500);
-  console.log('[Fluxora] list-source CRUD+clone ready');
+  wireMgr();
+  setTimeout(wireMgr, 500);
+  setTimeout(wireMgr, 1500);
+  console.log('[Fluxora] list-source CRUD fix');
 })();
