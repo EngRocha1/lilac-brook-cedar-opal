@@ -1,6 +1,6 @@
 /**
  * Vote UX + comment + image/HTML preview.
- * Scope-only: modal save, fullscreen, overflow, node 👁 icon.
+ * Instant vote colors on click.
  */
 (function () {
   function $(id) {
@@ -26,6 +26,7 @@
       if (typeof flow === 'undefined' || !flow) return;
       if (!flow.comments) flow.comments = {};
       if (!flow.previews) flow.previews = {};
+      if (!flow.votes) flow.votes = {};
     } catch (e) {}
   }
 
@@ -55,11 +56,11 @@
     var st = document.createElement('style');
     st.id = 'vote-preview-css';
     st.textContent = [
-      '.vbtn{transition:background .15s,border-color .15s,box-shadow .15s}',
-      '.vbtn.on-ok{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.25)}',
-      '.vbtn.on-no{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.25)}',
+      '.vbtn{transition:background .12s,border-color .12s,box-shadow .12s;cursor:pointer}',
+      '.vbtn.on-ok,.vbtn[data-v="ok"].on-ok{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.3)!important}',
+      '.vbtn.on-no,.vbtn[data-v="no"].on-no{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.3)!important}',
       '#modalBg .modal.modal-grow{max-height:92vh;display:flex;flex-direction:column;overflow:hidden}',
-      '#modalBg .modal-b{overflow-y:auto;max-height:calc(92vh - 52px);padding-bottom:12px;-webkit-overflow-scrolling:touch}',
+      '#modalBg .modal-b{overflow-y:auto;max-height:calc(92vh - 52px);padding-bottom:12px}',
       '#sideComment{width:100%;box-sizing:border-box;min-height:72px;max-height:160px;border:1px solid #c9d3df;border-radius:8px;padding:10px;font:inherit;resize:vertical}',
       '#sidePreviewHtml{width:100%;box-sizing:border-box;min-height:100px;max-height:180px;overflow:auto;font-family:ui-monospace,monospace;font-size:12px;border:1px solid #c9d3df;border-radius:8px;padding:8px;resize:vertical}',
       '.preview-box{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}',
@@ -73,16 +74,52 @@
       '#previewViewModal.fullscreen{padding:0}',
       '#previewViewModal.fullscreen .pv-panel{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0}',
       '#previewViewModal .pv-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0}',
-      '#previewViewModal .pv-head strong{font-size:14px}',
       '#previewViewModal .pv-head .pv-btns{display:flex;gap:8px}',
       '#previewViewModal .pv-head button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}',
       '#previewViewModal .pv-body{flex:1 1 auto;overflow:auto;padding:0;background:#fff;min-height:0;position:relative}',
       '#previewViewModal .pv-body img{max-width:100%;height:auto;display:block;margin:0 auto;padding:12px}',
       '#previewViewModal .pv-body iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}',
       '#previewViewModal .pv-empty{color:#94a3b8;text-align:center;padding:48px 16px}',
-      '.preview-btn{cursor:pointer}',
     ].join('');
     document.head.appendChild(st);
+  }
+
+  /** Apply vote colors immediately from flow.votes */
+  function paintVoteButtons() {
+    var okBtn = document.querySelector('#modalBg .vbtn[data-v="ok"]');
+    var noBtn = document.querySelector('#modalBg .vbtn[data-v="no"]');
+    if (okBtn) {
+      okBtn.classList.remove('on-ok', 'on-no');
+      okBtn.style.background = '';
+      okBtn.style.borderColor = '';
+      okBtn.style.boxShadow = '';
+    }
+    if (noBtn) {
+      noBtn.classList.remove('on-ok', 'on-no');
+      noBtn.style.background = '';
+      noBtn.style.borderColor = '';
+      noBtn.style.boxShadow = '';
+    }
+    if (typeof selected === 'undefined' || !selected || typeof flow === 'undefined' || !flow) return;
+    var k = voteKeyOf();
+    var v = (flow.votes && flow.votes[k]) || { mine: null };
+    if (typeof getVotes === 'function') {
+      try {
+        v = getVotes(selected.kind, selected.id) || v;
+      } catch (e) {}
+    }
+    if (v.mine === 'ok' && okBtn) {
+      okBtn.classList.add('on-ok');
+      okBtn.style.background = '#dcfce7';
+      okBtn.style.borderColor = '#86efac';
+      okBtn.style.boxShadow = '0 0 0 2px rgba(34,197,94,.3)';
+    }
+    if (v.mine === 'no' && noBtn) {
+      noBtn.classList.add('on-no');
+      noBtn.style.background = '#fee2e2';
+      noBtn.style.borderColor = '#fca5a5';
+      noBtn.style.boxShadow = '0 0 0 2px rgba(239,68,68,.3)';
+    }
   }
 
   function ensurePreviewModal() {
@@ -97,8 +134,7 @@
       '<button type="button" id="pvFullscreen">⛶ Fullscreen</button>' +
       '<button type="button" id="pvClose">×</button>' +
       '</div></div>' +
-      '<div class="pv-body" id="pvBody"></div>' +
-      '</div>';
+      '<div class="pv-body" id="pvBody"></div></div>';
     document.body.appendChild(m);
     $('pvClose').onclick = closePreviewView;
     m.addEventListener('click', function (ev) {
@@ -106,14 +142,9 @@
     });
     $('pvFullscreen').onclick = function () {
       m.classList.toggle('fullscreen');
-      var fs = m.classList.contains('fullscreen');
-      $('pvFullscreen').textContent = fs ? '⛶ Sair' : '⛶ Fullscreen';
-      /* force iframe reflow */
-      var iframe = m.querySelector('iframe');
-      if (iframe) {
-        iframe.style.height = '100%';
-        iframe.style.width = '100%';
-      }
+      $('pvFullscreen').textContent = m.classList.contains('fullscreen')
+        ? '⛶ Sair'
+        : '⛶ Fullscreen';
     };
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape' && m.classList.contains('open')) closePreviewView();
@@ -132,10 +163,13 @@
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) {
       var html = htmlEl.value || '';
-      var cur = flow.previews[k] || {};
+      var cur = (flow.previews && flow.previews[k]) || {};
+      if (!flow.previews) flow.previews = {};
       flow.previews[k] = Object.assign({}, cur, {
         html: html,
-        mode: html.trim() ? 'html' : cur.mode || (cur.imageUrl || cur.storageId ? 'image' : ''),
+        mode: html.trim()
+          ? 'html'
+          : cur.mode || (cur.imageUrl || cur.storageId ? 'image' : ''),
       });
     }
     return true;
@@ -143,7 +177,6 @@
 
   async function flushSave() {
     persistCommentAndPreview();
-    /* title from multi-line */
     try {
       if (typeof selected !== 'undefined' && selected && flow) {
         var name = $('sideNameMulti') || $('sideName');
@@ -162,9 +195,7 @@
           }
         }
       }
-    } catch (err) {
-      console.warn(err);
-    }
+    } catch (err) {}
     try {
       localStorage.setItem('hemopi_editor_v1', JSON.stringify(flow));
     } catch (e) {}
@@ -176,21 +207,7 @@
     if (typeof saveToCloud === 'function') {
       try {
         await saveToCloud();
-      } catch (e3) {
-        console.warn('[preview] cloud save', e3);
-      }
-    } else if (cx() && typeof flowKey !== 'undefined' && flowKey) {
-      try {
-        var email = ((window.user || {}).email || '').toLowerCase().trim();
-        await cx().mutation('flows:save', {
-          key: String(flowKey),
-          title: (typeof flowTitle !== 'undefined' ? flowTitle : '') || String(flowKey),
-          ownerEmail: email,
-          data: flow,
-        });
-      } catch (e4) {
-        console.warn('[preview] flows:save', e4);
-      }
+      } catch (e3) {}
     }
     if (typeof render === 'function') render();
     if (typeof renderMacroBar === 'function') renderMacroBar();
@@ -218,15 +235,9 @@
         var url = null;
         try {
           url = await client.mutation('files:getUrl', { storageId: storageId });
-        } catch (e) {
-          console.warn(e);
-        }
-        setPreview({
-          storageId: storageId,
-          imageUrl: url || '',
-          mode: 'image',
-        });
-        if (hint) hint.textContent = url ? 'Imagem no Convex ✓' : 'Imagem salva (id) ✓';
+        } catch (e) {}
+        setPreview({ storageId: storageId, imageUrl: url || '', mode: 'image' });
+        if (hint) hint.textContent = url ? 'Imagem no Convex ✓' : 'Imagem salva ✓';
         await flushSave();
       } else {
         var reader = new FileReader();
@@ -240,7 +251,6 @@
     } catch (e) {
       console.error(e);
       if (hint) hint.textContent = 'Erro: ' + (e.message || e);
-      /* fallback data URL so user is not blocked */
       try {
         var r2 = new FileReader();
         r2.onload = async function () {
@@ -281,48 +291,38 @@
     modal.classList.remove('fullscreen');
     if ($('pvFullscreen')) $('pvFullscreen').textContent = '⛶ Fullscreen';
 
-    function showHtml(html) {
+    if (prev.html && prev.html.trim()) {
       var iframe = document.createElement('iframe');
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-      iframe.setAttribute('title', 'preview');
       iframe.srcdoc =
         '<!DOCTYPE html><html><head><meta charset="utf-8"/>' +
         '<meta name="viewport" content="width=device-width,initial-scale=1"/>' +
-        '<style>html,body{margin:0;padding:0;min-height:100%;}body{font-family:system-ui,sans-serif;}</style>' +
+        '<style>html,body{margin:0;padding:0;min-height:100%}body{font-family:system-ui,sans-serif}</style>' +
         '</head><body>' +
-        html +
+        prev.html +
         '</body></html>';
       body.appendChild(iframe);
-    }
-
-    if (prev.html && prev.html.trim()) {
-      showHtml(prev.html);
     } else if (prev.imageUrl) {
       var img = document.createElement('img');
       img.src = prev.imageUrl;
-      img.alt = 'Preview';
       body.appendChild(img);
     } else if (prev.storageId && cx()) {
-      body.innerHTML = '<p class="pv-empty">Carregando imagem…</p>';
+      body.innerHTML = '<p class="pv-empty">Carregando…</p>';
       cx()
         .mutation('files:getUrl', { storageId: prev.storageId })
         .then(function (url) {
           if (!url) {
-            body.innerHTML = '<p class="pv-empty">Imagem indisponível</p>';
+            body.innerHTML = '<p class="pv-empty">Indisponível</p>';
             return;
           }
-          setPreview({ imageUrl: url }, kind, id);
           body.innerHTML = '';
           var im = document.createElement('img');
           im.src = url;
           body.appendChild(im);
-        })
-        .catch(function () {
-          body.innerHTML = '<p class="pv-empty">Falha ao carregar</p>';
         });
     } else {
       body.innerHTML =
-        '<p class="pv-empty">Nenhum preview. Anexe imagem ou cole HTML e clique Salvar.</p>';
+        '<p class="pv-empty">Nenhum preview. Salve HTML ou imagem primeiro.</p>';
     }
     modal.classList.add('open');
   }
@@ -335,42 +335,23 @@
     if (body) body.innerHTML = '';
   }
 
-  function syncVoteColors() {
-    document.querySelectorAll('.vbtn').forEach(function (b) {
-      b.classList.remove('on-ok', 'on-no');
-    });
-    if (typeof selected === 'undefined' || !selected || !flow) return;
-    var v = null;
-    try {
-      if (typeof getVotes === 'function') v = getVotes(selected.kind, selected.id);
-      else if (flow.votes) v = flow.votes[voteKeyOf()];
-    } catch (e) {}
-    if (!v) return;
-    if (v.mine === 'ok') {
-      var ok = document.querySelector('.vbtn[data-v="ok"]');
-      if (ok) ok.classList.add('on-ok');
-    }
-    if (v.mine === 'no') {
-      var no = document.querySelector('.vbtn[data-v="no"]');
-      if (no) no.classList.add('on-no');
-    }
-  }
-
   function fillFields() {
     ensureStore();
     var k = voteKeyOf();
     var c = $('sideComment');
     if (c) {
-      c.value = k && flow.comments && flow.comments[k] != null ? flow.comments[k] : '';
+      c.value =
+        k && flow.comments && flow.comments[k] != null ? flow.comments[k] : '';
     }
     var prev = getPreview();
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) htmlEl.value = prev.html || '';
     var hint = $('sidePreviewImageHint');
     if (hint) {
-      hint.textContent = prev.imageUrl || prev.storageId ? 'Imagem anexada ✓' : 'Nenhuma imagem';
+      hint.textContent =
+        prev.imageUrl || prev.storageId ? 'Imagem anexada ✓' : 'Nenhuma imagem';
     }
-    syncVoteColors();
+    paintVoteButtons();
   }
 
   function wireModalControls() {
@@ -408,14 +389,13 @@
       saveBtn.dataset.vpSave = '1';
       saveBtn.addEventListener(
         'click',
-        function (ev) {
-          /* capture persistence even if other handlers run */
+        function () {
           persistCommentAndPreview();
           setTimeout(function () {
             flushSave().then(function () {
-              if (typeof showNotification === 'function') {
+              if (typeof showNotification === 'function')
                 showNotification('Comentário e preview salvos', 'success');
-              } else if (typeof toast === 'function') toast('Salvo');
+              else if (typeof toast === 'function') toast('Salvo');
             });
           }, 0);
         },
@@ -426,16 +406,14 @@
 
   function svgEl(tag, attrs, kids) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    if (attrs) {
+    if (attrs)
       Object.keys(attrs).forEach(function (k) {
         n.setAttribute(k, attrs[k]);
       });
-    }
-    if (kids) {
+    if (kids)
       kids.forEach(function (t) {
         n.appendChild(document.createTextNode(t));
       });
-    }
     return n;
   }
 
@@ -443,24 +421,24 @@
     if (typeof flow === 'undefined' || !flow || !flow.nodes) return;
     var canvas = $('canvas');
     if (!canvas) return;
-    /* remove previous */
     canvas.querySelectorAll('.preview-btn').forEach(function (el) {
       el.remove();
     });
     flow.nodes.forEach(function (n) {
       if (!hasPreview('node', n.id)) return;
-      /* find node group by transform approximate or data */
       var groups = canvas.querySelectorAll('g.node');
       var g = null;
       for (var i = 0; i < groups.length; i++) {
         var t = groups[i].getAttribute('transform') || '';
-        if (t.indexOf('translate(' + n.x + ',' + n.y + ')') === 0 || t.indexOf('translate(' + n.x + ', ' + n.y + ')') === 0) {
+        if (
+          t.indexOf('translate(' + n.x + ',' + n.y + ')') === 0 ||
+          t.indexOf('translate(' + n.x + ', ' + n.y + ')') === 0
+        ) {
           g = groups[i];
           break;
         }
       }
       if (!g) {
-        /* fallback: create floating icon in root */
         g = svgEl('g', {
           class: 'preview-btn-host',
           transform: 'translate(' + n.x + ',' + n.y + ')',
@@ -486,13 +464,7 @@
       pg.appendChild(
         svgEl(
           'text',
-          {
-            x: '0',
-            y: '4',
-            'text-anchor': 'middle',
-            'font-size': '11',
-            fill: '#fff',
-          },
+          { x: '0', y: '4', 'text-anchor': 'middle', 'font-size': '11', fill: '#fff' },
           ['👁']
         )
       );
@@ -510,13 +482,32 @@
     });
   }
 
+  function enhanceVote() {
+    var prev = window.voteSelected;
+    window.voteSelected = function (val) {
+      if (typeof prev === 'function') prev(val);
+      else if (typeof setMyVote === 'function' && selected)
+        setMyVote(selected.kind, selected.id, val);
+      /* imediato — não espera fechar o modal */
+      paintVoteButtons();
+      requestAnimationFrame(paintVoteButtons);
+      setTimeout(paintVoteButtons, 30);
+      persistCommentAndPreview();
+      if (typeof saveLocal === 'function') {
+        try {
+          saveLocal();
+        } catch (e) {}
+      }
+    };
+  }
+
   function enhanceOpenModal() {
     var prev = window.openModal;
     window.openModal = function () {
       if (typeof prev === 'function') prev();
       fillFields();
       wireModalControls();
-      syncVoteColors();
+      paintVoteButtons();
     };
   }
 
@@ -535,15 +526,7 @@
       }
       fillFields();
       wireModalControls();
-    };
-  }
-
-  function enhanceVote() {
-    var prev = window.voteSelected;
-    window.voteSelected = function (val) {
-      if (typeof prev === 'function') prev(val);
-      syncVoteColors();
-      persistCommentAndPreview();
+      paintVoteButtons();
     };
   }
 
@@ -556,9 +539,7 @@
       var r = prev.apply(this, arguments);
       try {
         injectPreviewIcons();
-      } catch (e) {
-        console.warn(e);
-      }
+      } catch (e) {}
       return r;
     };
   }
@@ -581,5 +562,5 @@
   }, 800);
 
   window.openPreviewView = openPreviewView;
-  console.log('[Fluxora] vote-preview-modal v2');
+  console.log('[Fluxora] vote-preview-modal v3 instant vote');
 })();
