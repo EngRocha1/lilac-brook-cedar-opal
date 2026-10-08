@@ -1,8 +1,7 @@
 /**
- * Vote UX + comment + image/HTML preview.
- * - Photo-stack icon on nodes (like design ref)
- * - Save HTML/image to flow.previews → Convex with toast + verify
- * - Instant vote colors
+ * Vote + comment + image/HTML preview.
+ * Canonical flow = window.flow (synced both ways).
+ * Instant vote colors; save verifies previews on Convex.
  */
 (function () {
   function $(id) {
@@ -14,22 +13,50 @@
   }
 
   function notify(msg, kind) {
-    if (typeof showNotification === 'function') {
-      showNotification(msg, kind || 'info');
-    } else if (typeof window.toast === 'function') {
+    if (typeof showNotification === 'function') showNotification(msg, kind || 'info');
+    else if (typeof window.toast === 'function') {
       try {
         window.toast(msg, kind === 'error');
       } catch (e) {}
-    } else {
-      console.log('[Fluxora]', kind, msg);
     }
   }
 
+  /** Always mutate the same object used by saveToCloud */
   function getFlow() {
+    var f = null;
     try {
-      if (typeof flow !== 'undefined' && flow) return flow;
+      if (typeof flow !== 'undefined' && flow) f = flow;
     } catch (e) {}
-    return window.flow || null;
+    if (window.flow) {
+      if (!f) f = window.flow;
+      else if (f !== window.flow) {
+        /* prefer the one that already has previews */
+        var wp = window.flow.previews && Object.keys(window.flow.previews).length;
+        var fp = f.previews && Object.keys(f.previews).length;
+        if (wp && !fp) f = window.flow;
+        else {
+          if (window.flow.previews) f.previews = f.previews || window.flow.previews;
+          if (window.flow.comments) f.comments = f.comments || window.flow.comments;
+          if (window.flow.votes) f.votes = Object.assign({}, window.flow.votes, f.votes || {});
+        }
+      }
+    }
+    if (!f) return null;
+    if (!f.previews) f.previews = {};
+    if (!f.comments) f.comments = {};
+    if (!f.votes) f.votes = {};
+    window.flow = f;
+    try {
+      flow = f;
+    } catch (e2) {}
+    return f;
+  }
+
+  function currentSelected() {
+    try {
+      if (typeof selected !== 'undefined' && selected) return selected;
+    } catch (e) {}
+    return window.selected || null;
   }
 
   function voteKeyOf(kind, id) {
@@ -37,37 +64,32 @@
       if (typeof voteKey === 'function') return voteKey(kind, id);
       return kind + ':' + id;
     }
-    var sel = null;
-    try {
-      if (typeof selected !== 'undefined' && selected) sel = selected;
-    } catch (e) {}
-    if (!sel) sel = window.selected;
+    var sel = currentSelected();
     if (!sel) return null;
     if (typeof voteKey === 'function') return voteKey(sel.kind, sel.id);
     return sel.kind + ':' + sel.id;
   }
 
   function ensureStore() {
-    var f = getFlow();
-    if (!f) return null;
-    if (!f.comments) f.comments = {};
-    if (!f.previews) f.previews = {};
-    if (!f.votes) f.votes = {};
-    return f;
+    return getFlow();
   }
 
   function getPreview(kind, id) {
-    var f = ensureStore();
+    var f = getFlow();
     var k = voteKeyOf(kind, id);
     if (!f || !k) return {};
     return f.previews[k] || {};
   }
 
   function setPreview(partial, kind, id) {
-    var f = ensureStore();
+    var f = getFlow();
     var k = voteKeyOf(kind, id);
     if (!f || !k) return null;
     f.previews[k] = Object.assign({}, f.previews[k] || {}, partial);
+    window.flow = f;
+    try {
+      flow = f;
+    } catch (e) {}
     return f.previews[k];
   }
 
@@ -83,8 +105,8 @@
     st.id = 'vote-preview-css';
     st.textContent = [
       '.vbtn{transition:background .12s,border-color .12s,box-shadow .12s;cursor:pointer}',
-      '.vbtn.on-ok,.vbtn[data-v="ok"].on-ok{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.3)!important}',
-      '.vbtn.on-no,.vbtn[data-v="no"].on-no{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.3)!important}',
+      '.vbtn.on-ok{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.35)!important}',
+      '.vbtn.on-no{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.35)!important}',
       '#modalBg .modal.modal-grow{max-height:92vh;display:flex;flex-direction:column;overflow:hidden}',
       '#modalBg .modal-b{overflow-y:auto;max-height:calc(92vh - 52px);padding-bottom:12px}',
       '#sideComment{width:100%;box-sizing:border-box;min-height:72px;max-height:160px;border:1px solid #c9d3df;border-radius:8px;padding:10px;font:inherit;resize:vertical}',
@@ -107,51 +129,44 @@
       '#previewViewModal .pv-body iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}',
       '#previewViewModal .pv-empty{color:#94a3b8;text-align:center;padding:48px 16px}',
       'g.preview-btn{cursor:pointer}',
-      'g.preview-btn:hover circle.pv-bg{fill:#e0f2fe}',
     ].join('');
     document.head.appendChild(st);
+  }
+
+  function clearVoteBtnStyles(btn) {
+    if (!btn) return;
+    btn.classList.remove('on-ok', 'on-no');
+    btn.style.removeProperty('background');
+    btn.style.removeProperty('border-color');
+    btn.style.removeProperty('box-shadow');
   }
 
   function paintVoteButtons() {
     var okBtn = document.querySelector('#modalBg .vbtn[data-v="ok"]');
     var noBtn = document.querySelector('#modalBg .vbtn[data-v="no"]');
-    if (okBtn) {
-      okBtn.classList.remove('on-ok', 'on-no');
-      okBtn.style.background = '';
-      okBtn.style.borderColor = '';
-      okBtn.style.boxShadow = '';
-    }
-    if (noBtn) {
-      noBtn.classList.remove('on-ok', 'on-no');
-      noBtn.style.background = '';
-      noBtn.style.borderColor = '';
-      noBtn.style.boxShadow = '';
-    }
+    clearVoteBtnStyles(okBtn);
+    clearVoteBtnStyles(noBtn);
     var f = getFlow();
-    var sel = null;
-    try {
-      if (typeof selected !== 'undefined') sel = selected;
-    } catch (e) {}
-    if (!sel) sel = window.selected;
+    var sel = currentSelected();
     if (!sel || !f) return;
     var k = voteKeyOf(sel.kind, sel.id);
     var v = (f.votes && f.votes[k]) || { mine: null };
     if (typeof getVotes === 'function') {
       try {
         v = getVotes(sel.kind, sel.id) || v;
-      } catch (e2) {}
+      } catch (e) {}
     }
     if (v.mine === 'ok' && okBtn) {
       okBtn.classList.add('on-ok');
-      okBtn.style.background = '#dcfce7';
-      okBtn.style.borderColor = '#86efac';
-      okBtn.style.boxShadow = '0 0 0 2px rgba(34,197,94,.3)';
+      okBtn.style.setProperty('background', '#dcfce7', 'important');
+      okBtn.style.setProperty('border-color', '#86efac', 'important');
+      okBtn.style.setProperty('box-shadow', '0 0 0 2px rgba(34,197,94,.35)', 'important');
     }
     if (v.mine === 'no' && noBtn) {
       noBtn.classList.add('on-no');
-      noBtn.style.background = '#fee2e2';
-      noBtn.style.borderColor = '#fca5a5';
-      noBtn.style.boxShadow = '0 0 0 2px rgba(239,68,68,.3)';
+      noBtn.style.setProperty('background', '#fee2e2', 'important');
+      noBtn.style.setProperty('border-color', '#fca5a5', 'important');
+      noBtn.style.setProperty('box-shadow', '0 0 0 2px rgba(239,68,68,.35)', 'important');
     }
   }
 
@@ -160,13 +175,9 @@
     var m = document.createElement('div');
     m.id = 'previewViewModal';
     m.innerHTML =
-      '<div class="pv-panel">' +
-      '<div class="pv-head">' +
-      '<strong id="pvTitle">Preview</strong>' +
-      '<div class="pv-btns">' +
-      '<button type="button" id="pvFullscreen">⛶ Fullscreen</button>' +
-      '<button type="button" id="pvClose">×</button>' +
-      '</div></div>' +
+      '<div class="pv-panel"><div class="pv-head"><strong id="pvTitle">Preview</strong>' +
+      '<div class="pv-btns"><button type="button" id="pvFullscreen">⛶ Fullscreen</button>' +
+      '<button type="button" id="pvClose">×</button></div></div>' +
       '<div class="pv-body" id="pvBody"></div></div>';
     document.body.appendChild(m);
     $('pvClose').onclick = closePreviewView;
@@ -179,20 +190,14 @@
         ? '⛶ Sair'
         : '⛶ Fullscreen';
     };
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape' && m.classList.contains('open')) closePreviewView();
-    });
   }
 
-  /** Write comment + HTML from modal into flow.previews */
   function persistCommentAndPreview() {
-    var f = ensureStore();
+    var f = getFlow();
     var k = voteKeyOf();
     if (!f || !k) return false;
     var c = $('sideComment');
-    if (c) {
-      f.comments[k] = c.value;
-    }
+    if (c) f.comments[k] = c.value;
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) {
       var html = htmlEl.value || '';
@@ -205,6 +210,13 @@
         updatedAt: Date.now(),
       });
     }
+    window.flow = f;
+    try {
+      flow = f;
+    } catch (e) {}
+    try {
+      localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
+    } catch (e2) {}
     return true;
   }
 
@@ -230,23 +242,16 @@
     }
   }
 
-  /**
-   * Save full flow (with previews) to Convex and verify the key landed.
-   * Returns { ok, error?, verified? }
-   */
   async function savePreviewToConvex(previewKey) {
     var f = getFlow();
     var client = cx();
     var key = currentKey();
     var email = emailOf();
-
     if (!f) return { ok: false, error: 'Sem fluxo em memória' };
     if (!client) return { ok: false, error: 'Convex offline' };
     if (!key || key.indexOf('local') === 0)
-      return { ok: false, error: 'Fluxo local — faça login e abra um fluxo da nuvem' };
-    if (!email) return { ok: false, error: 'Faça login para salvar' };
-
-    /* ensure previews object exists on the payload */
+      return { ok: false, error: 'Abra um fluxo da nuvem' };
+    if (!email) return { ok: false, error: 'Faça login' };
     if (!f.previews) f.previews = {};
 
     try {
@@ -261,48 +266,43 @@
         data: f,
       });
     } catch (e) {
-      console.error('[preview-save] mutation', e);
+      console.error('[preview-save]', e);
       return { ok: false, error: String(e.message || e) };
     }
 
-    /* verify */
     try {
       var remote = await client.query('flows:get', {
         key: key,
         requesterEmail: email,
       });
-      if (!remote || !remote.data) {
-        return { ok: true, verified: false, error: 'Salvou mas GET vazio' };
-      }
+      if (!remote || !remote.data)
+        return { ok: true, verified: false, error: 'GET vazio' };
       var rp = (remote.data.previews || {})[previewKey];
-      if (previewKey && !rp) {
-        console.warn('[preview-save] key missing after save', previewKey, remote.data.previews);
+      if (previewKey && f.previews[previewKey] && !rp) {
         return {
           ok: true,
           verified: false,
-          error: 'Salvou o fluxo, mas previews.' + previewKey + ' não veio no GET',
+          error: 'previews.' + previewKey + ' ausente no GET',
         };
+      }
+      /* keep local in sync with server */
+      if (remote.data.previews) {
+        f.previews = remote.data.previews;
+        window.flow = f;
       }
       return { ok: true, verified: true, remotePreview: rp };
     } catch (e2) {
-      console.warn('[preview-save] verify', e2);
-      return { ok: true, verified: false, error: 'Salvou, verify falhou: ' + (e2.message || e2) };
+      return { ok: true, verified: false, error: String(e2.message || e2) };
     }
   }
 
   async function flushSave(opts) {
     opts = opts || {};
     persistCommentAndPreview();
-
     var f = getFlow();
     var k = voteKeyOf();
-
+    var sel = currentSelected();
     try {
-      var sel = null;
-      try {
-        if (typeof selected !== 'undefined') sel = selected;
-      } catch (e) {}
-      if (!sel) sel = window.selected;
       if (sel && f) {
         var name = $('sideNameMulti') || $('sideName');
         if (name) {
@@ -322,29 +322,17 @@
       }
     } catch (err) {}
 
-    try {
-      if (f) localStorage.setItem('hemopi_editor_v1', JSON.stringify(f));
-    } catch (e) {}
-
-    if (typeof markFlowClean !== 'function' && typeof saveLocal === 'function') {
-      try {
-        saveLocal();
-      } catch (e2) {}
-    }
-
     var result = await savePreviewToConvex(k);
-
     if (result.ok && result.verified) {
       if (typeof markFlowClean === 'function') markFlowClean();
       if (!opts.silent) notify('Preview salvo na nuvem ✓', 'success');
-    } else if (result.ok && !result.verified) {
+    } else if (result.ok) {
       if (!opts.silent)
-        notify('Salvo com aviso: ' + (result.error || 'verifique o Convex'), 'info');
+        notify('Salvo com aviso: ' + (result.error || ''), 'info');
     } else {
       if (!opts.silent)
-        notify('Erro ao salvar: ' + (result.error || 'desconhecido'), 'error');
+        notify('Erro ao salvar: ' + (result.error || ''), 'error');
     }
-
     if (typeof render === 'function') render();
     if (typeof renderMacroBar === 'function') renderMacroBar();
     injectPreviewIcons();
@@ -359,7 +347,6 @@
     try {
       var client = cx();
       if (!client) throw new Error('Convex offline');
-
       var uploadUrl = await client.mutation('files:generateUploadUrl', {});
       var res = await fetch(uploadUrl, {
         method: 'POST',
@@ -369,15 +356,11 @@
       if (!res.ok) throw new Error('Upload HTTP ' + res.status);
       var json = await res.json();
       var storageId = json.storageId;
-      if (!storageId) throw new Error('Resposta sem storageId');
-
+      if (!storageId) throw new Error('Sem storageId');
       var url = null;
       try {
         url = await client.mutation('files:getUrl', { storageId: storageId });
-      } catch (e) {
-        console.warn('getUrl', e);
-      }
-
+      } catch (e) {}
       setPreview({
         storageId: storageId,
         imageUrl: url || '',
@@ -386,29 +369,15 @@
       });
       if (hint)
         hint.textContent = url
-          ? 'Imagem no Convex ✓ (' + storageId.slice(0, 8) + '…)'
-          : 'storageId ok (url pendente)';
-
+          ? 'Imagem no Convex ✓'
+          : 'storageId ok';
       var result = await flushSave({ silent: true });
-      if (result.ok) {
-        notify('Imagem + fluxo salvos na nuvem ✓', 'success');
-      } else {
-        notify('Imagem no storage, mas fluxo: ' + (result.error || '?'), 'error');
-      }
+      if (result.ok) notify('Imagem + fluxo salvos ✓', 'success');
+      else notify('Imagem ok, fluxo: ' + (result.error || '?'), 'error');
     } catch (e) {
-      console.error('[image]', e);
+      console.error(e);
       if (hint) hint.textContent = 'Erro: ' + (e.message || e);
-      notify('Erro no upload: ' + (e.message || e), 'error');
-      /* fallback local base64 so UX still works offline */
-      try {
-        var r2 = new FileReader();
-        r2.onload = async function () {
-          setPreview({ imageUrl: r2.result, mode: 'image', updatedAt: Date.now() });
-          if (hint) hint.textContent = 'Imagem local (fallback) — clique Salvar';
-          notify('Imagem só local — clique 💾 Salvar no modal', 'info');
-        };
-        r2.readAsDataURL(file);
-      } catch (e2) {}
+      notify('Erro upload: ' + (e.message || e), 'error');
     }
   }
 
@@ -422,32 +391,23 @@
       }
     }
     persistCommentAndPreview();
-    var prev = getPreview(
-      kind || (window.selected && window.selected.kind),
-      id || (window.selected && window.selected.id)
-    );
+    var sel = currentSelected();
+    var prev = getPreview(kind || (sel && sel.kind), id || (sel && sel.id));
     var body = $('pvBody');
     var title = $('pvTitle');
-    if (title) {
+    if (title)
       title.textContent =
-        'Preview · ' +
-        (kind || (window.selected && window.selected.kind) || '') +
-        ' ' +
-        (id || (window.selected && window.selected.id) || '');
-    }
+        'Preview · ' + (kind || (sel && sel.kind) || '') + ' ' + (id || (sel && sel.id) || '');
     body.innerHTML = '';
     var modal = $('previewViewModal');
     modal.classList.remove('fullscreen');
-    if ($('pvFullscreen')) $('pvFullscreen').textContent = '⛶ Fullscreen';
-
     if (prev.html && String(prev.html).trim()) {
       var iframe = document.createElement('iframe');
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
       iframe.srcdoc =
         '<!DOCTYPE html><html><head><meta charset="utf-8"/>' +
         '<meta name="viewport" content="width=device-width,initial-scale=1"/>' +
-        '<style>html,body{margin:0;padding:12px;min-height:100%;font-family:system-ui,sans-serif}</style>' +
-        '</head><body>' +
+        '<style>html,body{margin:0;padding:12px;font-family:system-ui,sans-serif}</style></head><body>' +
         prev.html +
         '</body></html>';
       body.appendChild(iframe);
@@ -456,25 +416,21 @@
       img.src = prev.imageUrl;
       body.appendChild(img);
     } else if (prev.storageId && cx()) {
-      body.innerHTML = '<p class="pv-empty">Carregando imagem…</p>';
+      body.innerHTML = '<p class="pv-empty">Carregando…</p>';
       cx()
         .mutation('files:getUrl', { storageId: prev.storageId })
         .then(function (url) {
+          body.innerHTML = '';
           if (!url) {
-            body.innerHTML = '<p class="pv-empty">URL indisponível</p>';
+            body.innerHTML = '<p class="pv-empty">Indisponível</p>';
             return;
           }
-          body.innerHTML = '';
           var im = document.createElement('img');
           im.src = url;
           body.appendChild(im);
-        })
-        .catch(function () {
-          body.innerHTML = '<p class="pv-empty">Falha ao carregar</p>';
         });
     } else {
-      body.innerHTML =
-        '<p class="pv-empty">Nenhum preview. Salve HTML ou imagem no modal.</p>';
+      body.innerHTML = '<p class="pv-empty">Nenhum preview salvo.</p>';
     }
     modal.classList.add('open');
   }
@@ -488,26 +444,20 @@
   }
 
   function fillFields() {
-    ensureStore();
+    getFlow();
     var k = voteKeyOf();
     var f = getFlow();
     var c = $('sideComment');
-    if (c) {
-      c.value =
-        k && f && f.comments && f.comments[k] != null ? f.comments[k] : '';
-    }
+    if (c) c.value = k && f && f.comments && f.comments[k] != null ? f.comments[k] : '';
     var prev = getPreview();
     var htmlEl = $('sidePreviewHtml');
     if (htmlEl) htmlEl.value = prev.html || '';
     var hint = $('sidePreviewImageHint');
     if (hint) {
-      if (prev.storageId || prev.imageUrl) {
-        hint.textContent =
-          'Imagem anexada ✓' +
-          (prev.storageId ? ' · ' + String(prev.storageId).slice(0, 10) + '…' : '');
-      } else {
-        hint.textContent = 'Nenhuma imagem';
-      }
+      hint.textContent =
+        prev.storageId || prev.imageUrl
+          ? 'Imagem anexada ✓'
+          : 'Nenhuma imagem';
     }
     paintVoteButtons();
   }
@@ -534,7 +484,7 @@
       clr.dataset.vpWired = '1';
       clr.addEventListener('click', async function (ev) {
         ev.preventDefault();
-        var f = ensureStore();
+        var f = getFlow();
         var k = voteKeyOf();
         if (f && k && f.previews) delete f.previews[k];
         if ($('sidePreviewHtml')) $('sidePreviewHtml').value = '';
@@ -543,33 +493,16 @@
         await flushSave();
       });
     }
-
     var saveBtn = $('btnModalSave');
     if (saveBtn && saveBtn.dataset.vpSave !== '1') {
       saveBtn.dataset.vpSave = '1';
       saveBtn.addEventListener(
         'click',
-        function (ev) {
-          /* captura: grava preview ANTES de qualquer outro handler */
+        function () {
           persistCommentAndPreview();
-          var k = voteKeyOf();
-          var f = getFlow();
-          var has =
-            k &&
-            f &&
-            f.previews &&
-            f.previews[k] &&
-            ((f.previews[k].html && f.previews[k].html.trim()) ||
-              f.previews[k].imageUrl ||
-              f.previews[k].storageId);
-          /* defer cloud save so title handlers no editor rodem primeiro */
           setTimeout(function () {
-            flushSave({ silent: false }).then(function (result) {
-              if (result && result.ok && has) {
-                /* already notified inside flushSave */
-              }
-            });
-          }, 50);
+            flushSave({ silent: false });
+          }, 40);
         },
         true
       );
@@ -578,18 +511,15 @@
 
   function svgEl(tag, attrs) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    if (attrs) {
+    if (attrs)
       Object.keys(attrs).forEach(function (k) {
         n.setAttribute(k, attrs[k]);
       });
-    }
     return n;
   }
 
-  /** Stacked photo frames icon (design ref) */
   function buildPhotoIcon() {
-    var g = svgEl('g', { class: 'preview-btn', transform: 'translate(0,0)' });
-    /* soft hit circle */
+    var g = svgEl('g', { class: 'preview-btn' });
     g.appendChild(
       svgEl('circle', {
         class: 'pv-bg',
@@ -601,7 +531,6 @@
         'stroke-width': '1.2',
       })
     );
-    /* back frame */
     g.appendChild(
       svgEl('rect', {
         x: '-5',
@@ -614,7 +543,6 @@
         'stroke-width': '1.3',
       })
     );
-    /* front frame */
     g.appendChild(
       svgEl('rect', {
         x: '-7',
@@ -627,16 +555,15 @@
         'stroke-width': '1.3',
       })
     );
-    /* mountain */
-    var mtn = svgEl('path', {
-      d: 'M-5.5 3 L-2.5 -0.5 L-0.5 1.5 L2  -1.5 L5 3 Z',
-      fill: 'none',
-      stroke: '#1e3a5f',
-      'stroke-width': '1.1',
-      'stroke-linejoin': 'round',
-    });
-    g.appendChild(mtn);
-    /* sun */
+    g.appendChild(
+      svgEl('path', {
+        d: 'M-5.5 3 L-2.5 -0.5 L-0.5 1.5 L2 -1.5 L5 3 Z',
+        fill: 'none',
+        stroke: '#1e3a5f',
+        'stroke-width': '1.1',
+        'stroke-linejoin': 'round',
+      })
+    );
     g.appendChild(
       svgEl('circle', {
         cx: '2.5',
@@ -655,15 +582,11 @@
     if (!f || !f.nodes) return;
     var canvas = $('canvas');
     if (!canvas) return;
-
     canvas.querySelectorAll('.preview-btn, .preview-btn-host').forEach(function (el) {
       el.remove();
     });
-
     f.nodes.forEach(function (n) {
       if (!hasPreview('node', n.id)) return;
-
-      /* place inside node on the left, like the design ref */
       var host = svgEl('g', {
         class: 'preview-btn-host',
         transform: 'translate(' + n.x + ',' + n.y + ')',
@@ -689,12 +612,15 @@
   function enhanceVote() {
     var prev = window.voteSelected;
     window.voteSelected = function (val) {
+      var sel = currentSelected();
       if (typeof prev === 'function') prev(val);
-      else if (typeof setMyVote === 'function' && window.selected)
-        setMyVote(window.selected.kind, window.selected.id, val);
+      else if (typeof setMyVote === 'function' && sel)
+        setMyVote(sel.kind, sel.id, val);
+      /* force immediate paint from flow.votes */
       paintVoteButtons();
       requestAnimationFrame(paintVoteButtons);
-      setTimeout(paintVoteButtons, 30);
+      setTimeout(paintVoteButtons, 16);
+      setTimeout(paintVoteButtons, 80);
       persistCommentAndPreview();
     };
   }
@@ -742,12 +668,24 @@
     };
   }
 
+  /* When toolbar 💾 saves, ensure previews already on flow */
+  function enhanceSaveToCloud() {
+    var prev = window.saveToCloud;
+    if (typeof prev !== 'function') return;
+    window.saveToCloud = async function () {
+      persistCommentAndPreview();
+      getFlow();
+      return await prev.apply(this, arguments);
+    };
+  }
+
   injectStyles();
   ensurePreviewModal();
   enhanceOpenModal();
   enhanceRefreshSide();
   enhanceVote();
   enhanceRender();
+  enhanceSaveToCloud();
   wireModalControls();
 
   setTimeout(function () {
@@ -755,11 +693,12 @@
     enhanceRefreshSide();
     enhanceVote();
     enhanceRender();
+    enhanceSaveToCloud();
     wireModalControls();
     injectPreviewIcons();
-  }, 800);
+  }, 900);
 
   window.openPreviewView = openPreviewView;
   window.flushPreviewSave = flushSave;
-  console.log('[Fluxora] vote-preview-modal v4 photo-icon + convex verify');
+  console.log('[Fluxora] vote-preview-modal v5 canonical+vote');
 })();
