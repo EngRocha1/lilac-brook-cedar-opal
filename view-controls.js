@@ -1,4 +1,4 @@
-/* View controls: collapse sections/sidebar, mobile scroll — no redundant Maximize */
+/* View controls: collapse sections/sidebar — board-toolbar from index (no draw dupes) */
 (function(){
   function $(id){ return document.getElementById(id); }
 
@@ -27,17 +27,23 @@
         min-height:40vh;
         position:relative;
       }
-
-      .board-tools{
-        display:flex;align-items:center;flex-wrap:wrap;gap:8px;
-        padding:6px 12px;margin:0 8px 6px;background:#fff;
-        border:1px solid #e2e8f0;border-radius:10px;
+      .toolbar-global{
+        display:flex!important;align-items:center;justify-content:space-between;
+        flex-wrap:wrap;gap:12px;
       }
-      .toolbar{
-        display:flex!important;align-items:center;flex-wrap:wrap;
-        gap:10px!important;padding:8px 12px!important;
+      .board-toolbar{
+        display:inline-flex;align-items:center;gap:4px;
+        background:#fff;border:1px solid #e2e8f0;border-radius:8px;
+        padding:4px 8px;box-shadow:0 1px 3px rgba(0,0,0,.05);
+        margin:0 8px 8px;flex-wrap:wrap;
       }
-      .toolbar .tool-group{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+      .board-toolbar-shapes{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}
+      .board-toolbar-sep{width:1px;height:22px;background:#e2e8f0;margin:0 6px}
+      .board-toolbar > .btn,.board-toolbar-shapes > .btn{
+        border:none!important;background:transparent!important;
+        padding:6px 10px;border-radius:4px;cursor:pointer;color:#0f172a;font-weight:600;
+      }
+      .board-toolbar > .btn:hover,.board-toolbar-shapes > .btn:hover{background:#f1f5f9!important}
 
       .sec-head{
         display:flex;align-items:center;justify-content:space-between;
@@ -178,47 +184,22 @@
   }
 
   function ensureBoardTools(){
-    let bar=$('boardTools');
-    if(bar) return bar;
-    const ws=document.querySelector('.workspace');
-    if(!ws) return null;
-    bar=document.createElement('div');
-    bar.id='boardTools';
-    bar.className='board-tools';
-    bar.innerHTML=
-      '<button type="button" class="btn" id="btnPalToggle" title="Recolher macros">Macros «»</button>'+
-      '<span style="flex:1"></span>'+
-      '<button type="button" class="btn" id="btnAddProcess2" title="Processo">▭</button>'+
-      '<button type="button" class="btn" id="btnAddDecision2" title="Decisão">◇</button>'+
-      '<button type="button" class="btn" id="btnAddText2" title="Texto">T</button>'+
-      '<button type="button" class="btn" id="btnAddMacro2" title="Macro">+ Macro</button>'+
-      '<button type="button" class="btn" id="btnConnect2" title="Conectar">⟷</button>';
-    ws.parentNode.insertBefore(bar, ws);
-
-    $('btnPalToggle').onclick=function(){
-      const pal=$('macroBar');
-      if(!pal) return;
-      pal.classList.toggle('collapsed');
-      const c=pal.classList.contains('collapsed');
-      try{ localStorage.setItem('vc_pal', c?'1':'0'); }catch(e){}
-      const tog=pal.querySelector('.palette-toggle');
-      if(tog) tog.textContent=c?'»':'«';
-    };
-
-    function proxy(from, toId){
-      const a=$(from), b=$(toId);
-      if(!a) return;
-      a.onclick=function(ev){
-        ev.preventDefault();
-        if(b) b.click();
+    // Usa #boardToolbar do index.html — não recria botões de desenho (evita duplicidade)
+    const bar=$('boardToolbar') || $('boardTools');
+    const palBtn=$('btnPalToggle');
+    if(palBtn && !palBtn.dataset.vcWired){
+      palBtn.dataset.vcWired='1';
+      palBtn.onclick=function(){
+        const pal=$('macroBar');
+        if(!pal) return;
+        pal.classList.toggle('collapsed');
+        const c=pal.classList.contains('collapsed');
+        try{ localStorage.setItem('vc_pal', c?'1':'0'); }catch(e){}
+        const tog=pal.querySelector('.palette-toggle');
+        if(tog) tog.textContent=c?'»':'«';
+        this.textContent = c ? 'Macros »' : 'Macros «»';
       };
     }
-    proxy('btnAddProcess2','btnAddProcess');
-    proxy('btnAddDecision2','btnAddDecision');
-    proxy('btnAddText2','btnAddText');
-    proxy('btnAddMacro2','btnAddMacro');
-    proxy('btnConnect2','btnConnect');
-
     return bar;
   }
 
@@ -249,5 +230,5 @@
   setTimeout(boot, 1200);
   setTimeout(boot, 2500);
 
-  console.log('[Fluxora] view-controls ready (no Maximize, real collapse)');
+  console.log('[Fluxora] view-controls ready (board-toolbar from index)');
 })();
