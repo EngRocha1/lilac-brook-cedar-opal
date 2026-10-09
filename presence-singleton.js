@@ -1,9 +1,14 @@
 /**
- * SINGLE presence loop for the whole app.
- * Clears every prior interval (CDN + patches) before starting one timer.
+ * Presence — single timer for the entire app (source of truth).
+ * CDN editor-fix must NOT start its own interval (see local editor-fix.js).
  */
 (function () {
-  var INTERVAL_MS = 20000;
+  if (window.__FLUXORA_PRESENCE_MODULE__) return;
+  window.__FLUXORA_PRESENCE_MODULE__ = true;
+
+  var INTERVAL_MS = 30000;
+  var timerId = null;
+  var busy = false;
 
   function cx() {
     return window.convexClient || null;
@@ -32,26 +37,26 @@
     return localStorage.getItem('hemopi_flow_key') || '';
   }
 
-  function killAllPresenceTimers() {
-    var keys = [
-      '_presenceTimer',
-      '_presenceTimerFixed',
-      'heartbeatInterval',
-      '_hbTimer',
-    ];
-    keys.forEach(function (k) {
-      try {
-        if (window[k]) {
-          clearInterval(window[k]);
-          window[k] = null;
-        }
-      } catch (e) {}
-    });
+  function clearLegacyTimers() {
+    ['_presenceTimer', '_presenceTimerFixed', 'heartbeatInterval', '_hbTimer'].forEach(
+      function (k) {
+        try {
+          if (window[k]) {
+            clearInterval(window[k]);
+            window[k] = null;
+          }
+        } catch (e) {}
+      }
+    );
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
   }
 
   async function tickOnce() {
-    if (window.__presenceBusy) return;
-    window.__presenceBusy = true;
+    if (busy) return;
+    busy = true;
     try {
       var bar = document.getElementById('presenceBar');
       var u = currentUser();
@@ -67,21 +72,20 @@
           name: u.name || u.email,
         });
       } catch (e) {
-        /* OCC soft-fail: next tick retries */
-        console.warn('[presence] heartbeat', e && e.message ? e.message : e);
+        console.warn('[presence] hb', e && e.message ? e.message : e);
       }
       try {
         var list =
           (await cx().query('shares:listPresence', { flowKey: key })) || [];
         if (bar) {
-          bar.innerHTML = list.length
-            ? '<strong>Online:</strong> ' +
-              list
+          var names = list.length
+            ? list
                 .map(function (p) {
                   return p.name || p.email;
                 })
                 .join(', ')
-            : '<strong>Online:</strong> ' + (u.name || u.email);
+            : u.name || u.email;
+          bar.innerHTML = '<strong>Online:</strong> ' + names;
         }
       } catch (e2) {
         if (bar)
@@ -89,51 +93,48 @@
             '<strong>Online:</strong> ' + (u.name || u.email || '—');
       }
     } finally {
-      window.__presenceBusy = false;
+      busy = false;
     }
   }
 
-  /** Public API — overrides every previous presenceTick */
-  window.presenceTick = function presenceTickSingleton() {
+  window.presenceTick = function () {
     return tickOnce();
   };
 
-  window.startPresenceSingleton = function startPresenceSingleton() {
-    killAllPresenceTimers();
+  window.startPresenceSingleton = function () {
+    clearLegacyTimers();
     tickOnce();
-    window.heartbeatInterval = setInterval(tickOnce, INTERVAL_MS);
-    window._presenceTimer = window.heartbeatInterval;
-    window._presenceTimerFixed = window.heartbeatInterval;
+    timerId = setInterval(tickOnce, INTERVAL_MS);
+    /* mirror ids so any legacy clear still works */
+    window._presenceTimer = timerId;
+    window.heartbeatInterval = timerId;
   };
 
-  window.stopPresenceSingleton = function stopPresenceSingleton() {
-    killAllPresenceTimers();
+  window.stopPresenceSingleton = function () {
+    clearLegacyTimers();
   };
 
-  /* After enterApp, ensure single timer */
-  function hookEnter() {
-    var prev = window.enterApp;
-    if (typeof prev !== 'function' || prev._presenceHooked) return;
-    var wrapped = async function () {
-      var r = await prev.apply(this, arguments);
-      try {
-        window.startPresenceSingleton();
-      } catch (e) {}
-      return r;
-    };
-    wrapped._presenceHooked = true;
-    window.enterApp = wrapped;
-  }
-
-  killAllPresenceTimers();
-  hookEnter();
-  setTimeout(hookEnter, 600);
-  setTimeout(hookEnter, 1800);
-  setTimeout(function () {
-    if (document.getElementById('appMain') && !document.getElementById('appMain').hidden) {
+  /* Start once when app shell is visible — not on every hook layer */
+  var started = false;
+  function bootOnce() {
+    if (started) return;
+    var app = document.getElementById('appMain');
+    if (app && !app.hidden) {
+      started = true;
       window.startPresenceSingleton();
     }
-  }, 2000);
+  }
 
-  console.log('[Fluxora] presence-singleton armed');
+  var prevEnter = window.enterApp;
+  if (typeof prevEnter === 'function') {
+    window.enterApp = async function () {
+      var r = await prevEnter.apply(this, arguments);
+      started = false;
+      bootOnce();
+      return r;
+    };
+  }
+
+  setTimeout(bootOnce, 2500);
+  console.log('[Fluxora] presence module v2 (30s, single timer)');
 })();
