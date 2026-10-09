@@ -1,44 +1,39 @@
 /**
- * SOURCE FIX (not a feature patch war):
- * 1) CDN/local editor-fix started presence setInterval (mutation+query storm)
- * 2) saveLocal() auto-flushed flows:save on every vote/drag (mutation storm)
- * This file must load immediately after editor-fix.js and disable both behaviors.
+ * Disarm CDN presence interval + keep saveLocal disk-only until save-guard runs.
  */
 (function () {
-  /* Kill presence timer if already armed */
-  try {
-    if (window._presenceTimer) {
-      clearInterval(window._presenceTimer);
-      window._presenceTimer = null;
-    }
-    if (window._presenceTimerFixed) {
-      clearInterval(window._presenceTimerFixed);
-      window._presenceTimerFixed = null;
-    }
-  } catch (e) {}
+  function killTimers() {
+    ['_presenceTimer', '_presenceTimerFixed', 'heartbeatInterval', '_hbTimer'].forEach(
+      function (k) {
+        try {
+          if (window[k]) {
+            clearInterval(window[k]);
+            window[k] = null;
+          }
+        } catch (e) {}
+      }
+    );
+  }
 
-  /* Prevent re-arm: any assignment to _presenceTimer is cleared */
-  try {
-    var _pt = null;
-    Object.defineProperty(window, '_presenceTimer', {
-      configurable: true,
-      get: function () {
-        return _pt;
-      },
-      set: function (v) {
-        if (v) {
-          try {
-            clearInterval(v);
-          } catch (e) {}
-          _pt = null;
-        } else {
-          _pt = null;
-        }
-      },
-    });
-  } catch (e2) {}
+  killTimers();
 
-  /* saveLocal = localStorage only (no cloud debounce chain) */
+  /* Intercept setInterval: if callback stringifies to presenceTick, skip */
+  var rawSetInterval = window.setInterval.bind(window);
+  window.setInterval = function (fn, ms) {
+    try {
+      var src = String(fn);
+      if (
+        src.indexOf('presenceTick') !== -1 &&
+        ms &&
+        ms < 60000
+      ) {
+        console.warn('[noloop] blocked presence setInterval', ms);
+        return 0;
+      }
+    } catch (e) {}
+    return rawSetInterval(fn, ms);
+  };
+
   window.saveLocal = function saveLocalDiskOnly() {
     try {
       var f = null;
@@ -50,11 +45,10 @@
     } catch (e3) {}
   };
 
-  /* Neutralize internal flushSave if still referenced */
-  try {
-    /* no-op queue flags if present */
-    window.__fluxoraBlockAutoCloud = true;
-  } catch (e4) {}
+  /* Re-kill after CDN enterApp may re-arm */
+  setTimeout(killTimers, 500);
+  setTimeout(killTimers, 2000);
+  setTimeout(killTimers, 5000);
 
-  console.log('[Fluxora] noloop: presence interval blocked + saveLocal disk-only');
+  console.log('[Fluxora] noloop v2: setInterval gate + disk saveLocal');
 })();

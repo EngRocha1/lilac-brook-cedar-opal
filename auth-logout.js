@@ -1,9 +1,8 @@
 /**
- * Logout canônico — única fonte de verdade para "Sair".
- * Limpa autenticação, fluxo em cache e timers de presença.
- * Impede auto-login no F5 após sair.
+ * Logout canônico + trava anti auto-login no F5.
  */
 (function () {
+  var LOGOUT_FLAG = 'fluxora_logged_out';
   var KEYS = [
     'hemopi_user',
     'hemopi_flow_key',
@@ -26,7 +25,6 @@
     try {
       sessionStorage.removeItem('fluxora_admin');
     } catch (e2) {}
-    /* varredura defensiva: qualquer chave residual do app */
     try {
       var doomed = [];
       for (var i = 0; i < localStorage.length; i++) {
@@ -46,7 +44,7 @@
     } catch (e3) {}
   }
 
-  function clearRuntimeUser() {
+  function clearRuntime() {
     try {
       window.user = null;
     } catch (e) {}
@@ -62,19 +60,14 @@
       flowTitle = '';
     } catch (e4) {}
     try {
-      window.flow = { macros: [], nodes: [], edges: [], votes: {}, comments: {}, previews: {} };
-      flow = window.flow;
-    } catch (e5) {}
-    try {
       window.HEMOPI_SHARE_MODE = null;
-    } catch (e6) {}
+    } catch (e5) {}
   }
 
   function stopPresence() {
     try {
-      if (typeof window.stopPresenceSingleton === 'function') {
+      if (typeof window.stopPresenceSingleton === 'function')
         window.stopPresenceSingleton();
-      }
     } catch (e) {}
     ['_presenceTimer', '_presenceTimerFixed', 'heartbeatInterval', '_hbTimer', '__sessionHbTimer'].forEach(
       function (k) {
@@ -105,10 +98,27 @@
     if (pub) pub.hidden = false;
   }
 
+  window.isLoggedOut = function () {
+    try {
+      return sessionStorage.getItem(LOGOUT_FLAG) === '1';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  window.clearLoggedOutFlag = function () {
+    try {
+      sessionStorage.removeItem(LOGOUT_FLAG);
+    } catch (e) {}
+  };
+
   window.logout = function logoutFluxora() {
     stopPresence();
     clearAuthStorage();
-    clearRuntimeUser();
+    clearRuntime();
+    try {
+      sessionStorage.setItem(LOGOUT_FLAG, '1');
+    } catch (e) {}
     showPublicShell();
     var lab = $('userLabel');
     if (lab) lab.innerHTML = '—';
@@ -116,12 +126,35 @@
     if (bar) bar.innerHTML = '<strong>Online:</strong> —';
     var bm = $('bannerMeta');
     if (bm) bm.innerHTML = '';
-    if (typeof toast === 'function') toast('Sessão encerrada');
-    else if (typeof flash === 'function') flash('Saiu');
-    console.log('[Fluxora] logout complete — storage cleared');
+    if (typeof showNotification === 'function')
+      showNotification('Sessão encerrada', 'info');
+    else if (typeof toast === 'function') toast('Sessão encerrada');
+    console.log('[Fluxora] logout complete + anti-relogin flag');
   };
 
-  function wireLogoutButton() {
+  /** Block auto enterApp after logout until explicit login */
+  function guardEnterApp() {
+    var prev = window.enterApp;
+    if (typeof prev !== 'function' || prev.__logoutGuard) return;
+    window.enterApp = async function () {
+      if (window.isLoggedOut && window.isLoggedOut()) {
+        /* only allow if user just logged in (flag cleared) */
+        var u = null;
+        try {
+          u = JSON.parse(localStorage.getItem('hemopi_user') || 'null');
+        } catch (e) {}
+        if (!u || !u.email) {
+          showPublicShell();
+          console.warn('[Fluxora] enterApp blocked — logged out');
+          return;
+        }
+      }
+      return prev.apply(this, arguments);
+    };
+    window.enterApp.__logoutGuard = true;
+  }
+
+  function wireBtn() {
     var btn = $('btnLogout');
     if (!btn) return;
     btn.onclick = function (ev) {
@@ -133,10 +166,33 @@
     };
   }
 
-  /* Garante binding após scripts CDN */
-  wireLogoutButton();
-  setTimeout(wireLogoutButton, 500);
-  setTimeout(wireLogoutButton, 1500);
+  /* On explicit login success paths, clear the flag */
+  function hookLoginClear() {
+    var form = $('authForm');
+    if (form && !form.__logoutHook) {
+      form.addEventListener(
+        'submit',
+        function () {
+          window.clearLoggedOutFlag && window.clearLoggedOutFlag();
+        },
+        true
+      );
+      form.__logoutHook = true;
+    }
+  }
 
-  console.log('[Fluxora] auth-logout ready');
+  guardEnterApp();
+  wireBtn();
+  hookLoginClear();
+  setTimeout(function () {
+    guardEnterApp();
+    wireBtn();
+    hookLoginClear();
+  }, 400);
+  setTimeout(function () {
+    guardEnterApp();
+    wireBtn();
+  }, 1500);
+
+  console.log('[Fluxora] auth-logout v2 ready');
 })();
