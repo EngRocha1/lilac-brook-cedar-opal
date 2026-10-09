@@ -1,9 +1,11 @@
 /**
- * HARD rate-limit on Convex HTTP client.
- * Stops request storms regardless of how many timers/patches call presence/save.
- * Load IMMEDIATELY after convex-api.js.
+ * Rate-limit presence/session calls. Block accidental flows:save.
+ * Explicit saves set window.__allowCloudSave = true first.
  */
 (function () {
+  if (window.__FLUXORA_RATE_LIMIT__) return;
+  window.__FLUXORA_RATE_LIMIT__ = true;
+
   var MIN_MS = {
     'shares:heartbeat': 30000,
     'shares:listPresence': 30000,
@@ -18,10 +20,10 @@
     var extra = '';
     try {
       if (path === 'shares:heartbeat' || path === 'shares:listPresence') {
-        extra = ':' + (args && args.flowKey ? args.flowKey : '');
+        extra = ':' + ((args && args.flowKey) || '');
       }
       if (path === 'sessions:heartbeat') {
-        extra = ':' + (args && args.email ? args.email : '');
+        extra = ':' + ((args && args.email) || '');
       }
     } catch (e) {}
     return path + extra;
@@ -35,94 +37,102 @@
 
     client.query = async function (path, args) {
       var min = MIN_MS[path];
-      if (min) {
-        var k = keyOf(path, args);
-        var now = Date.now();
-        if (inFlight[k]) return inFlight[k];
-        if (lastAt[k] && now - lastAt[k] < min) {
-          return lastResult[k];
-        }
-        lastAt[k] = now;
-        inFlight[k] = rawQuery(path, args)
-          .then(function (r) {
-            lastResult[k] = r;
-            return r;
-          })
-          .finally(function () {
-            delete inFlight[k];
-          });
-        return inFlight[k];
-      }
-      return rawQuery(path, args);
+      if (!min) return rawQuery(path, args);
+      var k = keyOf(path, args);
+      var now = Date.now();
+      if (inFlight[k]) return inFlight[k];
+      if (lastAt[k] && now - lastAt[k] < min) return lastResult[k];
+      lastAt[k] = now;
+      inFlight[k] = rawQuery(path, args)
+        .then(function (r) {
+          lastResult[k] = r;
+          return r;
+        })
+        .finally(function () {
+          delete inFlight[k];
+        });
+      return inFlight[k];
     };
 
     client.mutation = async function (path, args) {
-      /* Block cloud save unless explicit flag (set by saveToCloud) */
       if (path === 'flows:save' && !window.__allowCloudSave) {
-        console.debug('[rate-limit] blocked flows:save (use 💾)');
+        console.debug('[rate-limit] blocked flows:save (use Salvar)');
         return null;
       }
       var min = MIN_MS[path];
-      if (min) {
-        var k = keyOf(path, args);
-        var now = Date.now();
-        if (inFlight[k]) return inFlight[k];
-        if (lastAt[k] && now - lastAt[k] < min) {
-          return lastResult[k];
-        }
-        lastAt[k] = now;
-        inFlight[k] = rawMutation(path, args)
-          .then(function (r) {
-            lastResult[k] = r;
-            return r;
-          })
-          .finally(function () {
-            delete inFlight[k];
-          });
-        return inFlight[k];
-      }
-      return rawMutation(path, args);
+      if (!min) return rawMutation(path, args);
+      var k = keyOf(path, args);
+      var now = Date.now();
+      if (inFlight[k]) return inFlight[k];
+      if (lastAt[k] && now - lastAt[k] < min) return lastResult[k];
+      lastAt[k] = now;
+      inFlight[k] = rawMutation(path, args)
+        .then(function (r) {
+          lastResult[k] = r;
+          return r;
+        })
+        .finally(function () {
+          delete inFlight[k];
+        });
+      return inFlight[k];
     };
 
     client.__rateLimited = true;
     return client;
   }
 
-  function arm() {
+  function armClient() {
     if (window.convexClient) {
       window.convexClient = wrapClient(window.convexClient);
     }
   }
 
-  arm();
-  /* convex-api may assign client slightly later */
+  armClient();
   var n = 0;
   var t = setInterval(function () {
-    arm();
+    armClient();
     if (++n > 20) clearInterval(t);
   }, 100);
 
-  /* saveToCloud must set flag */
-  var prevSave;
-  function hookSave() {
-    if (typeof window.saveToCloud !== 'function') return;
-    if (window.saveToCloud.__rateHooked) return;
-    prevSave = window.saveToCloud;
+  /**
+   * Wrap saveToCloud ONCE (outermost) to set __allowCloudSave.
+   * Never re-wrap — avoids recursion with vote-preview-modal.
+   */
+  function hookSaveOnce() {
+    if (typeof window.saveToCloud !== 'function') return false;
+    if (window.saveToCloud.__rateHooked) return true;
+    var inner = window.saveToCloud;
     window.saveToCloud = async function () {
       window.__allowCloudSave = true;
       try {
-        return await prevSave.apply(this, arguments);
+        return await inner.apply(this, arguments);
       } finally {
         setTimeout(function () {
           window.__allowCloudSave = false;
-        }, 500);
+        }, 800);
       }
     };
     window.saveToCloud.__rateHooked = true;
+    return true;
   }
-  hookSave();
-  setTimeout(hookSave, 500);
-  setTimeout(hookSave, 2000);
 
-  console.log('[Fluxora] convex-rate-limit armed');
+  /* save-guard loads later — retry until hooked once */
+  var tries = 0;
+  var ht = setInterval(function () {
+    if (hookSaveOnce() || ++tries > 40) clearInterval(ht);
+  }, 150);
+
+  /** Public helper for modules that call mutation directly */
+  window.withCloudSave = async function (fn) {
+    window.__allowCloudSave = true;
+    try {
+      return await fn();
+    } finally {
+      setTimeout(function () {
+        window.__allowCloudSave = false;
+      }, 800);
+    }
+  };
+
+  console.log('[Fluxora] convex-rate-limit v2 (no recursion)');
 })();
