@@ -1,210 +1,156 @@
 /**
- * Isolation: new accounts never inherit another user's flow.
- * Presence timer is NOT started here — presence-singleton owns it.
+ * enterApp isolation v4 — owner isolation + logout guard + no presence interval
  */
 (function () {
-  var STORAGE_KEY = 'hemopi_editor_v1';
-  var FLOW_KEY_STORE = 'hemopi_flow_key';
   var USER_KEY = 'hemopi_user';
-  var LAST_OWNER_KEY = 'hemopi_last_owner';
+  var FLOW_KEY_STORE = 'hemopi_flow_key';
+  var STORAGE_KEY = 'hemopi_editor_v1';
+
+  function $(id) {
+    return document.getElementById(id);
+  }
 
   function cx() {
     return window.convexClient || null;
   }
 
-  function blank(title) {
-    return {
-      macros: [],
-      nodes: [],
-      edges: [],
-      votes: {},
-      comments: {},
-      previews: {},
-      header: { projectName: title || '' },
-    };
+  function onlyShow(id) {
+    ['publicPage', 'appMain', 'adminPage', 'adminGate', 'flowManager', 'guestModal'].forEach(
+      function (k) {
+        var el = $(k);
+        if (!el) return;
+        el.hidden = k !== id;
+      }
+    );
   }
 
-  function setFlow(f) {
-    if (!f) f = blank();
-    if (!f.previews) f.previews = {};
-    if (!f.comments) f.comments = {};
-    if (!f.votes) f.votes = {};
-    try {
-      flow = f;
-    } catch (e) {}
-    window.flow = f;
-  }
-
-  function setKey(k) {
-    try {
-      flowKey = k;
-    } catch (e) {}
-    window.flowKey = k;
-    if (k) localStorage.setItem(FLOW_KEY_STORE, k);
-    else localStorage.removeItem(FLOW_KEY_STORE);
-  }
-
-  function setTitle(t) {
-    try {
-      flowTitle = t;
-    } catch (e) {}
-    window.flowTitle = t;
-  }
-
-  function syncUser() {
+  function readUser() {
     try {
       var raw = localStorage.getItem(USER_KEY);
-      if (raw) {
-        var u = JSON.parse(raw);
-        if (u && u.email) {
-          window.user = u;
-          try {
-            user = u;
-          } catch (e) {}
-          return u;
-        }
-      }
-    } catch (e2) {}
-    if (window.user && window.user.email) return window.user;
-    return null;
-  }
-
-  function emailOf() {
-    var u = syncUser();
-    return ((u && u.email) || '').toLowerCase().trim();
-  }
-
-  function nameOf() {
-    var u = syncUser();
-    return (u && u.name) || emailOf().split('@')[0] || 'Meu fluxo';
-  }
-
-  function isGuest() {
-    var u = syncUser();
-    return !!(u && u.isGuest) || window.HEMOPI_SHARE_MODE === 'guest';
-  }
-
-  function clearForeignCache(email) {
-    var last = (localStorage.getItem(LAST_OWNER_KEY) || '').toLowerCase();
-    if (last && email && last !== email) {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(FLOW_KEY_STORE);
-      setKey('');
-      setTitle('');
-      setFlow(blank());
-    }
-    if (email) localStorage.setItem(LAST_OWNER_KEY, email);
-  }
-
-  async function ensureOwnedWorkspace(email) {
-    if (!cx() || !email) {
-      setKey('');
-      setTitle('');
-      setFlow(blank());
-      return;
-    }
-
-    var rows = [];
-    try {
-      rows = (await cx().query('flows:list', { ownerEmail: email })) || [];
+      if (!raw) return null;
+      var u = JSON.parse(raw);
+      return u && u.email ? u : null;
     } catch (e) {
-      console.warn('[enter-app] list', e);
+      return null;
     }
-
-    if (rows.length) {
-      var pick = rows[0];
-      for (var i = 0; i < rows.length; i++) {
-        if ((rows[i].title || '').toLowerCase().indexOf('principal') >= 0) {
-          pick = rows[i];
-          break;
-        }
-      }
-      setKey(pick.key);
-      setTitle(pick.title || pick.key);
-      try {
-        var remote = await cx().query('flows:get', {
-          key: pick.key,
-          requesterEmail: email,
-        });
-        if (remote && remote.data != null) {
-          setFlow(remote.data);
-          if (remote.title) setTitle(remote.title);
-        } else if (pick.data) {
-          setFlow(pick.data);
-        } else {
-          setFlow(blank(pick.title));
-        }
-      } catch (e2) {
-        setFlow(pick.data || blank(pick.title));
-      }
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.flow));
-      } catch (e3) {}
-      return;
-    }
-
-    var title = nameOf();
-    var data = blank(title);
-    var key = null;
-    try {
-      var starter = await cx().mutation('flows:ensureStarter', {
-        ownerEmail: email,
-        name: title,
-      });
-      if (starter && starter.key) key = starter.key;
-    } catch (e4) {}
-    if (!key) {
-      try {
-        var created = await cx().mutation('flows:create', {
-          title: title,
-          ownerEmail: email,
-          data: data,
-        });
-        if (created && created.key) key = created.key;
-      } catch (e5) {
-        console.error(e5);
-      }
-    }
-    if (!key) key = 'local-' + Date.now().toString(36);
-    setKey(key);
-    setTitle(title);
-    setFlow(data);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e6) {}
   }
 
   window.enterApp = async function enterAppIsolated() {
-    syncUser();
-    var email = emailOf();
-
-    try {
-      if (typeof onlyShow === 'function') onlyShow('appMain');
-      else {
-        var pub = document.getElementById('publicPage');
-        var app = document.getElementById('appMain');
-        if (pub) pub.hidden = true;
-        if (app) app.hidden = false;
-        var lm = document.getElementById('loginModal');
-        if (lm) lm.hidden = true;
+    /* Anti auto-login after Sair */
+    if (typeof window.isLoggedOut === 'function' && window.isLoggedOut()) {
+      var _u = null;
+      try {
+        _u = JSON.parse(localStorage.getItem('hemopi_user') || 'null');
+      } catch (e) {}
+      if (!_u || !_u.email) {
+        try {
+          var pub = document.getElementById('publicPage');
+          var app = document.getElementById('appMain');
+          if (pub) pub.hidden = false;
+          if (app) app.hidden = true;
+        } catch (e2) {}
+        console.warn('[Fluxora] enterApp blocked (logged out)');
+        return;
       }
-    } catch (e) {}
-
-    clearForeignCache(email);
-
-    if (!isGuest()) {
-      await ensureOwnedWorkspace(email);
+      if (typeof window.clearLoggedOutFlag === 'function') window.clearLoggedOutFlag();
     }
 
+    var u = readUser();
+    if (!u || !u.email) {
+      onlyShow('publicPage');
+      return;
+    }
+    window.user = u;
     try {
-      if (typeof window.refreshUserChrome === 'function')
-        await window.refreshUserChrome();
+      user = u;
     } catch (e) {}
 
+    var email = String(u.email).toLowerCase().trim();
+    onlyShow('appMain');
+
+    if (typeof window.refreshUserChrome === 'function') {
+      try {
+        await window.refreshUserChrome();
+      } catch (e) {}
+    }
+
+    var key = '';
     try {
-      if (typeof loadFlowListSafe === 'function') await loadFlowListSafe();
-      else if (typeof loadFlowList === 'function') await loadFlowList();
+      key = localStorage.getItem(FLOW_KEY_STORE) || '';
     } catch (e) {}
+
+    /* Isolation: never open another owner's flow */
+    if (key && cx()) {
+      try {
+        var row = await cx().query('flows:get', {
+          key: key,
+          requesterEmail: email,
+        });
+        if (!row || (row.ownerEmail && row.ownerEmail.toLowerCase() !== email)) {
+          key = '';
+          try {
+            localStorage.removeItem(FLOW_KEY_STORE);
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (e3) {}
+        }
+      } catch (e4) {
+        /* access denied → blank slate */
+        key = '';
+        try {
+          localStorage.removeItem(FLOW_KEY_STORE);
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e5) {}
+      }
+    }
+
+    if (!key && cx()) {
+      try {
+        var rows =
+          (await cx().query('flows:list', { ownerEmail: email })) || [];
+        if (rows.length) {
+          rows.sort(function (a, b) {
+            return (b.updatedAt || 0) - (a.updatedAt || 0);
+          });
+          key = rows[0].key;
+        } else if (typeof window.ensureStarter === 'function') {
+          key = await window.ensureStarter(email);
+        } else {
+          var created = await cx().mutation('flows:create', {
+            title: 'Novo fluxo',
+            ownerEmail: email,
+            data: {
+              macros: [],
+              nodes: [],
+              edges: [],
+              votes: {},
+              comments: {},
+              header: { projectName: 'Novo fluxo' },
+            },
+          });
+          key = created && created.key;
+        }
+      } catch (e6) {
+        console.warn('bootstrap flow', e6);
+      }
+    }
+
+    if (key) {
+      window.flowKey = key;
+      try {
+        flowKey = key;
+      } catch (e7) {}
+      try {
+        localStorage.setItem(FLOW_KEY_STORE, key);
+      } catch (e8) {}
+    }
+
+    if (typeof window.loadFlow === 'function') {
+      try {
+        await window.loadFlow();
+      } catch (e9) {
+        console.warn('loadFlow', e9);
+      }
+    }
 
     try {
       if (typeof render === 'function') render();
@@ -212,11 +158,12 @@
       if (typeof updateProgress === 'function') updateProgress();
       if (typeof renderProjectHeader === 'function') await renderProjectHeader();
       if (typeof renderSealBox === 'function') renderSealBox();
+      if (typeof window.renderBannerMeta === 'function') window.renderBannerMeta();
     } catch (e) {
       console.warn(e);
     }
 
-    /* ONE presence tick — interval owned by presence-singleton */
+    /* ONE presence start — interval owned by presence-singleton */
     try {
       if (typeof window.startPresenceSingleton === 'function') {
         window.startPresenceSingleton();
@@ -229,5 +176,5 @@
     console.log('[Fluxora] enterApp isolated →', window.flowKey, email);
   };
 
-  console.log('[Fluxora] enter-app-fix isolation v3 (no interval)');
+  console.log('[Fluxora] enter-app-fix isolation v4');
 })();
