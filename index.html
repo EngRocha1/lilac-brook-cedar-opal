@@ -26,7 +26,7 @@
 .user-chip{display:inline-flex;align-items:center;gap:8px;max-width:280px}
 .user-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .user-avatar--ph{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#1e3a5f;color:#fff;font-weight:700}
-.btn-save-modern{display:inline-flex;align-items:center;gap:6px;background:#0f766e!important;color:#fff!important;border:none!important;border-radius:8px;padding:6px 12px;font-weight:600;box-shadow:0 1px 3px rgba(15,118,110,.35)}
+.btn-save-modern{display:inline-flex;align-items:center;gap:6px;background:#0f766e!important;color:#fff!important;border:none!important;border-radius:8px;padding:6px 12px;font-weight:700;box-shadow:0 1px 3px rgba(15,118,110,.35)}
 .btn-save-modern:hover{background:#0d9488!important}
 .btn-save-modern svg{flex-shrink:0}
 .btn-save-label{font-size:13px}
@@ -251,9 +251,9 @@
     <button type="button" class="btn btn-save" id="btnFeSaveHeader">Salvar cabeçalho</button>
     <h4 style="margin-top:18px">Compartilhamentos</h4>
     <div id="feSharesList"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <input id="feNewShareEmail" type="email" placeholder="email" style="flex:1"/>
-      <button type="button" class="btn pri" id="btnFeAddShare">+ Compartilhar</button>
+    <div class="fe-share-add" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+      <input id="feNewShareEmail" type="email" placeholder="nome@empresa.com" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px"/>
+      <button type="button" class="btn pri" id="btnFeAddShare" style="width:100%;padding:11px;border-radius:10px;font-weight:700">+ Compartilhar</button>
     </div>
   </div></div>
 </div>
@@ -273,7 +273,8 @@
 <script src="auth-logout.js?v=2"></script>
 <script src="enter-app-fix.js?v=iso4"></script>
 <script src="auth-bridge.js?v=ux2"></script>
-<script src="flow-edit-modal.js?v=safe1"></script>
+<script src="flow-edit-modal.js?v=safe2"></script>
+<script src="share-modal.js?v=1"></script>
 <script src="share-access.js?v=safe1"></script>
 <script src="ui-polish.js?v=safe1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/print-diagram.js"></script>
@@ -283,7 +284,7 @@
 <script src="edges-fix.js?v=edges1"></script>
 <script src="connect-tool.js?v=crud2"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/shapes-edges-busbar.js"></script>
-<script src="board-viewport.js?v=safe1"></script>
+<script src="board-viewport.js?v=safe2"></script>
 <script src="notify.js?v=safe1"></script>
 <script src="block-duplicate.js?v=safe1"></script>
 <script src="macro-id-field.js?v=safe1"></script>
@@ -298,6 +299,6 @@
 <script src="vote-preview-modal.js?v=vote6"></script>
 <script src="vote-optimistic.js?v=vote2"></script>
 <script src="ux-shell.js?v=1"></script>
-<script src="board-scroll-preview.js?v=1"></script>
+<script src="board-scroll-preview.js?v=2"></script>
 </body>
 </html>
