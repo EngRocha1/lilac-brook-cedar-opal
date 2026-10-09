@@ -25,6 +25,11 @@
 .user-chip{display:inline-flex;align-items:center;gap:8px;max-width:280px}
 .user-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .user-avatar--ph{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#1e3a5f;color:#fff;font-weight:700}
+.btn-save-modern{display:inline-flex;align-items:center;gap:6px;background:#0f766e!important;color:#fff!important;border:none!important;border-radius:8px;padding:6px 12px;font-weight:600;box-shadow:0 1px 3px rgba(15,118,110,.35)}
+.btn-save-modern:hover{background:#0d9488!important}
+.btn-save-modern svg{flex-shrink:0}
+.btn-save-label{font-size:13px}
+@media(max-width:640px){.btn-save-label{display:none}}
 </style>
 </head>
 <body>
@@ -155,7 +160,10 @@
       <div class="prog" hidden><i id="progBar"></i></div>
       <button type="button" class="btn" onclick="printMode('overview')" title="Imprimir">🖨</button>
       <button type="button" class="btn pri" onclick="exportJSON()" title="Baixar">↓</button>
-      <button type="button" class="btn" id="btnCloudSave" onclick="saveToCloud()" title="Salvar">💾</button>
+      <button type="button" class="btn btn-save-modern" id="btnCloudSave" onclick="saveToCloud()" title="Salvar na nuvem" aria-label="Salvar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span class="btn-save-label">Salvar</span>
+      </button>
     </div>
   </div>
   <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
@@ -252,6 +260,7 @@
 <div id="toast" class="toast toast-top" hidden></div>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/config.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/convex-api.js"></script>
+<script src="convex-rate-limit.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/flow-data.js"></script>
 <script src="pre-guard.js?v=iso1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor.js"></script>
@@ -259,9 +268,9 @@
 <script src="editor-nullsafe.js?v=iso1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
-<script src="editor-fix-noloop.js?v=1"></script>
-<script src="auth-logout.js?v=1"></script>
-<script src="enter-app-fix.js?v=iso3"></script>
+<script src="editor-fix-noloop.js?v=2"></script>
+<script src="auth-logout.js?v=2"></script>
+<script src="enter-app-fix.js?v=iso4"></script>
 <script src="auth-bridge.js?v=ux2"></script>
 <script src="flow-edit-modal.js?v=safe1"></script>
 <script src="share-access.js?v=safe1"></script>
