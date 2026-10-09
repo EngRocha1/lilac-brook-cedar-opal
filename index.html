@@ -9,17 +9,19 @@
 <link rel="stylesheet" href="editor.css?v=edges1"/>
 <style>
 #publicPage[hidden],#appMain[hidden],#adminPage[hidden],#adminGate[hidden],#flowManager[hidden],#loginModal[hidden],#guestModal[hidden]{display:none!important}
-.btn.active,#btnConnect.active{outline:2px solid #16a34a;background:#dcfce7!important;color:#14532d!important}
-.flow-mgr-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.flow-mgr-actions .btn-edit-flow{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.flow-mgr-actions .btn-clone{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.flow-mgr-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-.vbtn.on-ok,.vbtn.voted-up{background:#dcfce7!important;border-color:#86efac!important;box-shadow:0 0 0 2px rgba(34,197,94,.35)!important}
-.vbtn.on-no,.vbtn.voted-down{background:#fee2e2!important;border-color:#fca5a5!important;box-shadow:0 0 0 2px rgba(239,68,68,.35)!important}
-#sideComment{width:100%;min-height:72px;border:1px solid #c9d3df;border-radius:8px;padding:10px;box-sizing:border-box}
-.preview-box{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
-.preview-box textarea,#sidePreviewHtml{width:100%;min-height:100px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid #c9d3df;border-radius:8px;padding:8px;box-sizing:border-box}
-.preview-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#projectHeader,.share-panel{display:none!important}
+.banner-meta{width:100%;margin-top:8px}
+.banner-meta-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.banner-flow-title{font-weight:700;font-size:15px;color:#fff}
+.banner-meta-actions{display:flex;gap:6px;align-items:center}
+.banner-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;padding:0}
+.banner-icon-btn:hover{background:rgba(255,255,255,.22)}
+.banner-meta-grid{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:8px}
+.banner-chip{display:inline-flex;flex-direction:column;gap:1px;padding:4px 10px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);min-width:90px}
+.banner-chip i{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.04em;opacity:.75;color:#fce7f3}
+.banner-chip b{font-size:12px;font-weight:600;color:#fff;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vbtn.on-ok,.vbtn.voted-up{background:#dcfce7!important;border-color:#86efac!important}
+.vbtn.on-no,.vbtn.voted-down{background:#fee2e2!important;border-color:#fca5a5!important}
 .user-chip{display:inline-flex;align-items:center;gap:8px;max-width:280px}
 .user-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .user-avatar--ph{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#1e3a5f;color:#fff;font-weight:700}
@@ -124,7 +126,11 @@
 <div class="app" id="appMain" hidden>
   <header class="hero"><div class="hero-top">
     <div class="logo">◇</div>
-    <div style="flex:1"><h1>Fluxora — Editor</h1><p class="tagline">Validação visual de processos</p></div>
+    <div style="flex:1;min-width:200px">
+      <h1>Fluxora — Editor</h1>
+      <p class="tagline">Validação visual de processos</p>
+      <div id="bannerMeta" class="banner-meta"></div>
+    </div>
     <div class="hero-user">
       <span id="userLabel" class="user-chip">—</span>
       <button type="button" class="btn hero-btn" id="btnOpenProfile">Perfil</button>
@@ -133,8 +139,10 @@
     </div>
   </div></header>
   <div class="toolbar toolbar-global">
-    <div class="tool-group">
+    <div class="tool-group" hidden>
       <label class="flow-label">Fluxo</label><select id="flowSelect"></select>
+    </div>
+    <div class="tool-group">
       <button type="button" class="btn" id="btnNewFlow">+ Novo</button>
     </div>
     <div class="tool-group tool-group-actions">
@@ -151,9 +159,9 @@
     </div>
   </div>
   <div id="presenceBar" class="presence-bar"><strong>Online:</strong> —</div>
-  <div id="projectHeader" class="project-header"></div>
+  <div id="projectHeader" class="project-header" hidden></div>
   <div id="sealBox"></div>
-  <div class="share-panel">
+  <div class="share-panel" hidden>
     <button type="button" class="btn" id="btnEditHeader">Cabeçalho</button>
     <button type="button" class="btn" id="btnShare">Compartilhar</button>
     <button type="button" class="btn pri" id="btnSeal">Selo</button>
@@ -251,6 +259,7 @@
 <script src="editor-nullsafe.js?v=iso1"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-patch.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/EngRocha1/lilac-brook-cedar-opal@9c55ef5/editor-fix.js"></script>
+<script src="editor-fix-noloop.js?v=1"></script>
 <script src="enter-app-fix.js?v=iso3"></script>
 <script src="auth-bridge.js?v=ux2"></script>
 <script src="flow-edit-modal.js?v=safe1"></script>
@@ -270,10 +279,11 @@
 <script src="macro-delete-cascade.js?v=sec1"></script>
 <script src="save-guard.js?v=sec2"></script>
 <script src="user-chrome.js?v=ux3"></script>
-<script src="presence-singleton.js?v=occ1"></script>
+<script src="presence-singleton.js?v=occ2"></script>
+<script src="header-banner.js?v=ban1"></script>
 <script src="load-flow-fix.js?v=prev1"></script>
 <script src="list-source.js?v=list1"></script>
-<script src="admin-panel.js?v=adm1"></script>
+<script src="admin-panel.js?v=adm2"></script>
 <script src="vote-preview-modal.js?v=vote5"></script>
 <script src="vote-optimistic.js?v=vote1"></script>
 </body>
