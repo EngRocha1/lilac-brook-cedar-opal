@@ -1,22 +1,21 @@
 /**
- * Board native scroll + preview icon on each shape.
- * Does not touch vote/save/presence logic.
+ * Board XY scrollbars + preview icon on shapes.
  */
 (function () {
   function $(id) {
     return document.getElementById(id);
   }
 
-  /* ---- Scrollbars on board ---- */
   function ensureScrollCss() {
     if (document.getElementById('board-scroll-css')) return;
     var st = document.createElement('style');
     st.id = 'board-scroll-css';
     st.textContent =
-      '.canvas-wrap{overflow:auto!important;scrollbar-gutter:stable;}' +
-      '.canvas-wrap::-webkit-scrollbar{width:10px;height:10px}' +
-      '.canvas-wrap::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:8px}' +
+      '.canvas-wrap{overflow:auto!important;scrollbar-gutter:stable both-edges;}' +
+      '.canvas-wrap::-webkit-scrollbar{width:12px;height:12px}' +
+      '.canvas-wrap::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:8px;border:2px solid #e2e8f0}' +
       '.canvas-wrap::-webkit-scrollbar-track{background:#e2e8f0}' +
+      '.canvas-wrap::-webkit-scrollbar-corner{background:#e2e8f0}' +
       '.canvas-wrap #canvas{min-width:2000px;min-height:1400px}' +
       'g.preview-btn{cursor:pointer}' +
       'g.preview-btn:hover circle{fill:#e0f2fe;stroke:#0284c7}' +
@@ -28,11 +27,11 @@
     var svg = $('canvas');
     var f = window.flow;
     if (!svg || !f) return;
-    var maxX = 1200,
-      maxY = 900;
+    var maxX = 1600,
+      maxY = 1100;
     function hit(x, y, w, h) {
-      maxX = Math.max(maxX, (x || 0) + (w || 0) + 120);
-      maxY = Math.max(maxY, (y || 0) + (h || 0) + 120);
+      maxX = Math.max(maxX, (x || 0) + (w || 0) + 160);
+      maxY = Math.max(maxY, (y || 0) + (h || 0) + 160);
     }
     (f.macros || []).forEach(function (m) {
       hit(m.x, m.y, m.w, m.h);
@@ -46,7 +45,6 @@
     svg.style.minHeight = Math.ceil(maxY) + 'px';
   }
 
-  /* ---- Preview icon on nodes (left of 💬) ---- */
   function elNS(name, attrs, text) {
     var e = document.createElementNS('http://www.w3.org/2000/svg', name);
     if (attrs) {
@@ -118,7 +116,6 @@
           window.openModal();
         }
       });
-      /* also block drag start */
       pg.addEventListener('click', function (ev) {
         ev.stopPropagation();
       });
