@@ -1,9 +1,8 @@
 /**
- * Vote + comment + image/HTML preview — v7
- * - Instant vote colors
- * - Preview HTML/image persist via flows:save (withCloudSave)
- * - Preview view reads flow.previews[key] first (no cross-node textarea bleed)
- * - saveToCloud wrapped ONCE only
+ * Vote + comment + image/HTML preview — v8
+ * - Modal fields follow CDN global `selected` (openModal path)
+ * - External eye uses openPreviewForNode(nodeId) — independent of modal
+ * - No cross-node bleed between eye sticky state and modal form
  */
 (function () {
   function $(id) {
@@ -47,12 +46,16 @@
     return f;
   }
 
-  /** Prefer window.selected (eye / explicit) then CDN global selected */
+  /**
+   * Modal / vote / save: CDN global `selected` is source of truth.
+   * window.selected is only a fallback (e.g. eye before modal open).
+   */
   function currentSelected() {
-    if (window.selected && window.selected.id != null) return window.selected;
     try {
-      if (typeof selected !== 'undefined' && selected) return selected;
+      if (typeof selected !== 'undefined' && selected && selected.id != null)
+        return selected;
     } catch (e) {}
+    if (window.selected && window.selected.id != null) return window.selected;
     return null;
   }
 
@@ -63,6 +66,19 @@
     var id = sel.id;
     if (typeof window.voteKey === 'function') return window.voteKey(k, id);
     return k + ':' + id;
+  }
+
+  /** Key for the node the modal is actually editing (CDN selected). */
+  function modalVoteKey() {
+    var sel = null;
+    try {
+      if (typeof selected !== 'undefined' && selected && selected.id != null)
+        sel = selected;
+    } catch (e) {}
+    if (!sel) return voteKeyOf();
+    if (typeof window.voteKey === 'function')
+      return window.voteKey(sel.kind || 'node', sel.id);
+    return (sel.kind || 'node') + ':' + sel.id;
   }
 
   function currentKey() {
@@ -97,7 +113,7 @@
 
   function persistCommentAndPreview() {
     var f = getFlow();
-    var k = voteKeyOf();
+    var k = modalVoteKey();
     if (!f || !k) return false;
     if (!f.comments) f.comments = {};
     if (!f.previews) f.previews = {};
@@ -127,7 +143,7 @@
 
   function paintVoteButtons() {
     var f = getFlow();
-    var k = voteKeyOf();
+    var k = modalVoteKey();
     document.querySelectorAll('.vbtn').forEach(function (b) {
       b.classList.remove('on-ok', 'on-no', 'voted-up', 'voted-down');
     });
@@ -226,7 +242,7 @@
     opts = opts || {};
     persistCommentAndPreview();
     var f = getFlow();
-    var k = voteKeyOf();
+    var k = modalVoteKey();
     var sel = currentSelected();
     try {
       if (sel && f) {
@@ -285,7 +301,7 @@
       var storageId = json.storageId;
       var url = await client.mutation('files:getUrl', { storageId: storageId });
       var f = getFlow();
-      var k = voteKeyOf();
+      var k = modalVoteKey();
       if (f && k) {
         if (!f.previews) f.previews = {};
         f.previews[k] = Object.assign({}, f.previews[k] || {}, {
@@ -324,15 +340,26 @@
   function enhanceOpenModal() {
     var prev = window.openModal;
     window.openModal = function () {
+      /* Sync window.selected ← CDN selected so they never diverge */
+      try {
+        if (typeof selected !== 'undefined' && selected && selected.id != null) {
+          window.selected = {
+            kind: selected.kind || 'node',
+            id: selected.id,
+          };
+        }
+      } catch (e) {}
+
       if (typeof prev === 'function') prev.apply(this, arguments);
+
       setTimeout(function () {
         paintVoteButtons();
         var f = getFlow();
-        var k = voteKeyOf();
+        /* Always use modal key (CDN selected), not sticky eye state */
+        var k = modalVoteKey();
         var htmlEl = $('sidePreviewHtml');
         var c = $('sideComment');
         var hint = $('sidePreviewImageHint');
-        /* Always reset fields for THIS key — never keep previous block text */
         if (c) c.value = (f && k && f.comments && f.comments[k]) || '';
         if (htmlEl) {
           var p = f && k && f.previews ? f.previews[k] : null;
@@ -397,7 +424,7 @@
     if (clearBtn && !clearBtn.__previewWired) {
       clearBtn.onclick = function () {
         var f = getFlow();
-        var k = voteKeyOf();
+        var k = modalVoteKey();
         if (f && k && f.previews) delete f.previews[k];
         var htmlEl = $('sidePreviewHtml');
         if (htmlEl) htmlEl.value = '';
@@ -419,13 +446,10 @@
     }
   }
 
-  /**
-   * Preview for the currently selected node.
-   * Source of truth: flow.previews[voteKey] — textarea only if modal open for same key.
-   */
+  /** Modal "Ver preview" — uses modal key (CDN selected). */
   function openPreviewView() {
     var f = getFlow();
-    var k = voteKeyOf();
+    var k = modalVoteKey();
     if (!k) {
       notify('Nenhum bloco selecionado', 'error');
       return;
@@ -513,5 +537,5 @@
 
   window.openPreviewView = openPreviewView;
   window.flushPreviewSave = flushSave;
-  console.log('[Fluxora] vote-preview-modal v7 (preview key isolation)');
+  console.log('[Fluxora] vote-preview-modal v8 (modal key = CDN selected)');
 })();
