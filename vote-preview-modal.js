@@ -1,8 +1,9 @@
 /**
- * Vote + comment + image/HTML preview — v6
+ * Vote + comment + image/HTML preview — v7
  * - Instant vote colors
  * - Preview HTML/image persist via flows:save (withCloudSave)
- * - saveToCloud wrapped ONCE only (no recursion with rate-limit)
+ * - Preview view reads flow.previews[key] first (no cross-node textarea bleed)
+ * - saveToCloud wrapped ONCE only
  */
 (function () {
   function $(id) {
@@ -46,11 +47,13 @@
     return f;
   }
 
+  /** Prefer window.selected (eye / explicit) then CDN global selected */
   function currentSelected() {
+    if (window.selected && window.selected.id != null) return window.selected;
     try {
       if (typeof selected !== 'undefined' && selected) return selected;
     } catch (e) {}
-    return window.selected || null;
+    return null;
   }
 
   function voteKeyOf() {
@@ -81,6 +84,14 @@
       return ((window.user || {}).email || '').toLowerCase().trim();
     } catch (e) {
       return '';
+    }
+  }
+
+  function refreshEyes() {
+    if (typeof window.refreshPreviewIcons === 'function') {
+      try {
+        window.refreshPreviewIcons();
+      } catch (e) {}
     }
   }
 
@@ -176,7 +187,6 @@
     var saved = await cloudMutationSave(f);
     if (!saved.ok) return saved;
 
-    /* verify remote */
     try {
       var client = cx();
       var row = await client.query('flows:get', {
@@ -202,7 +212,11 @@
       } else if (!local || (!local.html && !local.storageId)) {
         verified = true;
       }
-      return { ok: true, verified: verified, error: verified ? '' : 'HTML/imagem ainda não confirmados no GET' };
+      return {
+        ok: true,
+        verified: verified,
+        error: verified ? '' : 'HTML/imagem ainda não confirmados no GET',
+      };
     } catch (e2) {
       return { ok: true, verified: false, error: 'Salvo, verificação falhou' };
     }
@@ -246,6 +260,7 @@
         notify('Erro ao salvar: ' + (result.error || ''), 'error');
     }
     if (typeof render === 'function') render();
+    else refreshEyes();
     if (typeof renderMacroBar === 'function') renderMacroBar();
     return result;
   }
@@ -314,17 +329,19 @@
         paintVoteButtons();
         var f = getFlow();
         var k = voteKeyOf();
-        if (f && k) {
-          var c = $('sideComment');
-          if (c) c.value = (f.comments && f.comments[k]) || '';
-          var htmlEl = $('sidePreviewHtml');
-          var p = f.previews && f.previews[k];
-          if (htmlEl) htmlEl.value = (p && p.html) || '';
-          var hint = $('sidePreviewImageHint');
-          if (hint) {
-            hint.textContent =
-              p && (p.imageUrl || p.storageId) ? 'Imagem anexada ✓' : '';
-          }
+        var htmlEl = $('sidePreviewHtml');
+        var c = $('sideComment');
+        var hint = $('sidePreviewImageHint');
+        /* Always reset fields for THIS key — never keep previous block text */
+        if (c) c.value = (f && k && f.comments && f.comments[k]) || '';
+        if (htmlEl) {
+          var p = f && k && f.previews ? f.previews[k] : null;
+          htmlEl.value = (p && p.html) || '';
+        }
+        if (hint) {
+          var p2 = f && k && f.previews ? f.previews[k] : null;
+          hint.textContent =
+            p2 && (p2.imageUrl || p2.storageId) ? 'Imagem anexada ✓' : '';
         }
         wireModalControls();
       }, 0);
@@ -342,7 +359,6 @@
     };
   }
 
-  /** Wrap saveToCloud ONCE — persist preview fields then call inner */
   function enhanceSaveToCloud() {
     if (typeof window.saveToCloud !== 'function') return;
     if (window.saveToCloud.__previewHooked) return;
@@ -353,7 +369,6 @@
       return await inner.apply(this, arguments);
     };
     window.saveToCloud.__previewHooked = true;
-    /* preserve rate-limit flag if it was already outer */
     if (inner.__rateHooked) window.saveToCloud.__rateHooked = true;
   }
 
@@ -390,6 +405,7 @@
         if (hint) hint.textContent = '';
         var file = $('sidePreviewImage');
         if (file) file.value = '';
+        refreshEyes();
         notify('Preview limpo (Salvar para gravar)', 'info');
       };
       clearBtn.__previewWired = true;
@@ -403,35 +419,58 @@
     }
   }
 
+  /**
+   * Preview for the currently selected node.
+   * Source of truth: flow.previews[voteKey] — textarea only if modal open for same key.
+   */
   function openPreviewView() {
     var f = getFlow();
     var k = voteKeyOf();
-    var p = f && k && f.previews ? f.previews[k] : null;
-    var htmlEl = $('sidePreviewHtml');
-    var html = (htmlEl && htmlEl.value) || (p && p.html) || '';
-    var imgUrl = p && (p.imageUrl || '');
-    var overlay = document.getElementById('previewViewOverlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'previewViewOverlay';
-      overlay.style.cssText =
-        'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px';
-      overlay.innerHTML =
-        '<div style="background:#fff;border-radius:12px;width:min(960px,100%);height:min(90vh,800px);display:flex;flex-direction:column;overflow:hidden">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #e2e8f0">' +
-        '<strong>Preview</strong>' +
-        '<span><button type="button" id="pvFull" class="btn">Tela cheia</button> ' +
-        '<button type="button" id="pvClose" class="btn">×</button></span></div>' +
-        '<div id="pvBody" style="flex:1;overflow:auto;background:#f8fafc"></div></div>';
-      document.body.appendChild(overlay);
-      overlay.querySelector('#pvClose').onclick = function () {
-        overlay.remove();
-      };
-      overlay.querySelector('#pvFull').onclick = function () {
-        var body = document.getElementById('pvBody');
-        if (body && body.requestFullscreen) body.requestFullscreen();
-      };
+    if (!k) {
+      notify('Nenhum bloco selecionado', 'error');
+      return;
     }
+    var p = f && f.previews ? f.previews[k] : null;
+    var html = (p && p.html) || '';
+    var htmlEl = $('sidePreviewHtml');
+    var modal = $('modalBg');
+    if (
+      !html &&
+      htmlEl &&
+      htmlEl.value &&
+      modal &&
+      modal.classList.contains('open')
+    ) {
+      html = htmlEl.value;
+    }
+    var imgUrl = (p && p.imageUrl) || '';
+
+    var overlay = document.getElementById('previewViewOverlay');
+    if (overlay) overlay.remove();
+
+    overlay = document.createElement('div');
+    overlay.id = 'previewViewOverlay';
+    overlay.style.cssText =
+      'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:12px;width:min(960px,100%);height:min(90vh,800px);display:flex;flex-direction:column;overflow:hidden">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #e2e8f0">' +
+      '<strong>Preview</strong>' +
+      '<span><button type="button" id="pvFull" class="btn">Tela cheia</button> ' +
+      '<button type="button" id="pvClose" class="btn">×</button></span></div>' +
+      '<div id="pvBody" style="flex:1;overflow:auto;background:#f8fafc"></div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#pvClose').onclick = function () {
+      overlay.remove();
+    };
+    overlay.querySelector('#pvFull').onclick = function () {
+      var body = document.getElementById('pvBody');
+      if (body && body.requestFullscreen) body.requestFullscreen();
+    };
+    overlay.addEventListener('click', function (ev) {
+      if (ev.target === overlay) overlay.remove();
+    });
+
     var body = document.getElementById('pvBody');
     if (!body) return;
     if (html && html.trim()) {
@@ -474,5 +513,5 @@
 
   window.openPreviewView = openPreviewView;
   window.flushPreviewSave = flushSave;
-  console.log('[Fluxora] vote-preview-modal v6 (no recursion)');
+  console.log('[Fluxora] vote-preview-modal v7 (preview key isolation)');
 })();
